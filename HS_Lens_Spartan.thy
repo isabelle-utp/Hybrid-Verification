@@ -983,8 +983,8 @@ subsection \<open> Proof Methods \<close>
 
 text \<open> A simple tactic for Hoare logic that uses weakest liberal precondition calculations \<close>
 
-method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst var_alpha_combine wp usubst_eval refine_iff_implies fbox_g_ode_on_subset''[OF local_flow])
-method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow, expr_auto)
+method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst var_alpha_combine wp usubst usubst_eval refine_iff_implies fbox_g_ode_on_subset''[OF local_flow])
+method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
 
 method vderiv = ((expr_simp)?; force intro!: poly_derivatives simp: vec_eq_iff field_simps)
 

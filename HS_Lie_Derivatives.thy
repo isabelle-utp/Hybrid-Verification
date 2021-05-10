@@ -398,6 +398,6 @@ method dInduct_mega' uses facts =
 
 text \<open> First attempt at a system level prover \<close>
 
-method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega, (expr_auto)+)
+method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
 
 end
