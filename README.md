@@ -1,6 +1,6 @@
 # Hybrid-Verification
 
-This repository contains a set of components for verifying hybrid systems in Isabelle/HOL, and is a collaboration between Jonathan Julián Huerta y Munive, Simon Foster and others. The tool herein in provides an implementation of various techniques for reasoning about hybrid programs and differential equations, including Platzer's [differential induction technique](http://www.ls.cs.cmu.edu/KeYmaeraX/), and also the use of flows and solutions.
+This repository contains a set of components for verifying hybrid systems in Isabelle/HOL, and is a collaboration between [Jonathan Julián Huerta y Munive](http://orcid.org/0000-0003-3279-3685), [Simon Foster](https://orcid.org/0000-0002-9889-9514) and others. The tool herein in provides an implementation of various techniques for reasoning about hybrid programs and differential equations, including Platzer's [differential induction technique](http://www.ls.cs.cmu.edu/KeYmaeraX/), and also the use of flows and solutions.
 
 In order to use this tool, you currently need Isabelle 2020 (though we should upgrade to 2021 soon), and a set of components from our other repositories. The dependencies you need include:
 * [Optics](https://github.com/isabelle-utp/Optics), branch isabelle2020
