@@ -346,4 +346,58 @@ lemma has_vderiv_on_vec_eq[simp]:
   unfolding has_vderiv_on_def has_vector_derivative_def apply safe
   using has_derivative_vec_nth has_derivative_vec_lambda by blast+
 
+
+(*****)
+
+lemma bounded_iff_subset_ball:
+  "bounded S \<longleftrightarrow> (\<exists>e x. S \<subseteq> ball x e \<and> 0 \<le> e)"
+  unfolding bounded_def ball_def subset_eq apply (clarsimp, safe)
+  apply (metis approximation_preproc_push_neg(1) dual_order.strict_trans2 gt_ex linear)
+  using less_eq_real_def by blast
+
+lemmas bounded_continuous_image = compact_imp_bounded[OF compact_continuous_image]
+
+lemmas bdd_above_continuous_image = bounded_continuous_image[THEN bounded_imp_bdd_above]
+
+term "\<exists>f'. D f = f' on T"
+term "\<exists>x'. D f \<mapsto> x' (at x within T)"
+thm bounded_linear_def bounded_linear_axioms_def
+thm mvt_very_simple mvt_general
+thm open_contains_ball
+thm bounded_imp_bdd_above
+thm connected_compact_interval_1 is_interval_connected
+
+lemma real_compact_intervalI:
+  "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
+  by (meson connected_compact_interval_1 is_interval_connected)
+
+lemma 
+  fixes f :: "real \<Rightarrow> 'a::real_inner"
+  assumes "\<exists>f'. D f = f' on UNIV"
+  shows "local_lipschitz T S (\<lambda>t::real. f)"
+proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
+  obtain f' where h: "D f = f' on UNIV"
+    using assms by blast
+  hence deriv_f1: "\<And>a b. a < b \<Longrightarrow> D f = f' on {a..b}"
+    using has_vderiv_on_subset[OF h] by auto
+  hence cont_f: "\<And>a b. a < b \<Longrightarrow> continuous_on {a..b} f"
+    using  vderiv_on_continuous_on by blast
+  have deriv_f2: "\<And>a b x. a < x \<Longrightarrow> x < b \<Longrightarrow> D f \<mapsto> (\<lambda>t. t *\<^sub>R f' x) (at x)"
+    using h unfolding has_vderiv_on_def has_vector_derivative_def by simp
+  {fix a b::real assume "a < b"
+    hence f1: "(\<And>x. a < x \<Longrightarrow> x < b \<Longrightarrow> D f \<mapsto> (\<lambda>t. t *\<^sub>R f' x) (at x))"
+      using deriv_f2 unfolding has_vderiv_on_def has_vector_derivative_def by simp
+    hence "\<exists>x\<in>{a<..<b}. \<parallel>f b - f a\<parallel> \<le> \<parallel>(b - a) *\<^sub>R f' x\<parallel>"
+      using mvt_general[OF \<open>a < b\<close> cont_f[OF \<open>a < b\<close>] f1] by auto
+    term "\<exists>u>0. (\<exists>ta. \<bar>t - ta\<bar> \<le> u \<and> ta \<in> T) \<longrightarrow>
+                 (\<exists>L\<ge>0. \<forall>b\<in>cball x u \<inter> S. \<forall>a\<in>cball x u \<inter> S. \<parallel>f b - f a\<parallel> \<le> L * \<bar>b - a\<bar>)"
+  }
+
+  unfolding local_lipschitz_def lipschitz_on_def apply (clarsimp simp: dist_norm)
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  unfolding has_derivative_within 
+  unfolding tendsto_iff dist_norm
+
+  apply(erule_tac x=t in ballE)
+
 end
