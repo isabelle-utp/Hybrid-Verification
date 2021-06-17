@@ -359,20 +359,6 @@ lemmas bounded_continuous_image = compact_imp_bounded[OF compact_continuous_imag
 
 lemmas bdd_above_continuous_image = bounded_continuous_image[THEN bounded_imp_bdd_above]
 
-term "\<exists>f'. D f = f' on T"
-term "\<exists>x'. D f \<mapsto> x' (at x within T)"
-thm bounded_linear_def bounded_linear_axioms_def
-thm mvt_very_simple mvt_general
-thm open_contains_ball
-thm bounded_imp_bdd_above
-thm connected_compact_interval_1 is_interval_connected
-
-thm mvt_general
-
-lemma "D f \<mapsto> (f' x) (at x within {a..b}) \<Longrightarrow> \<forall>x. a < x \<and> x < b \<longrightarrow> D f \<mapsto> (f' x) (at x)"
-  unfolding has_derivative_def tendsto_iff apply simp
-  oops
-
 lemma real_compact_intervalI:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
@@ -398,6 +384,98 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
   {fix a b::real assume "a < b"
     hence f1: "(\<And>x. a < x \<Longrightarrow> x < b \<Longrightarrow> D f \<mapsto> (\<lambda>t. t *\<^sub>R f' x) (at x))"
       using deriv_f2 unfolding has_vderiv_on_def has_vector_derivative_def by simp
+    thm mvt_general[of a b]
+    hence "\<exists>x\<in>{a<..<b}. \<parallel>f b - f a\<parallel> \<le> \<bar>b - a\<bar> * \<parallel>f' x\<parallel>"
+      using mvt_general[OF \<open>a < b\<close> cont_f[OF \<open>a < b\<close>] f1] by auto}
+  hence key: "\<And>a b. a < b \<Longrightarrow> \<exists>x\<in>{a<..<b}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x\<parallel> * \<bar>b - a\<bar>"
+    by (metis mult.commute)
+  {fix \<epsilon>::real assume "\<epsilon> > 0"
+    let ?L = "Sup ((\<lambda>z. \<parallel>f' z\<parallel>) ` cball x \<epsilon>)"
+    have "?L \<ge> 0"
+      apply(rule_tac x=x in conditionally_complete_lattice_class.cSUP_upper2)
+        apply(rule bdd_above_continuous_image; clarsimp?)
+        apply(rule continuous_on_subset[OF cont_f'])
+      using \<open>\<epsilon> > 0\<close> by auto
+    {fix a b assume "a \<in> cball x \<epsilon>" and "b \<in> cball x \<epsilon>"
+      hence "\<exists>x\<in>{a--b}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x\<parallel> * \<bar>b - a\<bar>"
+        using key apply(cases "a = b", clarsimp) 
+        apply(cases "a < b"; clarsimp)
+         apply (metis ODE_Auxiliarities.closed_segment_eq_real_ivl atLeastAtMost_iff 
+            greaterThanLessThan_iff less_eq_real_def)
+        by (metis ODE_Auxiliarities.closed_segment_eq_real_ivl atLeastAtMost_iff 
+            dist_commute dist_norm greaterThanLessThan_iff less_eq_real_def not_le)
+      then obtain z where "z\<in>{a--b}" and z_hyp: "\<parallel>f b - f a\<parallel> \<le> \<parallel>f' z\<parallel> * \<bar>b - a\<bar>"
+        by blast
+      hence "{a--b} \<subseteq> cball x \<epsilon>" and "z \<in> cball x \<epsilon>"
+        by (meson \<open>a \<in> cball x \<epsilon>\<close> \<open>b \<in> cball x \<epsilon>\<close> closed_segment_subset convex_cball subset_eq)+
+      hence "\<parallel>f' z\<parallel> \<le> ?L"
+        by (metis bdd_above_continuous_image cSUP_upper compact_cball cont_f' 
+            continuous_on_subset top.extremum)
+      hence "\<parallel>f b - f a\<parallel> \<le> ?L * \<bar>b - a\<bar>"
+        using z_hyp by (smt (verit, best) mult_right_mono)}
+    hence "(\<exists>ta. \<bar>t - ta\<bar> \<le> \<epsilon>) \<longrightarrow> (\<exists>L\<ge>0. \<forall>xa\<in>cball x \<epsilon>. \<forall>y\<in>cball x \<epsilon>. \<parallel>f xa - f y\<parallel> \<le> L * \<bar>xa - y\<bar>)"
+      using \<open>?L \<ge> 0\<close> by auto}
+  thus "\<exists>u>0. (\<exists>ta. \<bar>t - ta\<bar> \<le> u) \<longrightarrow>
+    (\<exists>L\<ge>0. \<forall>xa\<in>cball x u. \<forall>y\<in>cball x u. \<parallel>f xa - f y\<parallel> \<le> L * \<bar>xa - y\<bar>)"
+    by (rule_tac x=1 in exI, auto)
+qed
+
+lemma "local_lipschitz UNIV UNIV (\<lambda>(\<tau>::real) (t::real). t)"
+  apply(rule continuous_derivative_local_lipschitz)
+  apply(rule_tac x="\<lambda>x. 1" in exI, simp)
+  apply(rule poly_derivatives)
+  done
+
+term "\<exists>f'. D f = f' on T"
+term "\<exists>x'. D f \<mapsto> x' (at x within T)"
+thm bounded_linear_def bounded_linear_axioms_def
+thm mvt_very_simple mvt_general
+thm open_contains_ball
+thm bounded_imp_bdd_above
+thm connected_compact_interval_1 is_interval_connected
+thm mvt_general
+
+thm mvt_general[of a b f]
+
+term "local_lipschitz UNIV UNIV f"
+
+thm has_vector_derivative_def
+thm has_vderiv_on_def
+term local_lipschitz
+thm lipschitz_on_def
+
+thm differentiable_def
+(*
+https://math.stackexchange.com/questions/476072/continuous-differentiability-implies-lipschitz-continuity
+https://math.stackexchange.com/questions/795950/differentiability-and-lipschitz-continuity?rq=1
+https://math.stackexchange.com/questions/3157153/differentiability-implies-lipschitz-continuity-multivariable?noredirect=1&lq=1
+https://math.stackexchange.com/questions/143655/mathcalc1-implies-locally-lipschitz-in-mathbbrn/143781#143781
+https://math.stackexchange.com/questions/73368/a-continuously-differentiable-map-is-locally-lipschitz
+*)
+
+lemma differentiable_local_lipschitz: 
+  assumes "D (f \<tau>) \<mapsto> f' (at s within S)"
+  shows "local_lipschitz T S f"
+proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
+  fix x and t assume "x \<in> S" and "t \<in> T"
+  let ?s\<^sub>0 = "netlimit (at s within S)"
+  from assms have "(\<forall>e>0. \<exists>d>0. \<forall>x\<in>S. x \<noteq> s \<and> \<parallel>x - s\<parallel> < d \<longrightarrow>
+    \<parallel>f \<tau> x - f \<tau> ?s\<^sub>0 - f' (x - ?s\<^sub>0)\<parallel> /\<^sub>R \<parallel>x - ?s\<^sub>0\<parallel> < e)"
+    unfolding has_derivative_def tendsto_iff eventually_at dist_norm by simp
+  hence deriv_f1: "\<And>a b. a < b \<Longrightarrow> D f = f' on {a..b}"
+    using has_vderiv_on_subset[OF h1] by auto
+  hence cont_f: "\<And>a b. a < b \<Longrightarrow> continuous_on {a..b} f"
+    using vderiv_on_continuous_on by blast
+  have deriv_f2: "\<And>a b x. a < x \<Longrightarrow> x < b \<Longrightarrow> D f \<mapsto> (\<lambda>t. t *\<^sub>R f' x) (at x)"
+    using h1 unfolding has_vderiv_on_def has_vector_derivative_def by simp
+  have cont_f': "continuous_on UNIV (\<lambda>z. \<parallel>f' z\<parallel>)"
+    apply(subst comp_def[symmetric, where f=norm])
+    apply(rule continuous_on_compose[OF h2])
+    using continuous_on_norm_id by blast
+  {fix a b::real assume "a < b"
+    hence f1: "(\<And>x. a < x \<Longrightarrow> x < b \<Longrightarrow> D f \<mapsto> (\<lambda>t. t *\<^sub>R f' x) (at x))"
+      using deriv_f2 unfolding has_vderiv_on_def has_vector_derivative_def by simp
+    thm mvt_general[of a b]
     hence "\<exists>x\<in>{a<..<b}. \<parallel>f b - f a\<parallel> \<le> \<bar>b - a\<bar> * \<parallel>f' x\<parallel>"
       using mvt_general[OF \<open>a < b\<close> cont_f[OF \<open>a < b\<close>] f1] by auto}
   hence key: "\<And>a b. a < b \<Longrightarrow> \<exists>x\<in>{a<..<b}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x\<parallel> * \<bar>b - a\<bar>"
