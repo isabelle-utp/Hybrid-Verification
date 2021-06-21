@@ -67,6 +67,10 @@ declare has_vderiv_on_const [poly_derivatives]
     and has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs, poly_derivatives]
     and has_vderiv_on_ln[poly_derivatives]
 
+lemma has_vderiv_Pair [poly_derivatives]: 
+  "\<lbrakk> D f = f' on T; D g = g' on T \<rbrakk> \<Longrightarrow> D (\<lambda>x. (f x, g x)) = (\<lambda> x. (f' x, g' x)) on T"
+  by (auto intro: has_vector_derivative_Pair simp add: has_vderiv_on_def)
+
 lemma vderiv_on_composeI:
   assumes "D f = f' on g ` T" 
     and " D g = g' on T"
