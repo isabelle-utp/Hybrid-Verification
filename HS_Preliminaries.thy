@@ -337,6 +337,66 @@ lemma has_derivative_vec_lambda:
    apply(force simp: bounded_linear_def bounded_linear_axioms_def)
   using assms frechet_vec_lambda[of x T ] unfolding has_derivative_def by auto
 
+term "x::'a::euclidean_space"
+term "x::'a::ordered_euclidean_space"
+term "x::'a::executable_euclidean_space"
+term "eucl_truncate_down e x"
+thm vec_nth_matrix
+
+thm tendsto_iff dist_norm eventually_at
+
+term Sum
+term sum
+thm sum.image_eq
+
+lemma sum_eq_Sum:
+  assumes "inj_on f A"
+  shows "(\<Sum>x\<in>A. f x) = (\<Sum> {f x |x. x \<in> A})"
+proof-
+  have "(\<Sum> {f x |x. x \<in> A}) = (\<Sum> (f ` A))"
+    apply(auto simp: image_def)
+    by (rule_tac f=Sum in arg_cong, auto)
+  also have "... = (\<Sum>x\<in>A. f x)"
+    by (subst sum.image_eq[OF assms], simp)
+  finally show "(\<Sum>x\<in>A. f x) = (\<Sum> {f x |x. x \<in> A})"
+    by simp
+qed
+
+lemma "x = \<Sum> {(x \<bullet> e) *\<^sub>R e |e. e \<in> Basis}"
+  apply(subst euclidean_representation[symmetric])
+  apply(subst sum_eq_Sum)
+   apply(subst inj_on_def)
+  apply clarsimp
+   defer
+  apply simp
+  oops
+
+lemma 
+  assumes "\<forall>e\<in>Basis. D (\<lambda>x. (f x) \<bullet> e) \<mapsto> (\<lambda>x. (f' x) \<bullet> e) at x within S"
+  shows "D f \<mapsto> f' at x within S"
+proof(unfold has_derivative_def, safe)
+  have "\<forall>i\<in>Basis. bounded_linear (\<lambda>x. f' x \<bullet> i)"
+    using assms unfolding has_derivative_def by simp
+  thus "bounded_linear f'"
+    using bounded_linear_componentwise_iff by blast
+  let ?x0 = "netlimit (at x within S)"
+  show "((\<lambda>x. (f x - f ?x0 - f' (x - ?x0)) /\<^sub>R \<parallel>x - ?x0\<parallel>) \<longlongrightarrow> 0) (at x within S)"
+  proof(unfold tendsto_iff dist_norm eventually_at, clarify)
+    fix \<epsilon>::real assume "\<epsilon> > 0"
+    hence "\<forall>e\<in>Basis. \<exists>\<delta>>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < \<delta> \<longrightarrow>
+      \<parallel>(f s \<bullet> e - f ?x0 \<bullet> e - f' (s - ?x0) \<bullet> e) /\<^sub>R \<parallel>s - ?x0\<parallel> \<parallel> < \<epsilon>"
+      using assms unfolding has_derivative_def tendsto_iff 
+        dist_norm eventually_at by clarsimp
+    show "\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow>
+      \<parallel>(f s - f ?x0 - f' (s - ?x0)) /\<^sub>R \<parallel>s - ?x0\<parallel> - 0\<parallel> < \<epsilon>"
+      apply(subst euclidean_representation[symmetric])
+      back back back back back back back back
+      thm choice_Basis_iff
+    have "\<parallel>s - x\<parallel> \<le> \<parallel>s\<parallel> + \<parallel>x\<parallel>"
+      by (meson norm_triangle_ineq4)
+
+    oops
+
 lemma has_derivative_vec_nth:
   assumes "D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) at x within T"
   shows "D (\<lambda>t. f t $ i) \<mapsto> (\<lambda>h. h *\<^sub>R f' x $ i) at x within T"

@@ -120,6 +120,7 @@ abbreviation dfpend :: "real^2 \<Rightarrow> real^2" ("df")
 
 lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
   apply (unfold_locales, simp_all)
+  apply(rule c1_local_lipschitz; clarsimp)
   apply(rule_tac \<DD>=df in c1_local_lipschitz; clarsimp)
   apply(rule has_derivative_vec_lambda)
   oops
