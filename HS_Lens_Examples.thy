@@ -115,15 +115,21 @@ lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
    apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
   using exhaust_2 by force expr_auto+
 
-abbreviation dfpend :: "real^2 \<Rightarrow> real^2" ("df") 
-  where "dfpend \<equiv> [x \<leadsto> y, y \<leadsto> -x]"
+lemma num2I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P j" for j::2
+  by (meson forall_2)
 
-lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
+lemma "local_flow f UNIV UNIV \<phi>"
   apply (unfold_locales, simp_all)
-  apply(rule c1_local_lipschitz; clarsimp)
-  apply(rule_tac \<DD>=df in c1_local_lipschitz; clarsimp)
-  apply(rule has_derivative_vec_lambda)
-  oops
+    apply(rule_tac \<DD>=f in c1_local_lipschitz; clarsimp)
+  apply expr_auto
+     apply(auto simp: has_derivative_coordinate forall_2
+      intro: has_derivative_vec_nth1 derivative_intros)[1]
+    apply expr_auto
+    apply(auto intro: num2I intro!: continuous_intros)[1]
+   apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
+  using exhaust_2 apply force 
+  apply expr_auto
+  by (simp add: vec_eq_iff)
 
 lemma pendulum_flow: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   apply(subst local_flow.fbox_g_ode_subset[OF local_flow_pend], simp)

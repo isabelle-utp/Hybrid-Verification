@@ -220,7 +220,8 @@ lemma netlimit_at_within_mono:
   using assms(1) interior_mono[OF \<open>T \<subseteq> S\<close>] netlimit_within_interior by auto
 
 lemma has_derivative_at_within_mono:
-  assumes "(t::real) \<in> interior T" and "T \<subseteq> S"
+  fixes t::"'a::{perfect_space,t2_space,real_normed_vector}"
+  assumes "t \<in> interior T" and "T \<subseteq> S"
     and "D f \<mapsto> f' at t within T"
   shows "D f \<mapsto> f' at t within S"
   using assms(3) apply(unfold has_derivative_def tendsto_iff, safe)
@@ -337,18 +338,6 @@ lemma has_derivative_vec_lambda:
    apply(force simp: bounded_linear_def bounded_linear_axioms_def)
   using assms frechet_vec_lambda[of x T ] unfolding has_derivative_def by auto
 
-term "x::'a::euclidean_space"
-term "x::'a::ordered_euclidean_space"
-term "x::'a::executable_euclidean_space"
-term "eucl_truncate_down e x"
-thm vec_nth_matrix
-
-thm tendsto_iff dist_norm eventually_at
-
-term Sum
-term sum
-thm sum.image_eq
-
 lemma sum_eq_Sum:
   assumes "inj_on f A"
   shows "(\<Sum>x\<in>A. f x) = (\<Sum> {f x |x. x \<in> A})"
@@ -362,44 +351,82 @@ proof-
     by simp
 qed
 
-lemma "x = \<Sum> {(x \<bullet> e) *\<^sub>R e |e. e \<in> Basis}"
-  apply(subst euclidean_representation[symmetric])
-  apply(subst sum_eq_Sum)
-   apply(subst inj_on_def)
-  apply clarsimp
-   defer
-  apply simp
-  oops
+lemma bounded_linear_coordinate:
+  "(bounded_linear f) \<longleftrightarrow> (\<forall>i. bounded_linear (\<lambda>x. (f x) $ i))" (is "?lhs = ?rhs")
+proof
+  assume ?lhs 
+  thus ?rhs
+    apply(clarsimp, rule_tac f="(\<lambda>x. x $ i)" in bounded_linear_compose)
+     apply(simp_all add: bounded_linear_def bounded_linear_axioms_def linear_iff)
+    by (rule_tac x=1 in exI, clarsimp) (meson Finite_Cartesian_Product.norm_nth_le)
+next
+  assume ?rhs
+  hence "(\<forall>i. \<exists>K. \<forall>x. \<parallel>f x $ i\<parallel> \<le> \<parallel>x\<parallel> * K)" "linear f"
+    by (auto simp: bounded_linear_def bounded_linear_axioms_def linear_iff vec_eq_iff)
+  then obtain F where F: "\<And>i x. \<parallel>f x $ i\<parallel> \<le> \<parallel>x\<parallel> * F i"
+    by metis
+  have "\<parallel>f x\<parallel> \<le> \<parallel>x\<parallel> * sum F UNIV" for x
+  proof -
+    have "norm (f x) \<le> (\<Sum>i\<in>UNIV. \<parallel>f x $ i\<parallel>)"
+      by (simp add: L2_set_le_sum norm_vec_def)
+    also have "... \<le> (\<Sum>i\<in>UNIV. norm x * F i)"
+      by (metis F sum_mono)
+    also have "... = norm x * sum F UNIV"
+      by (simp add: sum_distrib_left)
+    finally show ?thesis .
+  qed
+  then show ?lhs
+    by (force simp: bounded_linear_def bounded_linear_axioms_def \<open>linear f\<close>)
+qed
+
+lemma open_preimage_nth:
+  "open S \<Longrightarrow> open {s::('a::real_normed_vector^'n::finite). s $ i \<in> S}"
+  unfolding open_contains_ball apply clarsimp
+  apply(erule_tac x="x$i" in ballE; clarsimp)
+  apply(rule_tac x=e in exI; clarsimp simp: dist_norm subset_eq ball_def)
+  apply(rename_tac x e y, erule_tac x="y$i" in allE)
+  using Finite_Cartesian_Product.norm_nth_le
+  by (metis le_less_trans vector_minus_component)
+
+thm has_derivative_componentwise_within
+thm tendsto_componentwise_iff
+thm eventually_at
+thm bounded_linear_compose
+
+lemma tendsto_nth_iff:
+  fixes l::"'a::real_normed_vector^'n::finite"
+  shows "(f \<longlongrightarrow> l) F \<longleftrightarrow> (\<forall>i. ((\<lambda>x. f x $ i) \<longlongrightarrow> l $ i) F)" (is "?lhs = ?rhs")
+proof
+  assume ?lhs
+  thus ?rhs
+    unfolding tendsto_def
+    by (clarify, drule_tac x="{s. s $ i \<in> S}" in spec) (auto simp: open_preimage_nth)
+next
+  assume ?rhs
+  thus ?lhs
+    unfolding tendsto_def
+    apply clarify
+    sorry
+qed
+
+lemma has_derivative_coordinate:
+  "(D f \<mapsto> f' at x within S) \<longleftrightarrow> (\<forall>i. D (\<lambda>s. f s $ i) \<mapsto> (\<lambda>s. f' s $ i) at x within S)"
+  by (simp add: has_derivative_within tendsto_nth_iff 
+      bounded_linear_coordinate all_conj_distrib)
+
+lemma has_derivative_vec_nth1: "D (\<lambda>s. s $ i) \<mapsto> (\<lambda>s. s $ i) (at x within S)"
+  by (clarsimp simp: has_derivative_within ) standard
 
 lemma 
   assumes "\<forall>e\<in>Basis. D (\<lambda>x. (f x) \<bullet> e) \<mapsto> (\<lambda>x. (f' x) \<bullet> e) at x within S"
   shows "D f \<mapsto> f' at x within S"
-proof(unfold has_derivative_def, safe)
-  have "\<forall>i\<in>Basis. bounded_linear (\<lambda>x. f' x \<bullet> i)"
-    using assms unfolding has_derivative_def by simp
-  thus "bounded_linear f'"
-    using bounded_linear_componentwise_iff by blast
-  let ?x0 = "netlimit (at x within S)"
-  show "((\<lambda>x. (f x - f ?x0 - f' (x - ?x0)) /\<^sub>R \<parallel>x - ?x0\<parallel>) \<longlongrightarrow> 0) (at x within S)"
-  proof(unfold tendsto_iff dist_norm eventually_at, clarify)
-    fix \<epsilon>::real assume "\<epsilon> > 0"
-    hence "\<forall>e\<in>Basis. \<exists>\<delta>>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < \<delta> \<longrightarrow>
-      \<parallel>(f s \<bullet> e - f ?x0 \<bullet> e - f' (s - ?x0) \<bullet> e) /\<^sub>R \<parallel>s - ?x0\<parallel> \<parallel> < \<epsilon>"
-      using assms unfolding has_derivative_def tendsto_iff 
-        dist_norm eventually_at by clarsimp
-    show "\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow>
-      \<parallel>(f s - f ?x0 - f' (s - ?x0)) /\<^sub>R \<parallel>s - ?x0\<parallel> - 0\<parallel> < \<epsilon>"
-      apply(subst euclidean_representation[symmetric])
-      back back back back back back back back
-      thm choice_Basis_iff
-    have "\<parallel>s - x\<parallel> \<le> \<parallel>s\<parallel> + \<parallel>x\<parallel>"
-      by (meson norm_triangle_ineq4)
-
-    oops
+  using has_derivative_componentwise_within[of f f' x S] assms by blast
 
 lemma has_derivative_vec_nth:
   assumes "D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) at x within T"
   shows "D (\<lambda>t. f t $ i) \<mapsto> (\<lambda>h. h *\<^sub>R f' x $ i) at x within T"
+  using  assms 
+  by (subst (asm) has_derivative_coordinate, simp)
   apply(unfold has_derivative_def, safe)
    apply(force simp: bounded_linear_def bounded_linear_axioms_def)
   using frechet_vec_nth assms unfolding has_derivative_def by auto
