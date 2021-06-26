@@ -393,8 +393,12 @@ thm tendsto_componentwise_iff
 thm eventually_at
 thm bounded_linear_compose
 
+lemma triangle_norm_vec_le_sum: "\<parallel>x\<parallel> \<le> (\<Sum>i\<in>UNIV. \<parallel>x $ i\<parallel>)"
+  by (simp add: L2_set_le_sum norm_vec_def)
+
 lemma tendsto_nth_iff:
   fixes l::"'a::real_normed_vector^'n::finite"
+  defines "m \<equiv> real CARD('n)"
   shows "(f \<longlongrightarrow> l) F \<longleftrightarrow> (\<forall>i. ((\<lambda>x. f x $ i) \<longlongrightarrow> l $ i) F)" (is "?lhs = ?rhs")
 proof
   assume ?lhs
@@ -404,9 +408,27 @@ proof
 next
   assume ?rhs
   thus ?lhs
-    unfolding tendsto_def
-    apply clarify
-    sorry
+  proof(unfold tendsto_iff dist_norm, clarify)
+    fix \<epsilon>::real assume "0 < \<epsilon>"
+    assume evnt_h: "\<forall>i \<epsilon>. 0 < \<epsilon> \<longrightarrow> (\<forall>\<^sub>F x in F. \<parallel>f x $ i - l $ i\<parallel> < \<epsilon>)"
+    {fix x assume hyp: "\<forall>i. \<parallel>f x $ i - l $ i\<parallel> < (\<epsilon>/m)"
+      have "\<parallel>f x - l\<parallel> \<le> (\<Sum>i\<in>UNIV. \<parallel>f x $ i - l $ i\<parallel>)"
+        using triangle_norm_vec_le_sum[of "f x - l"] by auto
+      also have "... < (\<Sum>(i::'n)\<in>UNIV. (\<epsilon>/m))"
+        apply(rule sum_strict_mono[of UNIV "\<lambda>i. \<parallel>f x $ i - l $ i\<parallel>" "\<lambda>i. \<epsilon>/m"])
+        using hyp by auto
+      also have "... = m * (\<epsilon>/m)"
+        unfolding assms by simp
+      finally have "\<parallel>f x - l\<parallel> < \<epsilon>" 
+        unfolding assms by simp}
+    hence key: "\<And>x. \<forall>i. \<parallel>f x $ i - l $ i\<parallel> < (\<epsilon>/m) \<Longrightarrow> \<parallel>f x - l\<parallel> < \<epsilon>"
+      by blast
+    have obs: "\<forall>\<^sub>F x in F. \<forall>i. \<parallel>f x $ i - l $ i\<parallel> < (\<epsilon>/m)"
+      apply(rule eventually_all_finite)
+      using \<open>0 < \<epsilon>\<close> evnt_h unfolding assms by auto
+    thus "\<forall>\<^sub>F x in F. \<parallel>f x - l\<parallel> < \<epsilon>"
+      by (rule eventually_mono[OF _ key], simp)
+  qed
 qed
 
 lemma has_derivative_coordinate:
