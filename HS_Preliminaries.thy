@@ -410,7 +410,7 @@ lemma
   shows "D f \<mapsto> f' at x within S"
   using has_derivative_componentwise_within[of f f' x S] assms by blast
 
-lemma has_vderiv_on_vec_eq_old:
+lemma has_vderiv_on_vec_eq_old[simp]:
   fixes x::"real \<Rightarrow> ('a::banach)^('n::finite)"
   shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
   unfolding has_vderiv_on_def has_vector_derivative_def by auto

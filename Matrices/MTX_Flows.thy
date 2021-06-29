@@ -162,13 +162,15 @@ lemma has_derivative_mtx_ith[derivative_intros]:
 lemmas has_derivative_mtx_vec_mult[derivative_intros] = 
   bounded_bilinear.FDERIV[OF bounded_bilinear_sq_mtx_vec_mult]
 
+declare has_derivative_coordinate [simp del]
+
 lemma vderiv_on_mtx_vec_multI[poly_derivatives]:
   assumes "D u = u' on T" and "D A = A' on T"
       and "g = (\<lambda>t. A t *\<^sub>V u' t + A' t *\<^sub>V u t )"
     shows "D (\<lambda>t. A t *\<^sub>V u t) = g on T"
   using assms unfolding has_vderiv_on_def has_vector_derivative_def apply clarsimp
   apply(erule_tac x=x in ballE, simp_all)+
-  apply(rule derivative_eq_intros(159))
+  apply(rule derivative_eq_intros(160))
   by (auto simp: fun_eq_iff mtx_vec_scaleR_commute pth_6 scaleR_mtx_vec_assoc)
 
 lemmas has_vderiv_on_ivl_integral = ivl_integral_has_vderiv_on[OF vderiv_on_continuous_on]
@@ -183,7 +185,7 @@ lemma has_derivative_mtx_vec_multl[derivative_intros]:
    apply(simp_all add: scaleR_right.sum)
   apply(rule_tac g'1="\<lambda>\<tau>. \<tau> *\<^sub>R \<c>\<o>\<l> i (A' t)" in derivative_eq_intros(4), simp_all add: mult.commute)
   using assms unfolding sq_mtx_col_def column_def apply(transfer, simp)
-  apply(rule has_derivative_vec_lambda)
+  apply(rule has_derivative_vec_lambda_old)
   by (simp add: scaleR_vec_def)
 
 lemma continuous_on_mtx_vec_multr: "continuous_on S ((*\<^sub>V) A)"
@@ -191,6 +193,7 @@ lemma continuous_on_mtx_vec_multr: "continuous_on S ((*\<^sub>V) A)"
 
 \<comment> \<open>Automatically generated derivative rules from this subsubsection \<close>
 
+declare has_derivative_coordinate [simp]
 thm derivative_eq_intros(140,141,142,143)
 
 

@@ -12,6 +12,12 @@ theory HS_Lens_Examples
 
 begin
 
+lemma num2I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P j" for j::2
+  by (meson forall_2)
+
+lemma num4I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> P 4 \<Longrightarrow> P j" for j::4
+  by (meson forall_4)
+
 lemma hoare_cases: "\<^bold>{p \<and> I\<^bold>}S\<^bold>{p \<and> I\<^bold>} \<Longrightarrow> \<^bold>{\<not> p \<and> I\<^bold>}S\<^bold>{\<not> p \<and> I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>}S\<^bold>{I\<^bold>}"
   by (auto simp add: fbox_def SEXP_def)
 
@@ -115,21 +121,12 @@ lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
    apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
   using exhaust_2 by force expr_auto+
 
-lemma num2I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P j" for j::2
-  by (meson forall_2)
-
 lemma "local_flow f UNIV UNIV \<phi>"
-  apply (unfold_locales, simp_all)
-    apply(rule_tac \<DD>=f in c1_local_lipschitz; clarsimp)
-  apply expr_auto
-     apply(auto simp: has_derivative_coordinate forall_2
-      intro: has_derivative_vec_nth1 derivative_intros)[1]
-    apply expr_auto
-    apply(auto intro: num2I intro!: continuous_intros)[1]
-   apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
-  using exhaust_2 apply force 
-  apply expr_auto
-  by (simp add: vec_eq_iff)
+  apply (unfold_locales; expr_auto)
+  apply ((rule_tac \<DD>=f in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros, 
+   fastforce intro: num2I continuous_intros)
+   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
+  using exhaust_2 by (auto simp: vec_eq_iff)
 
 lemma pendulum_flow: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   apply(subst local_flow.fbox_g_ode_subset[OF local_flow_pend], simp)
@@ -239,6 +236,16 @@ lemma local_flow_ball: "local_flow f UNIV UNIV \<phi>"
   apply (expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2 intro!: poly_derivatives )
   using exhaust_2 by force expr_auto+
 
+abbreviation dfball :: "real ^ 2 \<Rightarrow> real ^ 2" ("df")
+  where "dfball \<equiv> [y \<leadsto> v, v \<leadsto> 0]"
+
+lemma "local_flow f UNIV UNIV \<phi>"
+  apply (unfold_locales; expr_auto)
+  apply ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros, 
+   fastforce intro: num2I continuous_intros)
+   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
+  using exhaust_2 by (auto simp: vec_eq_iff)
+
 lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
   apply(rule hoare_loopI, simp only: wp fbox_if_then_else)
     apply(subst local_flow.fbox_g_ode_subset[OF local_flow_ball], simp)
@@ -248,6 +255,7 @@ lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBa
   by (expr_auto, clarsimp simp: field_simps, simp add: mult.commute)
 
 no_notation fball ("f")
+        and dfball ("df")
         and ball_flow ("\<phi>")
 
 end
@@ -365,6 +373,20 @@ lemma local_flow_therm: "local_flow (f c) UNIV UNIV (\<phi> c)"
   using a_ge0 apply unfold_locales
   prefer 6 apply(rule local_lipschitz_therm_dyn)
   apply (simp_all add: forall_4 vec_eq_iff, expr_auto)
+  by (auto intro!: poly_derivatives) expr_auto+
+
+abbreviation dfball :: "real \<Rightarrow> real ^ 4 \<Rightarrow> real ^ 4" ("df")
+  where "dfball c \<equiv> [T \<leadsto> - a * T, t \<leadsto> 0, \<theta> \<leadsto> 0, T\<^sub>0 \<leadsto> 0]"
+
+lemma "local_flow (f c) UNIV UNIV (\<phi> c)"
+  apply (unfold_locales)
+  prefer 6
+    apply (rule_tac \<DD>="df c" in c1_local_lipschitz; expr_auto)
+  subgoal for s i
+    using exhaust_4[of i] apply safe
+    by (auto intro!: derivative_eq_intros)
+          apply(fastforce intro: num4I continuous_intros)
+         apply (simp_all add: forall_4 vec_eq_iff, expr_auto)
   by (auto intro!: poly_derivatives) expr_auto+
 
 abbreviation "therm_ctrl \<equiv> ((t ::= 0);(T\<^sub>0 ::= T);
