@@ -415,8 +415,6 @@ lemma has_vderiv_on_vec_eq_old[simp]:
   shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
   unfolding has_vderiv_on_def has_vector_derivative_def by auto
 
-(*******************************************************)
-
 
 subsection \<open> Differentiability implies Lipschitz \<close>
 

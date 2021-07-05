@@ -991,9 +991,9 @@ method vderiv = ((expr_simp)?; force intro!: poly_derivatives simp: vec_eq_iff f
 method lipschitz for L :: real = 
   (unfold local_lipschitz_on_def local_lipschitz_def lipschitz_on_def dist_norm, clarify, rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
 
-method lens_c1_lipschitz for D uses all_typeI =
- ((rule_tac \<DD>=D in c1_local_lipschitz; expr_auto), fastforce intro: all_typeI intro!: derivative_intros, 
-   fastforce intro: all_typeI intro!: derivative_intros)
+method lens_c1_lipschitz for df uses typeI =
+ ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: typeI intro!: derivative_intros, 
+   fastforce intro: typeI continuous_intros)
 
 method local_flow for L :: real =
   ((auto simp add: local_flow_on_def)?, (unfold_locales, auto), (lipschitz L, vderiv, expr_auto))
