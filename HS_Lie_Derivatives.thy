@@ -220,6 +220,11 @@ lemma lie_deriv_disc_var [lie_deriv]:
   using assms
   by (auto simp add: expr_defs lens_quotient_def fun_eq_iff)
 
+(* FIXME: To support unique solutions, we need a way of taking the derivative of a substitution. *)
+
+lemma "frechet_derivative [\<leadsto>] (at s) = [\<leadsto>]"
+  by (simp add: subst_id_def)
+
 subsection \<open> Lie Derivative Invariants \<close>
 
 lemma derivation_lemma1:
