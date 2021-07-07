@@ -15,6 +15,9 @@ begin
 lemma num2I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P j" for j::2
   by (meson forall_2)
 
+lemma num3I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> P j" for j::3
+  by (meson forall_3)
+
 lemma num4I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> P 4 \<Longrightarrow> P j" for j::4
   by (meson forall_4)
 
@@ -502,6 +505,55 @@ lemma tank_correct:
         LOOP ctrl ; dyn INV (0 \<le> t \<and> h = ((flw * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
        \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
   using ci co by dProve
+
+end
+
+locale example_9b = 
+  fixes Kp::real 
+    and Kd::real
+    and x::"real \<Longrightarrow> real^3" 
+    and v::"real \<Longrightarrow> real^3" 
+    and xr::"real \<Longrightarrow> real^3"
+  assumes x_def [simp]: "x \<equiv> vec_lens 1"
+    and v_def [simp]: "v \<equiv> vec_lens 2"
+    and xr_def [simp]: "xr \<equiv> vec_lens 3"
+    and kp_def: "Kp = 2" 
+    and kd_def: "Kd = 3 "
+begin
+
+(* { x' = v, v' = -Kp*(x-xr) - Kd*v & v >= 0 } *)
+abbreviation f9 :: "real ^ 3 \<Rightarrow> real ^ 3" 
+  where "f9 \<equiv> [x \<leadsto> v, v \<leadsto> -Kp * (x - xr) - Kd * v, xr \<leadsto> 0]"
+
+lemma local_lipschitz_f9: "local_lipschitz UNIV UNIV (\<lambda>t::real. f9)"
+  apply(rule_tac \<DD>=f9 in c1_local_lipschitz; clarsimp)
+  apply expr_auto
+  subgoal for s i
+    using exhaust_3[of i]
+    by (auto intro!: derivative_eq_intros)
+  apply expr_auto
+  apply(rule_tac f'="\<lambda>t. f9" in has_derivative_continuous_on)
+  apply expr_auto
+  subgoal for s i
+    using exhaust_3[of i]
+    by (auto intro!: derivative_eq_intros)
+  done
+
+abbreviation "flow9 \<tau> \<equiv> [
+  x \<leadsto> exp ((-2)*\<tau>) * (xr - 2 * (exp \<tau>) * xr + (exp (2 * \<tau>)) * xr - v + (exp \<tau>) * v - x + 2 * (exp \<tau>) * x), 
+  v \<leadsto> exp ((-2)*\<tau>) * (-2 * xr + 2 * (exp \<tau>) * xr + 2 * v - (exp \<tau>) * v + 2* x - 2 * (exp \<tau>) * x),
+  xr \<leadsto> xr]"
+
+lemma "local_flow f9 UNIV UNIV flow9"
+  apply(unfold_locales; (rule local_lipschitz_f9)?; clarsimp simp: vec_eq_iff; expr_auto)
+  subgoal for t s i
+    using exhaust_3[of i] apply (safe; clarsimp simp: kp_def kd_def)
+      apply(auto intro!: poly_derivatives)[1]
+         apply(force simp: field_simps)+
+     prefer 2 apply(rule poly_derivatives)
+      apply(auto intro!: poly_derivatives)[1]
+    by (auto simp: field_simps exp_minus_inverse)
+  done
 
 end
 

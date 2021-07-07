@@ -404,29 +404,29 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_invariant (\<lambda>s. s $ 1 + s $ 2 = 0)
+  have key: "diff_invariant (\<lambda>s. s$1 + s$2 = 0)
      (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
   proof(clarsimp simp: diff_invariant_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
-    let "?c" = "(\<lambda>t.  X t $ 1 + X t $ 2)"
+    let "?c" = "(\<lambda>t.  X t$1 + X t$2)"
     assume init: "?c 0 = 0"
-      and D1: "D (\<lambda>t. X t $ 1) = (\<lambda>t. A * (X t $ 1)\<^sup>2 + B * X t $ 1) on UNIV"
-      and D2: "D (\<lambda>t. X t $ 2) = (\<lambda>t. A * X t $ 2 * X t $ 1 + B * X t $ 2) on UNIV"
-    hence "D ?c = (\<lambda>t. ?c t * (A * (X t $ 1) + B)) on UNIV"
+      and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. A * (X t$1)\<^sup>2 + B * X t$1) on UNIV"
+      and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. A * X t$2 * X t$1 + B * X t$2) on UNIV"
+    hence "D ?c = (\<lambda>t. ?c t * (A * (X t$1) + B)) on UNIV"
       by (auto intro!: poly_derivatives simp: field_simps power2_eq_square)
-    hence "D ?c = (\<lambda>t. (A * X t $ 1 + B) * (X t $ 1 + X t $ 2)) on {0--t}"
+    hence "D ?c = (\<lambda>t. (A * X t$1 + B) * (X t$1 + X t$2)) on {0--t}"
       using has_vderiv_on_subset[OF _ subset_UNIV[of "{0--t}"]] by (simp add: mult.commute)
-    moreover have "continuous_on UNIV (\<lambda>t. A * (X t $ 1) + B)"
+    moreover have "continuous_on UNIV (\<lambda>t. A * (X t$1) + B)"
       apply(rule vderiv_on_continuous_on)
       using D1 by (auto intro!: poly_derivatives simp: field_simps power2_eq_square)
-    moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t $ 1 + B) * 0) on {0--t}"
+    moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B) * 0) on {0--t}"
       by (auto intro!: poly_derivatives)
     moreover note picard_lindeloef.ivp_unique_solution[OF 
       picard_lindeloef_first_order_linear[OF UNIV_I open_UNIV is_interval_univ calculation(2)] 
       UNIV_I is_interval_closed_segment_1 subset_UNIV _ 
       ivp_solsI[of ?c]
       ivp_solsI[of "\<lambda>t. 0"], of t "\<lambda>s. 0" 0 "\<lambda>s. t" 0]
-    ultimately show "X t $ 1 + X t $ 2 = 0"
+    ultimately show "X t$1 + X t$2 = 0"
       using init by auto
   qed
   show ?thesis
@@ -449,7 +449,34 @@ abbreviation darboux_ineq_flow2 :: "real \<Rightarrow> real^2 \<Rightarrow> real
   where "\<phi> t s \<equiv> (\<chi> i. if i=1 then (s$1/(1 - t * s$1)) else
       (s$2 - s$1 * ln(1 - t * s$1))/(1 - t * s$1))"
 
-lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>t. f) (\<lambda>s. {t. 0 \<le> t \<and> t * s $ 1 < 1}) UNIV 0 s"
+abbreviation darboux_ineq_df :: "real \<times> (real ^ 2) \<Rightarrow> (real ^ 2) \<Rightarrow>\<^sub>L (real ^ 2)" ("df")
+  where "df p \<equiv> (case p of (t,x) \<Rightarrow> Blinfun (\<lambda>s. (\<chi> i::2. if i=1 then 2 * (s$1) * (x$1) else 
+  x$2 * s$1 + s$2 * x$1 + 2 * s$1 * x$1)))"
+
+thm c1_implies_local_lipschitz c1_local_lipschitz
+
+
+lemma picard_lindeloef_darboux_ineq: "picard_lindeloef (\<lambda>t. f) UNIV {s. s$1 + s$2 > 0} 0"
+  apply(unfold_locales, simp_all)
+  prefer 2
+   apply(rule_tac f'=df in c1_implies_local_lipschitz)
+  apply clarsimp
+  subgoal for s i
+    apply(cases "i = 1")
+     apply clarsimp
+     apply(subst Blinfun_inverse, clarsimp)
+      apply(subst bounded_linear_coordinate, clarsimp)
+    subgoal for j
+    using exhaust_2[of j] by (auto intro!: bounded_linear_intros)
+      apply(auto intro!: derivative_eq_intros)[1]
+  apply(subst Blinfun_inverse, clarsimp)
+      apply(subst bounded_linear_coordinate, clarsimp)
+ subgoal for j
+    using exhaust_2[of j] by (auto intro!: bounded_linear_intros)
+  by (auto intro!: derivative_eq_intros)[1]
+  sorry
+
+lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>t. f) (\<lambda>s. {t. 0 \<le> t \<and> t * s$1 < 1}) UNIV 0 s"
   by (rule ivp_solsI) (auto intro!: poly_derivatives 
       simp: forall_2 power2_eq_square add_divide_distrib power_divide vec_eq_iff)
 
@@ -475,7 +502,7 @@ proof-
   hence "s\<^sub>1 + s\<^sub>2 - s\<^sub>1 * ln (1 - t * s\<^sub>1) \<ge> s\<^sub>1 + s\<^sub>2"
     by linarith
   hence "(s\<^sub>1 + s\<^sub>2 - s\<^sub>1 * ln (1 - t * s\<^sub>1))/(1 - t * s\<^sub>1) \<ge> (s\<^sub>1 + s\<^sub>2)/(1 - t * s\<^sub>1)"
-    using \<open>t * s\<^sub>1 < 1\<close> by (simp add: \<open>0 \<le> s\<^sub>1 + s\<^sub>2\<close> frac_le)
+    using \<open>t * s\<^sub>1 < 1\<close> by (simp add: \<open>0 \<le> s\<^sub>1 + s\<^sub>2\<close> divide_le_cancel)
   also have "(s\<^sub>1 + s\<^sub>2)/(1 - t * s\<^sub>1) \<ge> 0"
     using \<open>t * s\<^sub>1 < 1\<close> by (simp add: \<open>0 \<le> s\<^sub>1 + s\<^sub>2\<close>)
   ultimately show ?thesis
@@ -485,12 +512,87 @@ qed
 (* x+z>=0 -> [{x'=x^2, z' = z*x+y & y = x^2}] x+z>=0 *)
 (* x' + z' \<ge> 0 \<longleftrightarrow> x^2 + z*x + x^2 \<ge> 0*)
 lemma "(\<lambda>s::real^2. s$1 + s$2 \<ge> 0) \<le> 
-  |EVOL \<phi> (\<lambda>s. y = (s$1)^2) (\<lambda>s. {t. 0 \<le> t \<and> t * s $ 1 < 1})]
+  |EVOL \<phi> (\<lambda>s. y = (s$1)^2) (\<lambda>s. {t. 0 \<le> t \<and> t * s$1 < 1})]
   (\<lambda>s. s$1 + s$2 \<ge> 0)"
   apply(subst fbox_g_evol, simp_all add: le_fun_def)
   using darboux_ineq_arith by smt
 
 no_notation darboux_ineq_flow2 ("\<phi>")
         and darboux_ineq_f ("f")
+
+subsection \<open> Dynamics: Fractional Darboux equality \<close>
+
+(* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
+(* x' + z' = (A*y+B*x)/z^2 + (A*x+B)/z = (A*y+B*x+A*x*z+B*z)/z^2 = (x*(A*x+B)+z*(A*x+B))/z^2 *)
+lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^3. s$1 + s$3 = 0) \<le>
+  |x\<acute>= (\<lambda> s. (\<chi> i::3. if i=1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else (if i = 3 then (A*(s$1)+B)/s$3 else 0))) & (\<lambda>s. (s$2) = (s$1)^2 \<and> (s$3)^2 > 0)] 
+  (\<lambda>s. s$1 + s$3 = 0)"
+proof-
+  have "diff_invariant (\<lambda>s::real^3. s$1 + s$3 = 0)
+     (\<lambda>t s. \<chi> i::3. if i = 1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else if i = 3 then (A*(s$1)+B)/s$3 else 0) (\<lambda>s. Collect ((\<le>) 0))
+     UNIV 0 (\<lambda>s. s$2 = (s$1)\<^sup>2 \<and> s$3 \<noteq> 0)"
+  proof(clarsimp simp: diff_invariant_eq ivp_sols_def forall_3)
+    fix X::"real\<Rightarrow>real^3" and t::real
+    let "?c" = "(\<lambda>t.  X t$1 + X t$3)"
+    assume init: "?c 0 = 0" and "t \<ge> 0"
+      and guard: "\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> X \<tau>$2 = (X \<tau>$1)\<^sup>2 \<and> X \<tau>$3 \<noteq> 0"
+      and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. (A * (X t$2) + B * X t$1)/(X t$3)\<^sup>2) on Collect ((\<le>) 0)"
+      and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. 0) on Collect ((\<le>) 0)"
+      and D3: "D (\<lambda>t. X t$3) = (\<lambda>t. (A * X t$1 + B)/(X t$3)) on Collect ((\<le>) 0)"
+    have "D ?c = (\<lambda>t. (A * (X t$2) + B * X t$1)/(X t$3)\<^sup>2 + (A * X t$1 + B)/(X t$3)) on {0--t}"
+      apply(rule_tac S="Collect ((\<le>) 0)" in has_vderiv_on_subset)
+      using \<open>t \<ge> 0\<close> by (auto simp: closed_segment_eq_real_ivl intro!: poly_derivatives D1 D3)
+    hence "D ?c = (\<lambda>t. (A * X t$1 + B)/(X t$3)\<^sup>2 * ?c t) on {0--t}"
+      apply(rule has_vderiv_on_eq_rhs)
+      using guard \<open>t \<ge> 0\<close>
+      using segment_open_subset_closed
+      by (auto simp: field_simps closed_segment_eq_real_ivl)
+    moreover have "continuous_on {0--t} (\<lambda>t. (A * X t$1 + B)/(X t$3)\<^sup>2)"
+      apply(rule vderiv_on_continuous_on)
+      apply(rule poly_derivatives)
+      using guard segment_open_subset_closed \<open>t \<ge> 0\<close> apply (force simp: closed_segment_eq_real_ivl)
+        apply(intro poly_derivatives, rule poly_derivatives)
+      apply(rule has_vderiv_on_subset[OF D1])
+      using \<open>t \<ge> 0\<close> apply(simp add: closed_segment_eq_real_ivl subset_eq, force)
+         apply(rule poly_derivatives, force)
+      apply(rule poly_derivatives,simp)
+      apply(rule has_vderiv_on_subset[OF D3])
+      using \<open>t \<ge> 0\<close> by (simp_all add: closed_segment_eq_real_ivl subset_eq)
+    moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B)/(X t$3)\<^sup>2 * 0) on {0--t}"
+      by (auto intro!: poly_derivatives)   
+    (*moreover note picard_lindeloef.unique_solution_general[OF 
+        picard_lindeloef_first_order_linear[OF _ _ _ calculation(2)] _ _ _ _ _ this _ _ calculation(1)]
+   *)
+    thm picard_lindeloef.unique_solution_closed_ivl
+    thm picard_lindeloef.unique_solution[of "(\<lambda>t. (*) ((A * X t$1 + B) / (X t$3)\<^sup>2))" _ _ 0]
+    thm picard_lindeloef_first_order_linear[OF _ _ _ calculation(2)]
+    moreover note picard_lindeloef.unique_solution_closed_ivl[OF 
+        picard_lindeloef_first_order_linear[OF _ _ _ calculation(2)] this _ _ _ calculation(1)]
+    ultimately show "X t$1 + X t$3 = 0"
+      using init by auto 
+        (* continuous because of guard need to change assumptions of picard_lindeloef *)
+        (* correct interval of existence or differentiabe \<Longrightarrow> lipschitz *)
+  qed
+  thus ?thesis
+    by auto
+qed
+
+subsection \<open> STTT Tutorial: Example 9b \<close>
+
+abbreviation f9 :: "real ^ 3 \<Rightarrow> real ^ 3" 
+  where "f9 \<equiv> (\<lambda>s. \<chi> i. if i = 1 then s $ 2 else if i = 2 then - 2 * (s $ 1 - s $ 3) - 3 * s $ 2 else 0)"
+
+(* { x' = v, v' = -Kp*(x-xr) - Kd*v & v >= 0 } *)
+term "(\<lambda>(t::real) (s::real^3). \<chi> i::3. if i = 1 then s $ 2 else if i = 2 then - 2 * (s $ 1 - s $ 3) - 3 * s $ 2 else 0)"
+lemma "local_lipschitz UNIV UNIV (\<lambda>(t::real). f9)"
+  apply(rule_tac \<DD>=f9 in c1_local_lipschitz; clarsimp?)
+  subgoal for s i
+    using exhaust_3[of i]
+    by (auto intro!: derivative_eq_intros)
+  apply(rule_tac f'="\<lambda>t. f9" in has_derivative_continuous_on, clarsimp)
+  subgoal for s i
+    using exhaust_3[of i]
+    by (auto intro!: derivative_eq_intros)
+  done
 
 end

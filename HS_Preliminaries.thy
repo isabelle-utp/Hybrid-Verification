@@ -424,6 +424,7 @@ thm has_derivative_componentwise_within
 thm tendsto_componentwise_iff
 thm eventually_at
 thm bounded_linear_compose
+thm c1_implies_local_lipschitz
 
 lemma bounded_iff_subset_ball:
   "bounded S \<longleftrightarrow> (\<exists>e x. S \<subseteq> ball x e \<and> 0 \<le> e)"
@@ -438,6 +439,71 @@ lemmas bdd_above_continuous_image = bounded_continuous_image[THEN bounded_imp_bd
 lemma real_compact_intervalI:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
+
+lemma c1_local_lipschitz_temp: 
+  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,perfect_space, times}) \<Rightarrow> 'a"
+  assumes "open S" and "open T"
+    and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> (\<DD> \<tau> s) (at s within S)" "\<forall>\<tau> \<in> T. continuous_on S (\<lambda>s. \<DD> \<tau> s)"
+  shows "local_lipschitz T S f"
+proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
+  fix s and t assume "s \<in> S" and "t \<in> T"
+  then obtain L where bdd: "\<forall>x. \<parallel>\<DD> t s x\<parallel> \<le> L * \<parallel>x\<parallel>"
+    using c1hyp unfolding has_derivative_def bounded_linear_def bounded_linear_axioms_def
+    by (metis mult.commute)
+  hence "L \<ge> 0"
+    by (metis mult.commute mult.left_neutral norm_ge_zero 
+        order_trans vector_choose_size zero_le_one)
+  then obtain \<epsilon>\<^sub>1 and \<epsilon>\<^sub>2 where "\<epsilon>\<^sub>1 > 0" and "t \<in> cball t \<epsilon>\<^sub>1"  and "cball t \<epsilon>\<^sub>1 \<subseteq> T"
+    and "\<epsilon>\<^sub>2 > 0"  and "s \<in> cball s \<epsilon>\<^sub>2" and "cball s \<epsilon>\<^sub>2 \<subseteq> S"
+    using \<open>t \<in> T\<close> \<open>s \<in> S\<close> \<open>open T\<close> \<open>open S\<close> open_contains_cball_eq
+    by (metis centre_in_cball less_eq_real_def) 
+  hence "t \<in> cball t (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<inter> T" (is "t \<in> ?B1 \<inter> T")
+    and "s \<in> cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<inter> S" (is "s \<in> ?B2 \<inter> S")
+    and "cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S"
+    by auto
+  {fix \<tau> assume tau_hyp: "\<tau> \<in> ?B1 \<inter> T"
+    {fix x and y assume x_hyp: "x \<in> ?B2 \<inter> S" and y_hyp: "y \<in> ?B2 \<inter> S"
+      define \<sigma> and \<sigma>' where sigma_def: "\<sigma> = (\<lambda>\<tau>. x + \<tau> *\<^sub>R (y - x))"
+        and dsigma_def: "\<sigma>' = (\<lambda>\<tau>. \<tau> *\<^sub>R (y - x))"
+      let ?g = "(f \<tau>) \<circ> \<sigma>"
+      have deriv: "D \<sigma> = (\<lambda>t. y - x) on {0..1}"
+        unfolding sigma_def has_vderiv_on_def
+        by (auto intro!: derivative_eq_intros)
+      have "\<sigma> ` {0..1} = closed_segment x y"
+        apply(clarsimp simp: closed_segment_def set_eq_iff sigma_def, safe)
+         apply(rename_tac r, rule_tac x="r" in exI, force simp: algebra_simps sigma_def)
+        by (auto simp: algebra_simps sigma_def)
+      hence sigma_img: "\<sigma> ` {0..1} \<subseteq> ?B2"
+        using convex_cball[of s "min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2"] convex_contains_segment[of ?B2]
+          \<open>?B2 \<subseteq> S\<close> x_hyp y_hyp by blast
+      hence "\<forall>r\<in>{0..1}. D f \<tau> \<mapsto> \<DD> \<tau> (\<sigma> r) at (\<sigma> r) within \<sigma> ` {0..1}"
+        using \<open>?B2 \<subseteq> S\<close> c1hyp
+        apply(clarify, rule_tac s=S in has_derivative_subset)
+        using tau_hyp by blast force
+      hence "\<And>r. r \<in> {0..1} \<Longrightarrow> (f \<tau> \<circ> \<sigma> has_vector_derivative (\<DD> \<tau> (\<sigma> r)) (y - x)) (at r within {0..1})"
+        using vector_derivative_diff_chain_within[of \<sigma> "y - x" _ "{0..1}" "f \<tau>" "(\<DD> \<tau> (\<sigma> _))"] deriv
+        unfolding has_vderiv_on_def by blast
+      note fundamental_theorem_of_calculus[OF zero_le_one this] 
+      hence key: "((\<lambda>t::real. (\<DD> \<tau> (\<sigma> t)) (y - x)) has_integral (f \<tau> \<circ> \<sigma>) 1 - (f \<tau> \<circ> \<sigma>) 0) {0..1}"
+        by (clarsimp simp: sigma_def)
+      thm has_integral_iff
+      have "f \<tau> y - f \<tau> x = ?g 1 - ?g 0"
+        by (simp add: sigma_def)
+      also have "... = integral {0..1} (\<lambda>t::real. (\<DD> \<tau> (\<sigma> t)) (y - x))"
+        by (rule sym, rule integral_unique[OF key])
+      also have "... = (\<DD> \<tau> (\<sigma> t)) (y - x)"
+        thm integral_const_real
+        by (subst integral_const_real, subst content_real, simp_all)
+      finally have "\<parallel>f \<tau> y - f \<tau> x\<parallel> = \<parallel>\<DD> (y - x)\<parallel>"
+        by simp
+      hence "\<parallel>f \<tau> y - f \<tau> x\<parallel> \<le> L * \<parallel>y - x\<parallel>"
+        using bdd by auto}
+    hence "0 \<le> L \<and> (\<forall>x \<in> ?B2 \<inter> S. \<forall>y \<in> ?B2 \<inter> S. \<parallel>f \<tau> x - f \<tau> y\<parallel> \<le> L * \<parallel>x - y\<parallel>)"
+      using \<open>0 \<le> L\<close> by blast}
+  thus "\<exists>\<epsilon>>0. \<exists>L. \<forall>\<tau>\<in>cball t \<epsilon> \<inter> T. 0 \<le> L \<and>
+    (\<forall>x\<in>cball s \<epsilon> \<inter> S. \<forall>y\<in>cball s \<epsilon> \<inter> S. \<parallel>f \<tau> x - f \<tau> y\<parallel> \<le> L * \<parallel>x - y\<parallel>)"
+    using \<open>\<epsilon>\<^sub>1 > 0\<close> \<open>\<epsilon>\<^sub>2 > 0\<close> by (metis Int_commute min_less_iff_conj) 
+qed
 
 lemma c1_local_lipschitz: 
   fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,perfect_space, times}) \<Rightarrow> 'a"
@@ -502,6 +568,15 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
     (\<forall>x\<in>cball s \<epsilon> \<inter> S. \<forall>y\<in>cball s \<epsilon> \<inter> S. \<parallel>f \<tau> x - f \<tau> y\<parallel> \<le> L * \<parallel>x - y\<parallel>)"
     using \<open>\<epsilon>\<^sub>1 > 0\<close> \<open>\<epsilon>\<^sub>2 > 0\<close> by (metis Int_commute min_less_iff_conj) 
 qed
+
+lemma c1_local_lipschitz_temp: 
+  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,perfect_space, times}) \<Rightarrow> 'a"
+  assumes "open S" and "open T"
+    and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> (\<DD> \<tau> s) (at s within S)" "\<forall>\<tau> \<in> T. continuous_on S (\<lambda>s. \<DD> \<tau> s)"
+  shows "local_lipschitz T S f"
+  apply(rule c1_local_lipschitz[OF assms(1,2)])
+  using c1hyp
+  oops
 
 lemma continuous_derivative_local_lipschitz: (* This should be generalised *)
   fixes f :: "real \<Rightarrow> 'a::real_inner"
