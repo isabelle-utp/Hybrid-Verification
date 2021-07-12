@@ -441,7 +441,7 @@ lemma real_compact_intervalI:
   by (meson connected_compact_interval_1 is_interval_connected)
 
 lemma c1_local_lipschitz_temp: 
-  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,perfect_space, times}) \<Rightarrow> 'a"
+  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,euclidean_space, times}) \<Rightarrow> 'a"
   assumes "open S" and "open T"
     and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> (\<DD> \<tau> s) (at s within S)" "\<forall>\<tau> \<in> T. continuous_on S (\<lambda>s. \<DD> \<tau> s)"
   shows "local_lipschitz T S f"
@@ -465,7 +465,6 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
     {fix x and y assume x_hyp: "x \<in> ?B2 \<inter> S" and y_hyp: "y \<in> ?B2 \<inter> S"
       define \<sigma> and \<sigma>' where sigma_def: "\<sigma> = (\<lambda>\<tau>. x + \<tau> *\<^sub>R (y - x))"
         and dsigma_def: "\<sigma>' = (\<lambda>\<tau>. \<tau> *\<^sub>R (y - x))"
-      let ?g = "(f \<tau>) \<circ> \<sigma>"
       have deriv: "D \<sigma> = (\<lambda>t. y - x) on {0..1}"
         unfolding sigma_def has_vderiv_on_def
         by (auto intro!: derivative_eq_intros)
@@ -486,18 +485,39 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
       note fundamental_theorem_of_calculus[OF zero_le_one this] 
       hence key: "((\<lambda>t::real. (\<DD> \<tau> (\<sigma> t)) (y - x)) has_integral (f \<tau> \<circ> \<sigma>) 1 - (f \<tau> \<circ> \<sigma>) 0) {0..1}"
         by (clarsimp simp: sigma_def)
-      thm has_integral_iff
-      have "f \<tau> y - f \<tau> x = ?g 1 - ?g 0"
+      let ?g = "(f \<tau>) \<circ> \<sigma>"
+      have "\<parallel>f \<tau> y - f \<tau> x\<parallel> = \<parallel>?g 1 - ?g 0\<parallel>"
         by (simp add: sigma_def)
-      also have "... = integral {0..1} (\<lambda>t::real. (\<DD> \<tau> (\<sigma> t)) (y - x))"
-        by (rule sym, rule integral_unique[OF key])
-      also have "... = (\<DD> \<tau> (\<sigma> t)) (y - x)"
-        thm integral_const_real
+      also have "... = \<parallel>integral {0..1} (\<lambda>t::real. (\<DD> \<tau> (\<sigma> t)) (y - x))\<parallel>"
+        by (rule arg_cong, rule sym, rule integral_unique[OF key])
+      also have "... \<le> integral {0..1} (\<lambda>t::real. \<parallel>(\<DD> \<tau> (\<sigma> t)) (y - x)\<parallel>)"
+        apply(rule continuous_on_imp_absolutely_integrable_on)
+        apply(subst comp_def[of "\<lambda>s. \<DD> \<tau> s (y - x)" \<sigma>, symmetric])
+        apply(rule continuous_on_compose)
+         apply(force simp: sigma_def intro!: continuous_intros)[1]
+        apply(rule continuous_on_subset[where s="S"])
+        using c1hyp(2) tau_hyp apply (auto elim!: ballE[where x=\<tau>] simp: dist_norm)[1]
+         apply (metis continuous_on_product_then_coordinatewise)
+        by (meson \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> order_trans sigma_img)
+      also have "... \<le> integral {0..1} (\<lambda>t::real. L * \<parallel>(y - x)\<parallel>)"
+        apply(rule Henstock_Kurzweil_Integration.integral_le)
+          apply(rule integrable_continuous_interval)
+        apply(subst comp_def[of "\<lambda>s. \<parallel>\<DD> \<tau> s (y - x)\<parallel>" \<sigma>, symmetric])
+        apply(rule continuous_on_compose)
+           apply(force simp: sigma_def intro!: continuous_intros)[1]
+          apply(rule continuous_on_subset[where s="S"])
+        using c1hyp(2) tau_hyp apply (auto elim!: ballE[where x=\<tau>] simp: dist_norm)[1]
+        apply (metis continuous_on_norm continuous_on_product_then_coordinatewise)
+          apply (meson \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> order_trans sigma_img)
+          apply(rule integrable_continuous_interval)
+         apply(auto intro!: continuous_intros)[1]
+        subgoal (* fixme: because of compactness, there is a constant that 
+        satisfies what we want *)
+          sorry
+        done
+      also have "... = L * \<parallel>(y - x)\<parallel>"
         by (subst integral_const_real, subst content_real, simp_all)
-      finally have "\<parallel>f \<tau> y - f \<tau> x\<parallel> = \<parallel>\<DD> (y - x)\<parallel>"
-        by simp
-      hence "\<parallel>f \<tau> y - f \<tau> x\<parallel> \<le> L * \<parallel>y - x\<parallel>"
-        using bdd by auto}
+      finally have "\<parallel>f \<tau> y - f \<tau> x\<parallel> \<le> L * \<parallel>y - x\<parallel>" .}
     hence "0 \<le> L \<and> (\<forall>x \<in> ?B2 \<inter> S. \<forall>y \<in> ?B2 \<inter> S. \<parallel>f \<tau> x - f \<tau> y\<parallel> \<le> L * \<parallel>x - y\<parallel>)"
       using \<open>0 \<le> L\<close> by blast}
   thus "\<exists>\<epsilon>>0. \<exists>L. \<forall>\<tau>\<in>cball t \<epsilon> \<inter> T. 0 \<le> L \<and>
