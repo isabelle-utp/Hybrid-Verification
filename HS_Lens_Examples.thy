@@ -378,8 +378,8 @@ lemma local_flow_therm: "local_flow (f c) UNIV UNIV (\<phi> c)"
   apply (simp_all add: forall_4 vec_eq_iff, expr_auto)
   by (auto intro!: poly_derivatives) expr_auto+
 
-abbreviation dfball :: "real \<Rightarrow> real ^ 4 \<Rightarrow> real ^ 4" ("df")
-  where "dfball c \<equiv> [T \<leadsto> - a * T, t \<leadsto> 0, \<theta> \<leadsto> 0, T\<^sub>0 \<leadsto> 0]"
+abbreviation dftherm :: "real \<Rightarrow> real ^ 4 \<Rightarrow> real ^ 4" ("df")
+  where "dftherm c \<equiv> [T \<leadsto> - a * T, t \<leadsto> 0, \<theta> \<leadsto> 0, T\<^sub>0 \<leadsto> 0]"
 
 lemma "local_flow (f c) UNIV UNIV (\<phi> c)"
   apply (unfold_locales)
