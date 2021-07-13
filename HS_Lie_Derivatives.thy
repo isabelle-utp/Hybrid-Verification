@@ -246,18 +246,51 @@ lemma c1_local_lipschitz_on:
 proof (unfold local_lipschitz_on_def, clarify)
   fix s
   from assms 
-  have 1:"\<And> c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
+  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
     by (simp add: differentiable_subst_def frechet_derivative_works)
 
-  from assms(1,3) have 2: "continuous_on UNIV (\<lambda>sa. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at sa))"
+  (*from assms(1,3) have 2: "continuous_on UNIV (\<lambda>sa. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at sa))"
     apply (auto simp add: continuous_subst_on_def frechet_derivative_subst_def)
-    sorry
-    
+
+   sorry*)
+
   show "local_lipschitz UNIV UNIV (\<lambda>t::real. \<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
-    apply (rule c1_local_lipschitz_temp[where \<DD>="\<lambda> t c'. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c')"], simp_all)
-     apply (auto)[1]
-    apply (rule_tac 1)
+    apply(rule c1_local_lipschitz_temp, simp_all) (* third attempt *)
+    using 1 apply force
+    apply clarsimp
+    using add_left_cancel continuous_on_coordinatewise_then_product continuous_on_id' eq_id_iff
     oops
+    by (metis add_left_cancel continuous_on_coordinatewise_then_product continuous_on_id' eq_id_iff)
+
+    apply(rule c1_local_lipschitz_temp, simp_all) (* fourth attempt *)
+    using 1 apply force
+    apply clarsimp
+    using assms(1,3) apply(simp add: continuous_subst_on_def)
+    apply (simp add: frechet_derivative_subst_def continuous_subst_on_def)
+    using comp_apply continuous_on_cong continuous_on_const 
+        continuous_on_coordinatewise_then_product frechet_derivative_at 
+        frechet_derivative_ident has_derivative_ident
+    oops
+    by (metis comp_apply continuous_on_cong continuous_on_const 
+        continuous_on_coordinatewise_then_product frechet_derivative_at 
+        frechet_derivative_ident has_derivative_ident)
+
+  apply(rule c1_implies_local_lipschitz[where (* second attempt *)
+        f'="\<lambda>(t, c'). Blinfun (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c'))"])
+       apply simp_all
+     apply(subst Blinfun_inverse)
+    using "1" apply blast
+    using 1 apply blast
+    apply(rule continuous_on_blinfun_componentwise)
+    oops
+
+    apply(rule c1_local_lipschitz, simp_all) (* first attempt *)
+     apply clarsimp
+    using 1 apply(erule_tac x="sa" in allE)
+    oops
+
+
+
     
 
 subsection \<open> Lie Derivative Invariants \<close>

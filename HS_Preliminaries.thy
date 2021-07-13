@@ -572,7 +572,7 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
 qed
 
 lemma c1_local_lipschitz: 
-  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,perfect_space, times}) \<Rightarrow> 'a"
+  fixes f::"real \<Rightarrow> ('a::{banach,perfect_space}) \<Rightarrow> 'a"
   assumes "open S" and "open T"
     and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> \<DD> (at s within S)" "continuous_on S \<DD>"
   shows "local_lipschitz T S f"
