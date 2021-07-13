@@ -440,12 +440,29 @@ lemma real_compact_intervalI:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
 
+         
+interpretation norm_onorm: real_normed_vector "(\<lambda>f g x. f x - g x)" "\<lambda>x y. onorm (x - y)" onorm "(\<lambda>f g x. f x + g x)" "(\<lambda>x. 0)" "(\<lambda>g x. - g x)"
+"\<lambda>c f x. c *\<^sub>R f x" "\<lambda>f x. f x /\<^sub>R onorm f" "(INF e\<in>{0<..}. principal {(x, y). onorm (x - y) < e})"
+"\<lambda>U. (\<forall>x\<in>U. \<forall>\<^sub>F (x', y) in INF e\<in>{0<..}. principal {(x, y). onorm (x - y) < e}.
+                    (\<forall>xa. x' xa = x xa) \<longrightarrow> y \<in> U)"
+  apply(unfold_locales)
+     apply(rule_tac f=onorm in arg_cong)
+                 apply(simp_all add: fun_eq_iff scaleR_add_right scaleR_add_left)
+    apply(subst onorm_eq_0; simp?)
+    prefer 2 apply(rule onorm_triangle)
+  prefer 4 apply(subst onorm_scaleR; simp?)
+  oops
+
+  thm compact_eq_openin_cover
+
 lemma c1_local_lipschitz_temp: 
   fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,euclidean_space, times}) \<Rightarrow> 'a"
   assumes "open S" and "open T"
     and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> (\<DD> \<tau> s) (at s within S)" "\<forall>\<tau> \<in> T. continuous_on S (\<lambda>s. \<DD> \<tau> s)"
   shows "local_lipschitz T S f"
 proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
+  have dd0: "\<forall>t\<in>T. \<forall>s\<in>S. \<DD> t s 0 = 0"
+    using linear_0 c1hyp unfolding has_derivative_def bounded_linear_def by blast
   fix s and t assume "s \<in> S" and "t \<in> T"
   then obtain L where bdd: "\<forall>x. \<parallel>\<DD> t s x\<parallel> \<le> L * \<parallel>x\<parallel>"
     using c1hyp unfolding has_derivative_def bounded_linear_def bounded_linear_axioms_def
@@ -459,13 +476,32 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
     by (metis centre_in_cball less_eq_real_def) 
   hence "t \<in> cball t (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<inter> T" (is "t \<in> ?B1 \<inter> T")
     and "s \<in> cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<inter> S" (is "s \<in> ?B2 \<inter> S")
-    and "cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S"
+    and B2sub: "cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S"
     by auto
+  have "\<exists>K. \<forall>\<tau>\<in>?B1. \<forall>s\<in>?B2. \<forall>x. \<parallel>\<DD> t s x\<parallel> \<le> K * \<parallel>x\<parallel>"
+    sorry
+  have "\<exists>K. \<forall>p\<in>?B2. onorm (\<DD> t p) \<le> K"
+        apply(subgoal_tac "continuous_on ?B2 (\<lambda>z. onorm (\<DD> t z))")
+     apply(drule bdd_above_continuous_image, simp_all add: bdd_above_def)
+    apply(subst comp_def[symmetric, of onorm])
+    apply(rule_tac g=onorm in continuous_on_compose)
+    apply(rule_tac s=S in continuous_on_subset)
+    using c1hyp \<open>t \<in> T\<close> B2sub apply (blast, blast)
+    using continuous_on_norm tendsto_norm norm_conv_dist tendsto_dist linear_continuous_on
+    sorry
   {fix \<tau> assume tau_hyp: "\<tau> \<in> ?B1 \<inter> T"
+    hence "\<exists>K. \<forall>z\<in>?B2. \<forall>w. \<parallel>\<DD> \<tau> z w\<parallel> \<le> K * \<parallel>w\<parallel>"
+        apply(subgoal_tac "continuous_on ?B2 (\<lambda>z. \<parallel>\<DD> \<tau> z w\<parallel>)")
+       apply(drule bdd_above_continuous_image, simp_all add: bdd_above_def)
+      sorry
+         apply(clarsimp, rule_tac x="M / \<parallel>y - x\<parallel>" in exI, clarsimp, erule_tac x="\<sigma> r" in ballE, simp)
+        using sigma_img apply (meson atLeastAtMost_iff image_eqI subset_eq)
+        by (metis IntE \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> c1hyp(2) continuous_on_norm 
+            continuous_on_product_then_coordinatewise continuous_on_subset tau_hyp)
     {fix x and y assume x_hyp: "x \<in> ?B2 \<inter> S" and y_hyp: "y \<in> ?B2 \<inter> S"
       define \<sigma> and \<sigma>' where sigma_def: "\<sigma> = (\<lambda>\<tau>. x + \<tau> *\<^sub>R (y - x))"
         and dsigma_def: "\<sigma>' = (\<lambda>\<tau>. \<tau> *\<^sub>R (y - x))"
-      have deriv: "D \<sigma> = (\<lambda>t. y - x) on {0..1}"
+      have dsigma: "D \<sigma> = (\<lambda>t. y - x) on {0..1}"
         unfolding sigma_def has_vderiv_on_def
         by (auto intro!: derivative_eq_intros)
       have "\<sigma> ` {0..1} = closed_segment x y"
@@ -480,11 +516,22 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
         apply(clarify, rule_tac s=S in has_derivative_subset)
         using tau_hyp by blast force
       hence "\<And>r. r \<in> {0..1} \<Longrightarrow> (f \<tau> \<circ> \<sigma> has_vector_derivative (\<DD> \<tau> (\<sigma> r)) (y - x)) (at r within {0..1})"
-        using vector_derivative_diff_chain_within[of \<sigma> "y - x" _ "{0..1}" "f \<tau>" "(\<DD> \<tau> (\<sigma> _))"] deriv
+        using vector_derivative_diff_chain_within[of \<sigma> "y - x" _ "{0..1}" "f \<tau>" "(\<DD> \<tau> (\<sigma> _))"] dsigma
         unfolding has_vderiv_on_def by blast
       note fundamental_theorem_of_calculus[OF zero_le_one this] 
       hence key: "((\<lambda>t::real. (\<DD> \<tau> (\<sigma> t)) (y - x)) has_integral (f \<tau> \<circ> \<sigma>) 1 - (f \<tau> \<circ> \<sigma>) 0) {0..1}"
         by (clarsimp simp: sigma_def)
+      have "\<forall>r\<in>{0..1}. \<DD> \<tau> (\<sigma> r) 0 = 0"
+        using dd0 tau_hyp by (meson IntE \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> image_eqI sigma_img subset_eq) 
+      hence "\<exists>K. \<forall>r\<in>{0..1}. \<parallel>\<DD> \<tau> (\<sigma> r) (y - x)\<parallel> \<le> K * \<parallel>y - x\<parallel>"
+        apply(subgoal_tac "continuous_on ?B2 (\<lambda>z. \<parallel>\<DD> \<tau> z (y - x)\<parallel>)")
+         apply(drule bdd_above_continuous_image, simp_all add: bdd_above_def)
+         apply(clarsimp, rule_tac x="M / \<parallel>y - x\<parallel>" in exI, clarsimp, erule_tac x="\<sigma> r" in ballE, simp)
+        using sigma_img apply (meson atLeastAtMost_iff image_eqI subset_eq)
+        by (metis IntE \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> c1hyp(2) continuous_on_norm 
+            continuous_on_product_then_coordinatewise continuous_on_subset tau_hyp)
+      then obtain K where bdd2: "\<forall>r\<in>{0..1}. \<parallel>\<DD> \<tau> (\<sigma> r) (y - x)\<parallel> \<le> K * \<parallel>y - x\<parallel>" and "K \<ge> 0"
+        by (smt (z3) less_eq_real_def mult_right_mono norm_ge_zero not_le order_trans)
       let ?g = "(f \<tau>) \<circ> \<sigma>"
       have "\<parallel>f \<tau> y - f \<tau> x\<parallel> = \<parallel>?g 1 - ?g 0\<parallel>"
         by (simp add: sigma_def)
@@ -499,7 +546,7 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
         using c1hyp(2) tau_hyp apply (auto elim!: ballE[where x=\<tau>] simp: dist_norm)[1]
          apply (metis continuous_on_product_then_coordinatewise)
         by (meson \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> order_trans sigma_img)
-      also have "... \<le> integral {0..1} (\<lambda>t::real. L * \<parallel>(y - x)\<parallel>)"
+      also have "... \<le> integral {0..1} (\<lambda>t::real. K * \<parallel>(y - x)\<parallel>)"
         apply(rule Henstock_Kurzweil_Integration.integral_le)
           apply(rule integrable_continuous_interval)
         apply(subst comp_def[of "\<lambda>s. \<parallel>\<DD> \<tau> s (y - x)\<parallel>" \<sigma>, symmetric])
@@ -511,15 +558,14 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
           apply (meson \<open>cball s (min \<epsilon>\<^sub>1 \<epsilon>\<^sub>2) \<subseteq> S\<close> order_trans sigma_img)
           apply(rule integrable_continuous_interval)
          apply(auto intro!: continuous_intros)[1]
-        subgoal (* fixme: because of compactness, there is a constant that 
-        satisfies what we want *)
-          sorry
-        done
-      also have "... = L * \<parallel>(y - x)\<parallel>"
+        using bdd2 by auto
+      also have "... = K * \<parallel>(y - x)\<parallel>"
         by (subst integral_const_real, subst content_real, simp_all)
-      finally have "\<parallel>f \<tau> y - f \<tau> x\<parallel> \<le> L * \<parallel>y - x\<parallel>" .}
+      finally have "\<parallel>f \<tau> y - f \<tau> x\<parallel> \<le> K * \<parallel>y - x\<parallel>" .
+      hence "\<exists>K. 0 \<le> K \<and> \<parallel>f \<tau> y - f \<tau> x\<parallel> \<le> K * \<parallel>y - x\<parallel>"
+        using \<open>0 \<le> K\<close> by blast}
     hence "0 \<le> L \<and> (\<forall>x \<in> ?B2 \<inter> S. \<forall>y \<in> ?B2 \<inter> S. \<parallel>f \<tau> x - f \<tau> y\<parallel> \<le> L * \<parallel>x - y\<parallel>)"
-      using \<open>0 \<le> L\<close> by blast}
+      using \<open>0 \<le> L\<close> sorry by blast}
   thus "\<exists>\<epsilon>>0. \<exists>L. \<forall>\<tau>\<in>cball t \<epsilon> \<inter> T. 0 \<le> L \<and>
     (\<forall>x\<in>cball s \<epsilon> \<inter> S. \<forall>y\<in>cball s \<epsilon> \<inter> S. \<parallel>f \<tau> x - f \<tau> y\<parallel> \<le> L * \<parallel>x - y\<parallel>)"
     using \<open>\<epsilon>\<^sub>1 > 0\<close> \<open>\<epsilon>\<^sub>2 > 0\<close> by (metis Int_commute min_less_iff_conj) 
