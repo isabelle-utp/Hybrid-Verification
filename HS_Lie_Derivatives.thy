@@ -222,8 +222,41 @@ lemma lie_deriv_disc_var [lie_deriv]:
 
 (* FIXME: To support unique solutions, we need a way of taking the derivative of a substitution. *)
 
-lemma "frechet_derivative [\<leadsto>] (at s) = [\<leadsto>]"
-  by (simp add: subst_id_def)
+definition differentiable_subst :: "('a::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> 'a set \<Rightarrow> bool" where
+"differentiable_subst a \<sigma> T = (\<forall> s. \<forall> t\<in>T. (\<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) differentiable (at t))"
+
+definition frechet_derivative_subst :: "('a::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's)" ("\<partial>\<^sub>s") where
+"frechet_derivative_subst a \<sigma> = (\<lambda> s. put\<^bsub>a\<^esub> s (frechet_derivative (\<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at (get\<^bsub>a\<^esub> s)) (get\<^bsub>a\<^esub> s)))"
+
+definition continuous_subst_on :: "('a::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> 'a set \<Rightarrow> bool" where
+"continuous_subst_on a \<sigma> T = (\<forall> s. continuous_on T (\<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))))"
+
+lemma frechet_derivative_subst_id_subst:
+  "vwb_lens a \<Longrightarrow> \<partial>\<^sub>s a [\<leadsto>] = [\<leadsto>]"
+  by (simp add: frechet_derivative_subst_def subst_id_def)
+
+lemma frechet_derivative_on_singleton:
+  "vwb_lens x \<Longrightarrow> \<partial>\<^sub>s x [x \<leadsto> e] = [x \<leadsto> \<L>\<^bsub>[\<leadsto>]\<^esub> e on x]"
+  by (simp add: frechet_derivative_subst_def expr_defs fun_eq_iff)
+
+term local_lipschitz_on
+
+thm c1_local_lipschitz
+
+thm frechet_derivative_works
+
+lemma
+  fixes a :: "('a::{heine_borel,banach,perfect_space, times}) \<Longrightarrow> 's"
+  assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV"
+  shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"
+proof (unfold local_lipschitz_on_def, clarify)
+  fix s
+  from assms 
+  have 1:"\<And> c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
+    by (simp add: differentiable_subst_def frechet_derivative_works)
+
+  show "local_lipschitz UNIV UNIV (\<lambda>t::real. \<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
+    oops
 
 subsection \<open> Lie Derivative Invariants \<close>
 
