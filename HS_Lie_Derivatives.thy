@@ -239,14 +239,8 @@ lemma frechet_derivative_on_singleton:
   "vwb_lens x \<Longrightarrow> \<partial>\<^sub>s x [x \<leadsto> e] = [x \<leadsto> \<L>\<^bsub>[\<leadsto>]\<^esub> e on x]"
   by (simp add: frechet_derivative_subst_def expr_defs fun_eq_iff)
 
-term local_lipschitz_on
-
-thm c1_local_lipschitz
-
-thm frechet_derivative_works
-
-lemma
-  fixes a :: "('a::{heine_borel,banach,perfect_space, times}) \<Longrightarrow> 's"
+lemma c1_local_lipschitz_on:
+  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV"
   shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"
 proof (unfold local_lipschitz_on_def, clarify)
@@ -255,8 +249,16 @@ proof (unfold local_lipschitz_on_def, clarify)
   have 1:"\<And> c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
     by (simp add: differentiable_subst_def frechet_derivative_works)
 
+  from assms(1,3) have 2: "continuous_on UNIV (\<lambda>sa. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at sa))"
+    apply (auto simp add: continuous_subst_on_def frechet_derivative_subst_def)
+    sorry
+    
   show "local_lipschitz UNIV UNIV (\<lambda>t::real. \<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
+    apply (rule c1_local_lipschitz_temp[where \<DD>="\<lambda> t c'. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c')"], simp_all)
+     apply (auto)[1]
+    apply (rule_tac 1)
     oops
+    
 
 subsection \<open> Lie Derivative Invariants \<close>
 
