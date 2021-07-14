@@ -440,7 +440,6 @@ lemma real_compact_intervalI:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
 
-         
 interpretation norm_onorm: real_normed_vector "(\<lambda>f g x. f x - g x)" "\<lambda>x y. onorm (x - y)" onorm "(\<lambda>f g x. f x + g x)" "(\<lambda>x. 0)" "(\<lambda>g x. - g x)"
 "\<lambda>c f x. c *\<^sub>R f x" "\<lambda>f x. f x /\<^sub>R onorm f" "(INF e\<in>{0<..}. principal {(x, y). onorm (x - y) < e})"
 "\<lambda>U. (\<forall>x\<in>U. \<forall>\<^sub>F (x', y) in INF e\<in>{0<..}. principal {(x, y). onorm (x - y) < e}.
@@ -455,7 +454,18 @@ interpretation norm_onorm: real_normed_vector "(\<lambda>f g x. f x - g x)" "\<l
 
   thm compact_eq_openin_cover
 
-lemma c1_local_lipschitz_temp: 
+  thm continuous_on_iff Lim_within eventually_at
+
+
+lemma 
+  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,euclidean_space, times}) \<Rightarrow> 'a \<Rightarrow> 'a"
+  shows "\<forall>s\<in>S. bounded_linear (f t s) \<Longrightarrow> continuous_on S (\<lambda>z. onorm (f t z))"
+  unfolding continuous_on_def tendsto_iff dist_norm apply clarsimp
+  unfolding eventually_at dist_norm using onorm[of "f t"]
+  unfolding onorm_def oops
+
+lemma c1_local_lipschitz_temp: (* might need to change definition of local lipschitz, 
+or make life easier by having dependent types *)
   fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,euclidean_space, times}) \<Rightarrow> 'a"
   assumes "open S" and "open T"
     and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> (\<DD> \<tau> s) (at s within S)" "\<forall>\<tau> \<in> T. continuous_on S (\<lambda>s. \<DD> \<tau> s)"
