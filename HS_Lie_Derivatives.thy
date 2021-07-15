@@ -228,8 +228,10 @@ definition differentiable_subst :: "('a::real_normed_vector \<Longrightarrow> 's
 definition frechet_derivative_subst :: "('a::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's)" ("\<partial>\<^sub>s") where
 "frechet_derivative_subst a \<sigma> = (\<lambda> s. put\<^bsub>a\<^esub> s (frechet_derivative (\<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at (get\<^bsub>a\<^esub> s)) (get\<^bsub>a\<^esub> s)))"
 
-definition continuous_subst_on :: "('a::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> 'a set \<Rightarrow> bool" where
-"continuous_subst_on a \<sigma> T = (\<forall> s. continuous_on T (\<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))))"
+thm continuous_rhs_def
+(* continuous_subst_on :: "('a::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> 'a set \<Rightarrow> bool" where *)
+definition continuous_subst_on :: "('a::real_normed_vector \<Longrightarrow> 's::topological_space) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> 'a set \<Rightarrow> 's set \<Rightarrow> bool" where
+"continuous_subst_on a \<sigma> T S = continuous_rhs T S (\<lambda>c s. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
 
 lemma frechet_derivative_subst_id_subst:
   "vwb_lens a \<Longrightarrow> \<partial>\<^sub>s a [\<leadsto>] = [\<leadsto>]"
@@ -238,6 +240,39 @@ lemma frechet_derivative_subst_id_subst:
 lemma frechet_derivative_on_singleton:
   "vwb_lens x \<Longrightarrow> \<partial>\<^sub>s x [x \<leadsto> e] = [x \<leadsto> \<L>\<^bsub>[\<leadsto>]\<^esub> e on x]"
   by (simp add: frechet_derivative_subst_def expr_defs fun_eq_iff)
+
+
+lemma c1_local_lipschitz_on:
+  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
+  assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" 
+    "\<forall>z s. continuous_on UNIV (\<lambda>(t::real,p:: 'a). \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at p) z)"
+  shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"
+proof (unfold local_lipschitz_on_def, clarify)
+  fix s
+  from assms(1,2)
+  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
+    by (simp add: differentiable_subst_def frechet_derivative_works)
+
+  have obs: "\<forall>t. \<exists>f'. (D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> f' (at t))"
+  using assms(2) unfolding differentiable_def differentiable_subst_def by clarsimp
+
+  show "local_lipschitz UNIV UNIV (\<lambda>t::real. \<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
+    apply(rule c1_implies_local_lipschitz[where (* second attempt *)
+          f'="\<lambda>(t, c'). Blinfun (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c'))"])
+       apply simp_all
+     apply(subst Blinfun_inverse)
+    using "1" apply blast
+    using 1 apply blast
+    apply(rule continuous_on_blinfun_componentwise)
+    apply (simp add: prod.case_eq_if)
+    apply(subst bounded_linear_Blinfun_apply, clarsimp)
+    using obs apply(erule_tac x=b in allE, clarsimp)
+     apply(erule_tac x=b in allE, clarsimp)
+    using has_derivative_unique 1 apply blast 
+    using assms(1,3) unfolding continuous_subst_on_def 
+      frechet_derivative_subst_def continuous_rhs_def
+    by (clarsimp simp: prod.case_eq_if)
+qed
 
 lemma c1_local_lipschitz_on:
   fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
@@ -271,38 +306,7 @@ proof (unfold local_lipschitz_on_def, clarify)
     done
 qed
 
-lemma c1_local_lipschitz_on:
-  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
-  assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV"
-  shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"
-proof (unfold local_lipschitz_on_def, clarify)
-  fix s
-  from assms(1,2)
-  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
-    by (simp add: differentiable_subst_def frechet_derivative_works)
 
-  have obs: "\<forall>t. \<exists>f'. (D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> f' (at t))"
-  using assms(2) unfolding differentiable_def differentiable_subst_def by clarsimp
-
-  show "local_lipschitz UNIV UNIV (\<lambda>t::real. \<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
-    apply(rule c1_implies_local_lipschitz[where (* second attempt *)
-          f'="\<lambda>(t, c'). Blinfun (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c'))"])
-       apply simp_all
-     apply(subst Blinfun_inverse)
-    using "1" apply blast
-    using 1 apply blast
-    apply(rule continuous_on_blinfun_componentwise)
-    apply (simp add: prod.case_eq_if)
-    apply(subst bounded_linear_Blinfun_apply, clarsimp)
-    using obs apply(erule_tac x=b in allE, clarsimp)
-     apply(erule_tac x=b in allE, clarsimp)
-    using has_derivative_unique 1 apply blast 
-    using assms(1,3) unfolding continuous_subst_on_def frechet_derivative_subst_def
-    apply(erule_tac x=s in allE, expr_auto)
-    apply(erule_tac x=s in allE, clarsimp simp: assms(1))
-
-    apply (simp add: prod.case_eq_if bounded_linear_Blinfun_apply 2 f)
-    oops
 
 subsection \<open> Lie Derivative Invariants \<close>
 
