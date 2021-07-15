@@ -504,15 +504,6 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
     using \<open>\<epsilon>\<^sub>1 > 0\<close> \<open>\<epsilon>\<^sub>2 > 0\<close> by (metis Int_commute min_less_iff_conj) 
 qed
 
-lemma c1_local_lipschitz_temp: 
-  fixes f::"real \<Rightarrow> ('a::{heine_borel,banach,perfect_space, times}) \<Rightarrow> 'a"
-  assumes "open S" and "open T"
-    and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> (\<DD> \<tau> s) (at s within S)" "\<forall>\<tau> \<in> T. continuous_on S (\<lambda>s. \<DD> \<tau> s)"
-  shows "local_lipschitz T S f"
-  apply(rule c1_local_lipschitz[OF assms(1,2)])
-  using c1hyp
-  oops
-
 lemma continuous_derivative_local_lipschitz: (* This should be generalised *)
   fixes f :: "real \<Rightarrow> 'a::real_inner"
   assumes "\<exists>f'. (D f = f' on UNIV) \<and> (continuous_on UNIV f')"
