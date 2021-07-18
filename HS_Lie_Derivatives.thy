@@ -104,9 +104,39 @@ declare lens_plus_right_sublens [simp]
 
 subsection \<open> Lie Derivatives \<close>
 
-definition lie_deriv_on :: 
-  "('s \<Rightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'a::real_normed_vector) \<Rightarrow> ('c::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'a)"
-  where [expr_defs]: "lie_deriv_on \<sigma> f a = (\<lambda> s. frechet_derivative (\<lambda> x. f (put\<^bsub>a\<^esub> s x)) (at (get\<^bsub>a\<^esub> s)) (get\<^bsub>a\<^esub> (\<sigma> s)))"
+(**************************************************)
+(********************** HERE **********************)
+(**************************************************)
+ 
+definition lens_restrict :: "('s \<Rightarrow> 'r) \<Rightarrow> ('c \<Longrightarrow> 's) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'r)" ("_\<restriction>\<^bsub>_\<^esub>")
+  where "e\<restriction>\<^bsub>a\<^esub> \<equiv> (\<lambda>s. e \<circ> (\<lambda>c. put\<^bsub>a\<^esub> s c))"
+
+definition "has_framed_deriv a e e' s S \<equiv> D (e\<restriction>\<^bsub>a\<^esub> s) \<mapsto> e' (at (get\<^bsub>a\<^esub> s) within S)"
+
+definition frechet_framed_deriv :: "('c::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('c set) \<Rightarrow> 
+  ('s \<Rightarrow> 'r::real_normed_vector) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'r)"
+  where "frechet_framed_deriv a S e \<equiv> (\<lambda>s. (\<partial> (e\<restriction>\<^bsub>a\<^esub> s) (at (get\<^bsub>a\<^esub> s) within S)))"
+
+lemma "vwb_lens a \<Longrightarrow> differentiable\<^sub>e e on a \<Longrightarrow> 
+  has_framed_deriv a e (frechet_framed_deriv a S e s) s S"
+  unfolding frechet_framed_deriv_def has_framed_deriv_def lens_restrict_def
+  unfolding expr_differentiable_when_on_def
+  apply (clarsimp, erule_tac x=s in allE)
+  apply(drule_tac t=S in differentiable_subset, simp)
+  by (simp add: frechet_derivative_works comp_def)
+
+definition lie_deriv_on :: "('s \<Rightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'a::real_normed_vector) \<Rightarrow> 
+  ('c::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'a)"
+  where [expr_defs]: "lie_deriv_on \<sigma> f a = 
+    (\<lambda> s. frechet_derivative (\<lambda> x. f (put\<^bsub>a\<^esub> s x)) (at (get\<^bsub>a\<^esub> s)) (get\<^bsub>a\<^esub> (\<sigma> s)))"
+
+lemma "(frechet_framed_deriv a UNIV e s) (get\<^bsub>a\<^esub> (\<sigma> s)) = lie_deriv_on \<sigma> e a s"
+  unfolding lie_deriv_on_def frechet_framed_deriv_def lens_restrict_def
+  by (clarsimp simp: comp_def)
+
+(**************************************************)
+(********************** HERE **********************)
+(**************************************************)
 
 expr_ctr lie_deriv_on
 

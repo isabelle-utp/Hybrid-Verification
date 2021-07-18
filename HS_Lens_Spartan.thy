@@ -473,7 +473,7 @@ definition g_evol :: "(('a::ord) \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow
   where "g_evol \<phi> G U = (\<lambda>s. g_orbit (\<lambda>t. \<phi> t s) G (U s))"
 
 definition g_evol_on :: "('c::real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'a \<Rightarrow> 'a set" where
-  "g_evol_on a \<phi> G U \<equiv> (\<lambda> s. put\<^bsub>a\<^esub> s ` (g_evol (loc_subst a \<phi> s) (\<lambda> v. G (put\<^bsub>a\<^esub> s v)) U (get\<^bsub>a\<^esub> s)))"
+  "g_evol_on a \<phi> G U \<equiv> (\<lambda> s. put\<^bsub>a\<^esub> s ` (g_evol (frame_timed a \<phi> s) (\<lambda> v. G (put\<^bsub>a\<^esub> s v)) U (get\<^bsub>a\<^esub> s)))"
 
 lemma g_evol_on_alt_def:
   "vwb_lens a \<Longrightarrow> g_evol_on a \<phi> G U s = {s \<oplus>\<^sub>L \<phi> t s on a |t. t \<in> U (get\<^bsub>a\<^esub> s) \<and> (\<forall>\<tau>. \<tau> \<in> down (U (get\<^bsub>a\<^esub> s)) t \<longrightarrow> G (s \<oplus>\<^sub>L \<phi> \<tau> s on a))}"
@@ -608,18 +608,18 @@ lemma fbox_g_orbital: "|x\<acute>=f & G on U S @ t\<^sub>0] Q =
   unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
 
 lemma fbox_g_orbital_on: "|g_orbital_on a f G U S t\<^sub>0] Q =
-  (\<lambda>s. \<forall>X\<in>Sols (loc_subst a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s).
+  (\<lambda>s. \<forall>X\<in>Sols (frame_timed a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s).
         \<forall>t\<in>U (get\<^bsub>a\<^esub> s). (\<forall>x. x \<in> U (get\<^bsub>a\<^esub> s) \<and> x \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X x))) \<longrightarrow> Q (put\<^bsub>a\<^esub> s (X t)))"
   by (auto simp add: g_orbital_on_def fbox_def g_orbital_eq fun_eq_iff)
 
 lemma fbox_g_ode_on_subset:
-  assumes "\<And> s. local_flow (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) T UNIV (loc_subst a \<phi> s)" "vwb_lens a"
+  assumes "\<And> s. local_flow (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) T UNIV (frame_timed a \<phi> s)" "vwb_lens a"
     "{t. 0 \<le> t} \<subseteq> T"
   shows "|g_dl_ode_frame a \<sigma> G] Q = (\<lambda> s. (\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (s \<oplus>\<^sub>L \<phi> \<tau> s on a)) \<longrightarrow> Q (s \<oplus>\<^sub>L \<phi> t s on a)))"
 proof (unfold fbox_g_orbital_on fun_eq_iff, simp add: expr_defs, clarify)
   fix s
   let ?sol = "(\<lambda>t. get\<^bsub>a\<^esub> (\<phi> t s))"
-  interpret local_flow "(\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))" T "UNIV" _ "(loc_subst a \<phi> s)"
+  interpret local_flow "(\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))" T "UNIV" _ "(frame_timed a \<phi> s)"
     by (simp add: assms)
   have sol: "?sol \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV 0 (get\<^bsub>a\<^esub> s)"
     using in_ivp_sols[of "(get\<^bsub>a\<^esub> s)" "(\<lambda>\<s>. Collect ((\<le>) 0))"] assms(2,3)
@@ -636,11 +636,11 @@ proof (unfold fbox_g_orbital_on fun_eq_iff, simp add: expr_defs, clarify)
       assume 
         a: "\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (s \<oplus>\<^sub>L \<phi> \<tau> s on a)) \<longrightarrow> Q (s \<oplus>\<^sub>L \<phi> t s on a)"
         "X \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV 0 (get\<^bsub>a\<^esub> s)" "0 \<le> t"
-      hence "\<forall>\<tau>\<in>{0..t}. X \<tau> = (loc_subst a \<phi> s) \<tau> (get\<^bsub>a\<^esub> s)"
+      hence "\<forall>\<tau>\<in>{0..t}. X \<tau> = (frame_timed a \<phi> s) \<tau> (get\<^bsub>a\<^esub> s)"
       proof (safe)
         fix \<tau>
         assume \<tau>: "\<tau> \<in> {0..t}"
-        thus "X \<tau> = (loc_subst a \<phi> s) \<tau> (get\<^bsub>a\<^esub> s)"
+        thus "X \<tau> = (frame_timed a \<phi> s) \<tau> (get\<^bsub>a\<^esub> s)"
         using a assms(2, 3) ivp_unique_solution[of "(get\<^bsub>a\<^esub> s)" "\<lambda> _. Collect ((\<le>) 0)" \<tau> X "?sol"]
         by (auto simp add: sol)
       qed
@@ -652,7 +652,7 @@ proof (unfold fbox_g_orbital_on fun_eq_iff, simp add: expr_defs, clarify)
 qed
 
 lemma fbox_g_ode_on_subset':
-  assumes "\<And> s. local_flow (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) T UNIV (loc_subst a \<phi> s)" "vwb_lens a" "{t. 0 \<le> t} \<subseteq> T"
+  assumes "\<And> s. local_flow (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) T UNIV (frame_timed a \<phi> s)" "vwb_lens a" "{t. 0 \<le> t} \<subseteq> T"
   shows "|g_dl_ode_frame a \<sigma> G] Q = |g_evol_on a \<phi> G ({0..})\<^sub>e] Q"
   using assms
   apply (simp add: g_evol_on_def fbox_g_evol)
@@ -664,7 +664,7 @@ lemma fbox_g_ode_on_subset':
 text \<open> A postcondition of a localised ODE is a postcondition of its unique localised solution. \<close>
 
 definition local_flow_on :: "('s \<Rightarrow> 's) \<Rightarrow> ('c::{heine_borel, banach} \<Longrightarrow> 's) \<Rightarrow> real set \<Rightarrow> 'c set \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) \<Rightarrow> bool" where
-"local_flow_on f A T S \<phi> = (\<forall> s. local_flow (\<lambda>c. get\<^bsub>A\<^esub> (f (put\<^bsub>A\<^esub> s c))) T S (loc_subst A \<phi> s))"
+"local_flow_on f A T S \<phi> = (\<forall> s. local_flow (\<lambda>c. get\<^bsub>A\<^esub> (f (put\<^bsub>A\<^esub> s c))) T S (frame_timed A \<phi> s))"
 
 definition local_lipschitz_on :: "('c::metric_space \<Longrightarrow> 's) \<Rightarrow> 'a::metric_space set \<Rightarrow> 'c set \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> bool" where
 "local_lipschitz_on A T S \<phi> = (\<forall> s. local_lipschitz T S (\<lambda>t c. get\<^bsub>A\<^esub> (\<phi> (put\<^bsub>A\<^esub> s c))))"

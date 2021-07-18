@@ -14,55 +14,55 @@ notation id_lens ("\<one>\<^sub>L")
 
 subsection \<open> ODEs and Orbits  \<close>
 
-text \<open> Localise a substitution using a lens. Useful for localising both ODEs and flows. \<close>
+text \<open> A frame is a set of variables that may be mutated by a program within a given context.
+We wish vector fields and flows to be restricted to the frame of continuous variables of a 
+hybrid program. For this, we use the interpretation of lenses @{term "a :: 'c \<Longrightarrow> 's"} as 
+projections of a larger space @{typ "'s"} into its subspace @{typ "'c"} and treat vector fields
+as variable substitutions. Thus, we define the framing of a substition as below. \<close>
 
-abbreviation loc_subst :: 
-  "('c \<Longrightarrow> 's) \<comment> \<open> A lens selecting a local region \<close> 
-   \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) \<comment> \<open> Substitution on the global state space\<close>
-   \<Rightarrow> 's \<comment> \<open> An initial global state \<close>
-   \<Rightarrow> (real \<Rightarrow> 'c \<Rightarrow> 'c)" \<comment> \<open> Substitution on the local state space \<close>
-   where "loc_subst a f s \<equiv> (\<lambda> t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c)))"
+abbreviation frame_subst :: "('c \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'c)"
+  where "frame_subst a f s \<equiv> (\<lambda>c. get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s c)))"
 
-text \<open> A version of guarded orbits localised by a lens \<close>
+abbreviation frame_timed :: 
+   "('c \<Longrightarrow> 's)            \<comment> \<open> A lens selecting a local region \<close> 
+   \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's)   \<comment> \<open> Substitution on the global state space\<close>
+   \<Rightarrow> 's                   \<comment> \<open> An initial global state \<close>
+   \<Rightarrow> (real \<Rightarrow> 'c \<Rightarrow> 'c)"  \<comment> \<open> Substitution on the local state space \<close>
+  where "frame_timed a f s \<equiv> (\<lambda> t. frame_subst a (f t) s)"
 
-text \<open> A version of orbital localised by a lens \<close>
 
-definition
-  g_orbital_on :: 
-    "('c::real_normed_vector \<Longrightarrow> 'a) 
-      \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
-      \<Rightarrow> ('a \<Rightarrow> bool) 
-      \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real => 'a \<Rightarrow> 'a set"
-    where "g_orbital_on a f G U S t\<^sub>0 
-            = (\<lambda> s. put\<^bsub>a\<^esub> s 
-              ` g_orbital 
-                  (loc_subst a f s) 
-                  (\<lambda> c. G (put\<^bsub>a\<^esub> s c))
-                  U S
-                  t\<^sub>0 (get\<^bsub>a\<^esub> s))"
+text \<open> Then, we can define a version of guarded orbitals framed by a lens \<close>
+
+definition g_orbital_on :: "('c::real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
+  \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real => 'a \<Rightarrow> 'a set"
+  where "g_orbital_on a f G U S t\<^sub>0 = 
+  (\<lambda>s. \<P> (put\<^bsub>a\<^esub> s) (g_orbital (frame_timed a f s) (\<lambda>c. G (put\<^bsub>a\<^esub> s c)) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)))"
 
 lemma g_orbital_on_id_lens: "g_orbital_on \<one>\<^sub>L = g_orbital"
   by (simp add: g_orbital_on_def fun_eq_iff lens_defs)
 
 lemma g_orbital_on_eq: "g_orbital_on a f G U S t\<^sub>0 s = 
-  {put\<^bsub>a\<^esub> s (X t) |t X. t \<in> U (get\<^bsub>a\<^esub> s) \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s} \<and> X \<in> Sols (loc_subst a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)}"
+  {put\<^bsub>a\<^esub> s (X t) |t X. t \<in> U (get\<^bsub>a\<^esub> s) \<and> X \<in> Sols (frame_timed a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)
+    \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s}}"
   unfolding g_orbital_on_def g_orbital_eq image_le_pred 
   by (auto simp: image_def)
 
 lemma g_orbital_onI:
-  assumes "X \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c))) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)"
+  assumes "X \<in> Sols (\<lambda>t. frame_subst a (f t) s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)"
     and "t \<in> U (get\<^bsub>a\<^esub> s)" and "(\<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> Collect G)"
   shows "put\<^bsub>a\<^esub> s (X t) \<in> g_orbital_on a f G U S t\<^sub>0 s"
   using assms unfolding g_orbital_on_eq by auto
 
 subsection \<open> Differential Invariants \<close>
 
-definition diff_invariant_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> 
-  ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
-  where "diff_invariant_on I a f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
+definition diff_invariant_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> 
+  (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
+  where "diff_invariant_on I a f U S t\<^sub>0 G \<equiv> 
+  (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
 lemma diff_invariant_on_eq: "diff_invariant_on I a f U S t\<^sub>0 G = 
-  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols (loc_subst a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s). (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
+  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols (frame_timed a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s). 
+  (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
   unfolding diff_invariant_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
 
 lemma diff_invariant_on_id_lens: "diff_invariant_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_invariant I f U S t\<^sub>0 G"
@@ -78,7 +78,7 @@ lemma diff_invariant_on_eq_rule_expr [diff_invariant_on_rules]:
   shows "diff_invariant_on (\<mu> = \<nu>)\<^sub>e a f U S t\<^sub>0 G"
 proof(simp add: diff_invariant_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
   fix X t s
-  assume xivp: "D X = (\<lambda>\<tau>. loc_subst a f s \<tau> (X \<tau>)) on U (get\<^bsub>a\<^esub> s)" "\<mu> s = \<nu> s" "X \<in> U (get\<^bsub>a\<^esub> s) \<rightarrow> S"
+  assume xivp: "D X = (\<lambda>\<tau>. frame_timed a f s \<tau> (X \<tau>)) on U (get\<^bsub>a\<^esub> s)" "\<mu> s = \<nu> s" "X \<in> U (get\<^bsub>a\<^esub> s) \<rightarrow> S"
     and tHyp: "t \<in> U (get\<^bsub>a\<^esub> s)" and t0Hyp: "t\<^sub>0 \<in> U (get\<^bsub>a\<^esub> s)" and init: "X t\<^sub>0 = get\<^bsub>a\<^esub> s"
     and GHyp: "\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>a\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
   hence "(D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = ((*\<^sub>R) 0) on U (get\<^bsub>a\<^esub> s))"
@@ -100,7 +100,7 @@ lemma diff_invariant_on_eq_rule_expr_inner [diff_invariant_on_rules]:
   shows "diff_invariant_on (\<mu> = \<nu>)\<^sub>e a f (\<lambda> _. {t\<^sub>0..}) S t\<^sub>0 G"
 proof(simp add: diff_invariant_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
   fix X t s
-  assume xivp: "D X = (\<lambda>\<tau>. loc_subst a f s \<tau> (X \<tau>)) on {t\<^sub>0..}" "\<mu> s = \<nu> s" "X \<in> {t\<^sub>0..} \<rightarrow> S"
+  assume xivp: "D X = (\<lambda>\<tau>. frame_timed a f s \<tau> (X \<tau>)) on {t\<^sub>0..}" "\<mu> s = \<nu> s" "X \<in> {t\<^sub>0..} \<rightarrow> S"
     and t0Hyp: "t\<^sub>0 \<le> t" and init: "X t\<^sub>0 = get\<^bsub>a\<^esub> s"
     and GHyp: "\<forall>\<tau>. t\<^sub>0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
   show "\<mu> (put\<^bsub>a\<^esub> s (X t)) = \<nu> (put\<^bsub>a\<^esub> s (X t))"

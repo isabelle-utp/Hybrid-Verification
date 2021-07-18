@@ -11,6 +11,18 @@ locale exponential_evol =
   assumes x_def [simp]: "x \<equiv> vec_lens 1"
 begin
 
+term "frame_timed x (\<lambda>t. [x \<leadsto> x])"
+term " [x \<leadsto> x]"
+
+lemma "D (\<lambda>r. frame_timed x (\<lambda>t. [x \<leadsto> x]) s 0 0) \<mapsto> (\<lambda>r. frame_timed x (\<lambda>t. [x \<leadsto> x]) s 0 0) (at t within T)"
+  by (expr_auto)
+
+lemma "D (\<lambda>t. [x \<leadsto> c] s) \<mapsto> (\<lambda>t. [x \<leadsto> 0] s) (at t within T)"
+  by (expr_auto)
+
+lemma "D (\<lambda>t. [x \<leadsto> x + y] s) \<mapsto> (\<lambda>t. [x \<leadsto> 0] s) (at t within T)"
+  by (expr_auto)
+
 \<comment> \<open>Verified with annotated dynamics \<close>
 
 abbreviation "exp_f \<equiv> [x \<leadsto> -x]" (* x>0 -> [{x'=-x}](x>0) *)
@@ -18,6 +30,7 @@ abbreviation "exp_flow \<tau> \<equiv> [x \<leadsto> x * exp (- \<tau>)]"
 
 lemma "D (\<lambda>t. exp_flow t s) = (\<lambda>t. exp_f (exp_flow t s)) on {0--t}"
   by (expr_auto, auto intro!: poly_derivatives)
+
 
 lemma "\<^bold>{x > 0\<^bold>}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0}))\<^bold>{x > 0\<^bold>}"
   by (simp add: fbox_g_evol) expr_auto
@@ -73,7 +86,8 @@ term exp_flow
 
 term "loc_ode (\<lambda> _. exp_f) x s"
 
-lemma "D (\<lambda>t. loc_subst x exp_flow s t (get\<^bsub>x\<^esub> s)) = (\<lambda> t. loc_subst x (\<lambda> _. exp_f) s t (loc_subst x exp_flow s t (get\<^bsub>x\<^esub> s))) on {0--t}"
+lemma "D (\<lambda>t. frame_timed x exp_flow s t (get\<^bsub>x\<^esub> s)) = 
+  (\<lambda> t. frame_timed x (\<lambda> _. exp_f) s t (frame_timed x exp_flow s t (get\<^bsub>x\<^esub> s))) on {0--t}"
   by (expr_auto, auto intro!: poly_derivatives)
 
 term "(\<lambda>t. exp_f (exp_flow t s))"
