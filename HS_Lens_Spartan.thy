@@ -697,7 +697,7 @@ lemma
   apply (rule in_ivp_sols_subset[OF _ _ ivp_solsI, of _ _ _ "\<lambda>s. T"])
   using  ivp(2)[OF \<open>s \<in> S\<close>] has_vderiv_on_domain[OF \<open>s \<in> S\<close>] 
     in_domain[OF \<open>s \<in> S\<close>] 
-  oops
+  oops (* delete? already proven? *)
 
 lemma fbox_g_ode_on_subset:
   assumes "\<And>s. s \<in> S \<Longrightarrow> 0 \<in> U (get\<^bsub>x\<^esub> s) \<and> is_interval (U (get\<^bsub>x\<^esub> s)) \<and> U (get\<^bsub>x\<^esub> s) \<subseteq> T"
@@ -706,7 +706,7 @@ lemma fbox_g_ode_on_subset:
   apply(unfold fbox_g_ode_on fun_eq_iff)
   apply(clarify, rule iffI)
    apply(clarsimp simp: in_ivp_sols assms)
-  oops
+  oops (* delete? already proven? *)
                          
 lemma fbox_g_ode: "|x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. T) S @ 0] Q = 
   (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>T. (\<forall>\<tau>\<in>down T t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
@@ -967,7 +967,7 @@ lemma diff_ghost_rule:
   assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B" 
     "\<^bold>{G\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (\<sigma>(y \<leadsto> \<eta>)) B \<^bold>{G\<^bold>}"
   shows "\<^bold>{G \\ $y\<^bold>} g_dl_ode_frame a \<sigma> B \<^bold>{G \\ $y\<^bold>}"
-  oops
+  oops (* generalise and finish proof *)
 
 lemma diff_ghost_rule_very_simple:
   fixes y :: "real \<Longrightarrow> _"
