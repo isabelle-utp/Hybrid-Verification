@@ -162,7 +162,7 @@ lemma has_derivative_mtx_ith[derivative_intros]:
 lemmas has_derivative_mtx_vec_mult[derivative_intros] = 
   bounded_bilinear.FDERIV[OF bounded_bilinear_sq_mtx_vec_mult]
 
-declare has_derivative_coordinate [simp del]
+declare has_derivative_component [simp del]
 
 lemma vderiv_on_mtx_vec_multI[poly_derivatives]:
   assumes "D u = u' on T" and "D A = A' on T"
@@ -184,17 +184,17 @@ lemma has_derivative_mtx_vec_multl[derivative_intros]:
   apply(rule_tac f'1="\<lambda>i \<tau>. \<tau> *\<^sub>R  (x $ i *\<^sub>R \<c>\<o>\<l> i (A' t))" in derivative_eq_intros(10))
    apply(simp_all add: scaleR_right.sum)
   apply(rule_tac g'1="\<lambda>\<tau>. \<tau> *\<^sub>R \<c>\<o>\<l> i (A' t)" in derivative_eq_intros(4), simp_all add: mult.commute)
-  using assms unfolding sq_mtx_col_def column_def apply(transfer, simp)
-  apply(rule has_derivative_vec_lambda_old)
-  by (simp add: scaleR_vec_def)
+  using assms unfolding sq_mtx_col_def column_def 
+  by (transfer, simp add: has_derivative_component)
 
 lemma continuous_on_mtx_vec_multr: "continuous_on S ((*\<^sub>V) A)"
   by transfer (simp add: matrix_vector_mult_linear_continuous_on)
 
-\<comment> \<open>Automatically generated derivative rules from this subsubsection \<close>
+declare has_derivative_component [simp]
 
-declare has_derivative_coordinate [simp]
-thm derivative_eq_intros(140,141,142,143)
+\<comment> \<open>Isabelle automatically generates derivative rules from this subsubsection \<close>
+
+thm derivative_eq_intros(140-)
 
 
 subsubsection \<open> Existence and uniqueness with square matrices \<close>

@@ -1,5 +1,5 @@
 (*  Title:       Preliminaries for hybrid systems verification
-    Author:      Jonathan Julián Huerta y Munive, 2020
+    Author:      Jonathan Julián Huerta y Munive, 2021
     Maintainer:  Jonathan Julián Huerta y Munive <jonjulian23@gmail.com>
 *)
 
@@ -12,12 +12,30 @@ theory HS_Preliminaries
   imports "Ordinary_Differential_Equations.Picard_Lindeloef_Qualitative" "Hybrid-Library.Matrix_Syntax"
 begin
 
-\<comment> \<open> Syntax \<close>
+\<comment> \<open> Notation \<close>
+
+bundle derivative_notation
+begin
 
 no_notation has_vderiv_on (infix "(has'_vderiv'_on)" 50)
 
 notation has_derivative ("(1(D _ \<mapsto> (_))/ _)" [65,65] 61)
      and has_vderiv_on ("(1 D _ = (_)/ on _)" [65,65] 61)
+
+end
+
+bundle derivative_no_notation
+begin
+
+notation has_vderiv_on (infix "(has'_vderiv'_on)" 50)
+
+no_notation has_derivative ("(1(D _ \<mapsto> (_))/ _)" [65,65] 61)
+     and has_vderiv_on ("(1 D _ = (_)/ on _)" [65,65] 61)
+
+end
+
+unbundle derivative_notation \<comment> \<open> enable notation \<close>
+
 
 subsection \<open> Real vector arithmetic \<close>
 
@@ -284,7 +302,7 @@ lemma has_derivative_vec_nth[derivative_intros]:
   "D (\<lambda>s. s $ i) \<mapsto> (\<lambda>s. s $ i) (at x within S)"
   by (clarsimp simp: has_derivative_within) standard
 
-lemma bounded_linear_coordinate:
+lemma bounded_linear_component:
   "(bounded_linear f) \<longleftrightarrow> (\<forall>i. bounded_linear (\<lambda>x. (f x) $ i))" (is "?lhs = ?rhs")
 proof
   assume ?lhs 
@@ -356,12 +374,15 @@ next
   qed
 qed
 
-lemma has_derivative_coordinate[simp]:
+lemma has_derivative_component[simp]:
   "(D f \<mapsto> f' at x within S) \<longleftrightarrow> (\<forall>i. D (\<lambda>s. f s $ i) \<mapsto> (\<lambda>s. f' s $ i) at x within S)"
   by (simp add: has_derivative_within tendsto_nth_iff 
-      bounded_linear_coordinate all_conj_distrib)
+      bounded_linear_component all_conj_distrib)
 
-(***************** PREVIOUS RESULTS GENERALISED ABOVE **************)
+lemma has_vderiv_on_component[simp]:
+  fixes x::"real \<Rightarrow> ('a::banach)^('n::finite)"
+  shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
+  unfolding has_vderiv_on_def has_vector_derivative_def by auto
 
 lemma frechet_tendsto_vec_lambda:
   fixes f::"real \<Rightarrow> ('a::banach)^('m::finite)" and x::real and T::"real set"
@@ -391,29 +412,6 @@ lemma frechet_tendsto_vec_nth:
    apply(clarsimp, rule mult_left_mono)
     apply (metis Finite_Cartesian_Product.norm_nth_le vector_minus_component vector_scaleR_component)
   using assms by simp_all
-
-lemma has_derivative_vec_lambda_old:
-  fixes f::"real \<Rightarrow> ('a::banach)^('n::finite)"
-  assumes "\<forall>i. D (\<lambda>t. f t $ i) \<mapsto> (\<lambda> h. h *\<^sub>R f' x $ i) (at x within T)"
-  shows "D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) at x within T"
-  apply(subst has_derivative_coordinate)
-  using assms by auto
-
-lemma has_derivative_vec_nth_old:
-  assumes "D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) at x within T"
-  shows "D (\<lambda>t. f t $ i) \<mapsto> (\<lambda>h. h *\<^sub>R f' x $ i) at x within T"
-  using  assms 
-  by (subst (asm) has_derivative_coordinate, simp)
-
-lemma 
-  assumes "\<forall>e\<in>Basis. D (\<lambda>x. (f x) \<bullet> e) \<mapsto> (\<lambda>x. (f' x) \<bullet> e) at x within S"
-  shows "D f \<mapsto> f' at x within S"
-  using has_derivative_componentwise_within[of f f' x S] assms by blast
-
-lemma has_vderiv_on_vec_eq_old[simp]:
-  fixes x::"real \<Rightarrow> ('a::banach)^('n::finite)"
-  shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
-  unfolding has_vderiv_on_def has_vector_derivative_def by auto
 
 
 subsection \<open> Differentiability implies Lipschitz \<close>
