@@ -107,35 +107,75 @@ subsection \<open> Lie Derivatives \<close>
 (**************************************************)
 (********************** HERE **********************)
 (**************************************************)
- 
+
+text \<open> Basic and necessary derivative knowledge \<close>
+
+lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) \<longleftrightarrow> bounded_linear f' \<and> 
+  (\<forall>X. open X \<longrightarrow> 0 \<in> X \<longrightarrow> (\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow> 
+    (f s - f x - f' (s - x)) /\<^sub>R \<parallel>s - x\<parallel> \<in> X))"
+  unfolding has_derivative_at_within tendsto_def eventually_at dist_norm by simp
+
+lemma "(D f = f' on S) \<longleftrightarrow> (\<forall>x\<in>S. D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) (at x within S))"
+  unfolding has_vderiv_on_def has_vector_derivative_def by simp
+
+thm has_derivative_at_within Lim_ident_at eventually_at
+thm has_field_derivative_iff_has_vector_derivative
+
+text \<open> Implementation \<close>
+
+lemma vwb_lens_iff: "vwb_lens x \<longleftrightarrow> (\<forall>\<sigma>. put\<^bsub>x\<^esub> \<sigma> (get\<^bsub>x\<^esub> \<sigma>) = \<sigma>) \<and> 
+  (\<forall>\<sigma> v. get\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> \<sigma> v) = v) \<and> (\<forall>\<sigma> v u. put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> \<sigma> v) u = put\<^bsub>x\<^esub> \<sigma> u)"
+  unfolding vwb_lens_def 
+  unfolding wb_lens_def 
+  unfolding wb_lens_axioms_def
+  unfolding mwb_lens_def
+  unfolding weak_lens_def
+  unfolding mwb_lens_axioms_def by auto
+
 definition lens_restrict :: "('s \<Rightarrow> 'r) \<Rightarrow> ('c \<Longrightarrow> 's) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'r)" ("_\<restriction>\<^bsub>_\<^esub>")
-  where "e\<restriction>\<^bsub>a\<^esub> \<equiv> (\<lambda>s. e \<circ> (\<lambda>c. put\<^bsub>a\<^esub> s c))"
+  where [expr_defs]: "e\<restriction>\<^bsub>x\<^esub> \<equiv> (\<lambda>s. e \<circ> (\<lambda>c. put\<^bsub>x\<^esub> s c))" \<comment> \<open> notice that put works as inclusion \<close>
 
-definition "has_framed_deriv a e e' s S \<equiv> D (e\<restriction>\<^bsub>a\<^esub> s) \<mapsto> e' (at (get\<^bsub>a\<^esub> s) within S)"
+lemma "vwb_lens x \<Longrightarrow> (e\<restriction>\<^bsub>x\<^esub>) s (get\<^bsub>x\<^esub> s) = e s"
+  unfolding lens_restrict_def by simp
 
-definition frechet_framed_deriv :: "('c::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('c set) \<Rightarrow> 
-  ('s \<Rightarrow> 'r::real_normed_vector) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'r)"
-  where "frechet_framed_deriv a S e \<equiv> (\<lambda>s. (\<partial> (e\<restriction>\<^bsub>a\<^esub> s) (at (get\<^bsub>a\<^esub> s) within S)))"
+text \<open> Basic and necessary lenses knowledge \<close>
 
-lemma "vwb_lens a \<Longrightarrow> differentiable\<^sub>e e on a \<Longrightarrow> 
-  has_framed_deriv a e (frechet_framed_deriv a S e s) s S"
-  unfolding frechet_framed_deriv_def has_framed_deriv_def lens_restrict_def
+definition has_restr_deriv :: "(('c::real_normed_vector) \<Longrightarrow> 's) \<Rightarrow> 
+  ('s \<Rightarrow> ('r::real_normed_vector)) \<Rightarrow> ('c \<Rightarrow> 'r) \<Rightarrow> 's \<Rightarrow> 'c set \<Rightarrow> bool" ("D\<^bsub>_\<^esub> _ = _ at _ on _")
+  where [expr_defs]: "has_restr_deriv x e e' s S \<equiv> 
+  D (e\<restriction>\<^bsub>x\<^esub> s) \<mapsto> e' (at (get\<^bsub>x\<^esub> s) within S)"
+
+lemma "vwb_lens x \<Longrightarrow> get\<^bsub>x\<^esub> \<circ> (\<lambda>c. put\<^bsub>x\<^esub> s c) = id"
+  by (clarsimp simp: fun_eq_iff)
+
+definition frechet_restr_deriv :: "('c::real_normed_vector \<Longrightarrow> 's) \<Rightarrow>  
+  ('s \<Rightarrow> 'r::real_normed_vector) \<Rightarrow> ('c set) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'r)" ("restrD\<^bsub>_\<^esub> _ on _")
+  where [expr_defs]: "frechet_restr_deriv x e S \<equiv> 
+  (\<lambda>s. (\<partial> (e\<restriction>\<^bsub>x\<^esub> s) (at (get\<^bsub>x\<^esub> s) within S)))"
+
+lemma "differentiable\<^sub>e e on x \<Longrightarrow> D\<^bsub>x\<^esub> e = (restrD\<^bsub>x\<^esub> e on S) s at s on S"
+  unfolding frechet_restr_deriv_def has_restr_deriv_def lens_restrict_def
   unfolding expr_differentiable_when_on_def
   apply (clarsimp, erule_tac x=s in allE)
   apply(drule_tac t=S in differentiable_subset, simp)
   by (simp add: frechet_derivative_works comp_def)
+
+lemma restrD_zero: "(restrD\<^bsub>x\<^esub> (0)\<^sub>e on UNIV) s (get\<^bsub>x\<^esub> (\<sigma> s)) = 0"
+  by (simp add: expr_defs)
 
 definition lie_deriv_on :: "('s \<Rightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'a::real_normed_vector) \<Rightarrow> 
   ('c::real_normed_vector \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'a)"
   where [expr_defs]: "lie_deriv_on \<sigma> f a = 
     (\<lambda> s. frechet_derivative (\<lambda> x. f (put\<^bsub>a\<^esub> s x)) (at (get\<^bsub>a\<^esub> s)) (get\<^bsub>a\<^esub> (\<sigma> s)))"
 
-lemma "(frechet_framed_deriv a UNIV e s) (get\<^bsub>a\<^esub> (\<sigma> s)) = lie_deriv_on \<sigma> e a s"
-  unfolding lie_deriv_on_def frechet_framed_deriv_def lens_restrict_def
+lemma "(restrD\<^bsub>a\<^esub> e on UNIV) s (get\<^bsub>a\<^esub> (\<sigma> s)) = lie_deriv_on \<sigma> e a s"
+  unfolding lie_deriv_on_def frechet_restr_deriv_def lens_restrict_def
   by (clarsimp simp: comp_def)
 
+
+
 (**************************************************)
-(********************** HERE **********************)
+(********************** END ***********************)
 (**************************************************)
 
 expr_ctr lie_deriv_on

@@ -423,6 +423,8 @@ thm tendsto_componentwise_iff
 thm eventually_at
 thm bounded_linear_compose
 thm c1_implies_local_lipschitz
+thm has_derivative_at_within Lim_ident_at
+
 
 lemma bounded_iff_subset_ball:
   "bounded S \<longleftrightarrow> (\<exists>e x. S \<subseteq> ball x e \<and> 0 \<le> e)"

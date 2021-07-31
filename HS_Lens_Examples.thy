@@ -557,4 +557,55 @@ lemma "local_flow f9 UNIV UNIV flow9"
 
 end
 
+locale darboux_ineq =
+  fixes x::"real \<Longrightarrow> real^2" 
+    and y::"real \<Longrightarrow> real^2"
+  assumes x_def [simp]: "x \<equiv> vec_lens 1"
+    and v_def [simp]: "y \<equiv> vec_lens 2"
+begin
+
+abbreviation darboux_ineq_f :: "real ^ 2 \<Rightarrow> real ^ 2" ("ff")
+  where "ff \<equiv> [x \<leadsto> x^2, y \<leadsto> y * x + x^2]"
+
+abbreviation "ff' s \<equiv> [x \<leadsto> 2 * x * s$1, y \<leadsto> y * s$1 + x * s$2 + 2 * x * s$1]"
+
+abbreviation darboux_ineq_f_no_lens :: "real \<Rightarrow> real^2 \<Rightarrow> real^2" ("f")
+  where "f t s \<equiv> (\<chi> i. if i=1 then (s$1)^2 else (s$2)*(s$1)+(s$1)^2)"
+
+lemma local_lipschitz_darboux: "local_lipschitz UNIV UNIV (\<lambda>t::real. ff)"
+  apply(rule_tac f'="\<lambda>(t,s::real^2). Blinfun (ff' s)" in c1_implies_local_lipschitz)
+     apply (simp add: prod.case_eq_if)
+     apply expr_auto
+     apply(subst bounded_linear_Blinfun_apply)
+  subgoal for y i s
+    apply(rule has_derivative_bounded_linear[of
+      "(\<lambda>s::real^2. \<chi> i. if i = 2 then s $ 2 * s $ 1 + (s $ 1)\<^sup>2 
+        else (\<chi> j. if j = 1 then (s $ 1)\<^sup>2 else s $ j) $ i)" 
+      "(\<lambda>s::real^2. \<chi> j. if j = 2 then s $ 2 * y $ 1 + s $ 1 * y $ 2 + 2 * s $ 1 * y $ 1
+        else (\<chi> j. if j = 1 then 2 * s $ 1 * y $ 1 else s $ j) $ j)" "at y"])
+    apply clarsimp
+    subgoal for j
+    using exhaust_2[of j]
+    by (auto simp: fun_eq_iff intro!: derivative_eq_intros)
+      done
+    subgoal for s i
+   using exhaust_2[of i] apply (expr_auto, safe; clarsimp?)
+   by (auto intro!: derivative_eq_intros)
+   apply expr_auto
+   apply simp_all
+  subgoal sorry
+  done
+
+lemma local_lipschitz_darboux: "local_lipschitz UNIV {s. 0 < s $ 1 + s $ 2} f"
+  apply(rule_tac \<DD>="\<lambda>x. (\<chi> i. if i=1 then 2 * x $ 1 * _ $ 1 else 
+    _ $ 2 * x $ 1 + x $ 2 * _ $ 1 + 2 * x $ 1 * _ $ 1)" in 
+      c1_local_lipschitz[of _ UNIV f]; clarsimp?)
+  subgoal sorry
+  subgoal for s i
+    using exhaust_2[of i] apply safe
+    apply (auto intro!: derivative_eq_intros)
+    oops
+
+end
+
 end
