@@ -67,6 +67,13 @@ lemma g_orbital_eq: "g_orbital f G U S t\<^sub>0 s =
   {X t |t X. t \<in> U s \<and> \<P> X (down (U s) t) \<subseteq> {s. G s} \<and> X \<in> Sols f U S t\<^sub>0 s }" 
   unfolding g_orbital_def ivp_sols_def g_orbit_eq by auto
 
+lemma "g_orbital f G (\<lambda>s. {t. t \<ge> 0}) UNIV 0 s =
+  {X t |t X. t \<ge> 0 \<and> (\<forall>\<tau>\<in>{0..t}. G (X \<tau>)) \<and> 
+  (\<forall>\<tau>\<in>{0..t}. (X has_vector_derivative (f t (X t))) (at \<tau> within {0..t})) \<and> X 0 = s}"
+  unfolding g_orbital_eq ivp_sols_def has_vderiv_on_def apply (clarsimp simp: set_eq_iff)
+  apply(rule iffI)
+  oops
+
 lemma g_orbitalI:
   assumes "X \<in> Sols f U S t\<^sub>0 s"
     and "t \<in> U s" and "(\<P> X (down (U s) t) \<subseteq> {s. G s})"
