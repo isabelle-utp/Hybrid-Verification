@@ -137,8 +137,8 @@ lemma vderiv_divI[poly_derivatives]:
    apply(erule ssubst, rule poly_derivatives(5)[OF assms(2)])
   apply(rule vderiv_on_composeI[where g=g and f="\<lambda>t. 1/t" and f'="\<lambda>t. - 1/t^2", OF _ assms(3)])
   apply(subst has_vderiv_on_def, subst has_vector_derivative_def, clarsimp)
-   using assms(1) apply(force intro!: derivative_eq_intros simp: fun_eq_iff power2_eq_square)
-   using assms by (auto simp: field_simps power2_eq_square)
+  using assms(1) apply(force intro!: derivative_eq_intros simp: fun_eq_iff power2_eq_square)
+  using assms by (auto simp: field_simps)
 
 lemma vderiv_cosI[poly_derivatives]:
   assumes "D (f::real \<Rightarrow> real) = f' on T" and "g = (\<lambda>t. - (f' t) * sin (f t))"
@@ -245,6 +245,9 @@ qed
 
 
 subsection \<open> Filters \<close>
+
+lemma set_eqI2: "(\<And>x. x \<in> A \<Longrightarrow> x \<in> B) \<Longrightarrow> (\<And>x. x \<in> B \<Longrightarrow> x \<in> A) \<Longrightarrow> A = B"
+  by blast
 
 lemma eventually_at_within_mono:
   assumes "t \<in> interior T" and "T \<subseteq> S"
