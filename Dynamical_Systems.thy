@@ -47,78 +47,163 @@ lemma in_ivp_sols_subset:
   apply(rule ivp_solsI)
   using ivp_solsD(1,2) has_vderiv_on_subset by blast+
 
+(*definition g_orbit :: "('a \<Rightarrow> bool) \<Rightarrow> ('b::real_vector) set \<Rightarrow> 'b \<Rightarrow> ('b \<Rightarrow> 'a) \<Rightarrow> 'a set" ("\<gamma>")
+  where "\<gamma> G T t\<^sub>0 X = \<Union> {\<P> X T  |t. \<P> X {t\<^sub>0--t} \<subseteq> {s. G s}}" 
+
+lemma g_orbit_eq: "\<gamma> G T t\<^sub>0 X = {X t |t. t \<in> T \<and> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>))}"
+  apply(rule set_eqI2; clarsimp simp: g_orbit_def)
+  apply(rename_tac \<tau> t)
+  apply(rule_tac x=\<tau> in exI, simp)*)
+
 definition g_orbit :: "('a \<Rightarrow> bool) \<Rightarrow> ('b::real_vector) set \<Rightarrow> 'b \<Rightarrow> ('b \<Rightarrow> 'a) \<Rightarrow> 'a set" ("\<gamma>")
   where "\<gamma> G T t\<^sub>0 X = {X t |t. t \<in> T \<and> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>))}"
 
-(* "g_orbital f G U S t\<^sub>0 s = \<Union>{\<gamma> X G (U s) |X. X \<in> ivp_sols f U S t\<^sub>0 s}" *)
-
 definition g_orbital :: "(real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> real set) \<Rightarrow> real \<Rightarrow> 
   ('a::real_normed_vector) \<Rightarrow> 'a set" 
-  where "g_orbital f G U t\<^sub>0 s = \<Union>{\<gamma> G {t\<^sub>0--t} t\<^sub>0 X |X t. t \<in> U s \<and> X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s}"
+  where "g_orbital f G U t\<^sub>0 s = \<Union>{\<gamma> G {t\<^sub>0--t} t\<^sub>0 X |X t. {t\<^sub>0--t} \<subseteq> U s \<and> X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s}"
 
 lemma g_orbital_eq: "g_orbital f G U t\<^sub>0 s = 
-  {X t |t X. t \<in> U s \<and> \<P> X ({t\<^sub>0--t}) \<subseteq> {s. G s} \<and> X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s }" 
-  unfolding g_orbital_def ivp_sols_def g_orbit_def apply (rule set_eqI2; clarsimp)
-  apply(rename_tac X t \<tau>)
-   apply(rule_tac x=\<tau> in exI, rule_tac x=X in exI, clarsimp)
-  sorry
+  {X t |t X. {t\<^sub>0--t} \<subseteq> U s \<and> \<P> X ({t\<^sub>0--t}) \<subseteq> {s. G s} \<and> X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s }"
+proof(rule set_eqI2; clarsimp simp: g_orbital_def g_orbit_def)
+  fix X t \<tau>
+  assume xivp: "X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s" 
+    and ivl: "\<tau> \<in> {t\<^sub>0--t}" "{t\<^sub>0--t} \<subseteq> U s"
+    and guard: "\<forall>r\<in>{t\<^sub>0--\<tau>}. G (X r)"
+  hence "X \<in> Sols f {t\<^sub>0--\<tau>} t\<^sub>0 s"
+    by (auto simp: closed_segment_eq_real_ivl 
+        intro!: in_ivp_sols_subset[OF _ _ xivp])
+  moreover have "{t\<^sub>0--\<tau>} \<subseteq> U s"
+    using ivl by (auto simp: closed_segment_eq_real_ivl split: if_splits)
+  ultimately show "\<exists>r Y. X \<tau> = Y r \<and> {t\<^sub>0--r} \<subseteq> U s \<and> 
+  (\<forall>r\<in>{t\<^sub>0--r}. G (Y r)) \<and> Y \<in> Sols f {t\<^sub>0--r} t\<^sub>0 s"
+    using guard by auto
+next
+  fix t X
+  assume xivp: "X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s" 
+    and ivl: "{t\<^sub>0--t} \<subseteq> U s"
+    and guard: "\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)"
+  hence "X t \<in> \<gamma> G {t\<^sub>0--t} t\<^sub>0 X"
+    unfolding g_orbit_def by auto
+  thus "\<exists>\<rho>. (\<exists>X t. \<rho> = {X \<tau> |\<tau>. \<tau> \<in> {t\<^sub>0--t} \<and> (\<forall>r\<in>{t\<^sub>0--\<tau>}. G (X r))} \<and>
+  {t\<^sub>0--t} \<subseteq> U s \<and> X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s) \<and> X t \<in> \<rho>"
+    using xivp ivl guard by auto
+qed
 
-lemma "g_orbital f G (\<lambda>s. {t. t \<ge> 0}) 0 s =
+lemma g_orbitalI:
+  assumes "X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s"
+    and "{t\<^sub>0--t} \<subseteq> U s" and "\<P> X ({t\<^sub>0--t}) \<subseteq> {s. G s}"
+  shows "X t \<in> g_orbital f G U t\<^sub>0 s"
+  using assms unfolding g_orbital_eq by auto
+
+lemma g_orbitalD:
+  assumes "s' \<in> g_orbital f G U t\<^sub>0 s"
+  obtains X and t where "X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s"
+  and "X t = s'" and "{t\<^sub>0--t} \<subseteq> U s" and "\<P> X ({t\<^sub>0--t}) \<subseteq> {s. G s}"
+  using assms unfolding g_orbital_eq by auto
+
+lemma g_orbital_eq_dL_semantics: "g_orbital f G (\<lambda>s. {t. t \<ge> 0}) 0 s =
   {X t |t X. t \<ge> 0 \<and> (\<forall>\<tau>\<in>{0..t}. G (X \<tau>)) \<and> 
   (\<forall>\<tau>\<in>{0..t}. (X has_vector_derivative (f \<tau> (X \<tau>))) (at \<tau> within {0..t})) \<and> X 0 = s}"
   unfolding g_orbital_eq g_orbit_def ivp_sols_def has_vderiv_on_def 
-  apply (rule set_eqI2; clarsimp simp: closed_segment_eq_real_ivl)
-   apply(rule_tac x=t in exI, rule_tac x=X in exI, clarsimp)
+  apply (rule set_eqI2; clarsimp simp: closed_segment_eq_real_ivl split: if_splits)
+  subgoal for s' t
+    apply safe
+   apply(rule_tac x=t in exI, rule_tac x=X in exI, clarsimp )
+     apply (force simp: atLeastAtMost_def)
+   apply(rule_tac x=t in exI, rule_tac x=X in exI)
+     apply (force simp: atLeastAtMost_def)
+    done
   by (rule_tac x=t in exI, clarsimp, rule_tac x=X in exI, clarsimp)
 
-lemma g_orbitalI:
-  assumes "X \<in> Sols f U t\<^sub>0 s"
-    and "t \<in> U s" and "(\<P> X (down (U s) t) \<subseteq> {s. G s})"
-  shows "X t \<in> g_orbital f G U S t\<^sub>0 s"
-  using assms unfolding g_orbital_eq(1) by auto
 
-lemma g_orbitalD:
-  assumes "s' \<in> g_orbital f G U S t\<^sub>0 s"
-  obtains X and t where "X \<in> Sols f U S t\<^sub>0 s"
-  and "X t = s'" and "t \<in> U s" and "(\<P> X (down (U s) t) \<subseteq> {s. G s})"
-  using assms unfolding g_orbital_def g_orbit_eq by auto
+lemma "X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s \<Longrightarrow> {t\<^sub>0--t} \<subseteq> U s \<Longrightarrow> \<gamma> G {t\<^sub>0--t} t\<^sub>0 X \<subseteq> g_orbital f G U t\<^sub>0 s"
+  unfolding g_orbital_def by auto
 
-lemma "g_orbital f G U S t\<^sub>0 s = {X t |t X. X t \<in> \<gamma> X G (U s) \<and> X \<in> Sols f U S t\<^sub>0 s}"
-  unfolding g_orbital_eq g_orbit_eq by auto
-
-lemma "X \<in> Sols f U S t\<^sub>0 s \<Longrightarrow> \<gamma> X G (U s) \<subseteq> g_orbital f G U S t\<^sub>0 s"
-  unfolding g_orbital_eq g_orbit_eq by auto
-
-lemma "g_orbital f G U S t\<^sub>0 s \<subseteq> g_orbital f (\<lambda>s. True) U S t\<^sub>0 s"
+lemma "g_orbital f G U t\<^sub>0 s \<subseteq> g_orbital f (\<lambda>s. True) U t\<^sub>0 s"
   unfolding g_orbital_eq by auto
 
-lemma "\<nu> \<in> g_orbital f G (\<lambda>s. {t. t \<ge> 0}) S t\<^sub>0 \<omega> \<longleftrightarrow> 
-  (\<exists>X\<in>Sols f (\<lambda>s. {t. t \<ge> 0}) S t\<^sub>0 \<omega>. \<exists>t\<ge>0. X t = \<nu> \<and> (\<forall>\<tau>\<in>{0..t}. G (X \<tau>)))"
-  apply(simp add: g_orbital_eq, rule iffI)
-   apply(clarsimp, rule_tac x=X in bexI, rule_tac x=t in exI, simp_all)
-  by (clarsimp, rule_tac x=t in exI, rule_tac x=X in exI, simp_all)
+lemma "\<nu> \<in> g_orbital f G (\<lambda>s. {t. t \<ge> 0}) 0 \<omega> \<longleftrightarrow> 
+  (\<exists>t\<ge>0. \<exists>X\<in>Sols f {0..t} 0 \<omega>. X t = \<nu> \<and> (\<forall>\<tau>\<in>{0..t}. G (X \<tau>)))"
+  by (simp add: g_orbital_eq_dL_semantics ivp_sols_def has_vderiv_on_def, rule iffI) force+
 
 no_notation g_orbit ("\<gamma>")
+
+
 
 
 subsection \<open> Differential Invariants \<close>
 
 definition diff_invariant :: "('a \<Rightarrow> bool) \<Rightarrow> (real \<Rightarrow> ('a::real_normed_vector) \<Rightarrow> 'a) \<Rightarrow> 
-  ('a \<Rightarrow> real set) \<Rightarrow> 'a set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
-  where "diff_invariant I f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
+  ('a \<Rightarrow> real set) \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
+  where "diff_invariant I f U t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital f G U t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
-lemma diff_invariant_eq: "diff_invariant I f U S t\<^sub>0 G = 
-  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols f U S t\<^sub>0 s. (\<forall>t\<in>U s.(\<forall>\<tau>\<in>(down (U s) t). G (X \<tau>)) \<longrightarrow> I (X t))))"
+lemma diff_invariant_eq: "diff_invariant I f U t\<^sub>0 G = 
+  (\<forall>s. I s \<longrightarrow> (\<forall>t. \<forall>X\<in>Sols f {t\<^sub>0--t} t\<^sub>0 s. {t\<^sub>0--t} \<subseteq> U s \<longrightarrow> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> I (X t)))"
   unfolding diff_invariant_def g_orbital_eq image_le_pred by auto
 
 lemma diff_inv_eq_inv_set:
-  "diff_invariant I f U S t\<^sub>0 G = (\<forall>s. I s \<longrightarrow> (g_orbital f G U S t\<^sub>0 s) \<subseteq> {s. I s})"
+  "diff_invariant I f U t\<^sub>0 G = (\<forall>s. I s \<longrightarrow> (g_orbital f G U t\<^sub>0 s) \<subseteq> {s. I s})"
   unfolding diff_invariant_eq g_orbital_eq image_le_pred by auto
 
-lemma "diff_invariant I f U S t\<^sub>0 (\<lambda>s. True) \<Longrightarrow> diff_invariant I f U S t\<^sub>0 G"
+lemma "diff_invariant I f U t\<^sub>0 (\<lambda>s. True) \<Longrightarrow> diff_invariant I f U t\<^sub>0 G"
   unfolding diff_invariant_eq by auto
 
 named_theorems diff_invariant_rules "rules for certifying differential invariants"
+
+thm filter_eq_iff eventually_at eventually_at_topological \<comment> \<open> filters \<close>
+thm at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> at within \<close>
+thm has_derivative_at_within Lim_ident_at \<comment> \<open> derivative at within \<close>
+thm has_field_derivative_iff_has_vector_derivative \<comment> \<open> real vs vector derivative \<close>
+thm Rolle_deriv mvt mvt_simple mvt_very_simple mvt_general \<comment> \<open> mean value theorem \<close>
+thm has_derivative_componentwise_within tendsto_componentwise_iff bounded_linear_compose
+thm c1_implies_local_lipschitz
+
+lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) \<longleftrightarrow> bounded_linear f' \<and> 
+  (\<forall>X. open X \<longrightarrow> 0 \<in> X \<longrightarrow> (\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow> 
+    (f s - f x - f' (s - x)) /\<^sub>R \<parallel>s - x\<parallel> \<in> X))"
+  unfolding has_derivative_at_within tendsto_def eventually_at dist_norm by simp
+
+lemma "(D f = f' on S) \<longleftrightarrow> (\<forall>x\<in>S. D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) (at x within S))"
+  unfolding has_vderiv_on_def has_vector_derivative_def by simp
+
+lemma 
+  fixes f :: "real \<Rightarrow> 'a::real_inner"
+  assumes "a \<noteq> b" and "continuous_on {a--b} f"
+    and "\<forall>x\<in> {a<--<b}. D f \<mapsto> (f' x) (at x)"
+  shows "\<exists>x\<in>{a<--<b}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x (b - a)\<parallel>"
+proof(cases "a < b")
+  case True
+  thus ?thesis 
+    using closed_segment_eq_real_ivl open_segment_eq_real_ivl
+      assms mvt_general[of a b f] by force
+next
+  case False
+  hence "b < a" "{a--b} = {b..a}" "{a<--<b} = {b<..<a}"
+    using assms closed_segment_eq_real_ivl open_segment_eq_real_ivl by auto
+  hence cont: "continuous_on {b..a} f" and "\<forall>x\<in>{b<..<a}. D f \<mapsto> (f' x) (at x)"
+    using assms by auto
+  hence "\<exists>x\<in>{b<..<a}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x (a - b)\<parallel>"
+    using mvt_general[OF \<open>b < a\<close> cont, of f'] 
+    by (auto simp: Real_Vector_Spaces.real_normed_vector_class.norm_minus_commute)
+  thus ?thesis 
+    apply(subst \<open>{a<--<b} = {b<..<a}\<close>) by auto
+
+
+  oops
+qed
+
+
+lemma 
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> 'b::real_inner"
+  assumes "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
+  \<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
+  shows "diff_invariant (\<lambda>s. \<mu> s = \<nu> s) f U t\<^sub>0 G"
+proof(simp add: diff_invariant_eq ivp_sols_def, clarsimp)
+  fix X t
+  assume xivp: "D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}" "\<mu> (X t\<^sub>0) = \<nu> (X t\<^sub>0)"
+    and "\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)" 
+  note mvt_general[of _ _ ]
+  note mvt_general[of _ _ "\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)" "\<lambda>\<tau> t. 0"]
 
 lemma diff_invariant_eq_rule [diff_invariant_rules]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
@@ -305,5 +390,37 @@ lemma diff_invariant_disj_rule [diff_invariant_rules]:
     and "diff_invariant I\<^sub>2 f U S t\<^sub>0 G"
   shows "diff_invariant (\<lambda>s. I\<^sub>1 s \<or> I\<^sub>2 s) f U S t\<^sub>0 G"
   using assms unfolding diff_invariant_def by auto
+
+
+
+type_synonym 'a pred = "'a \<Rightarrow> bool"
+
+definition fbox :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred" ("|_] _" [61,81] 82)
+  where "|F] P = (\<lambda>s. (\<forall>s'. s' \<in> F s \<longrightarrow> P s'))"
+
+lemma fbox_iso: "P \<le> Q \<Longrightarrow> |F] P \<le> |F] Q"
+  unfolding fbox_def by auto
+
+lemma fbox_anti: "\<forall>s. F\<^sub>1 s \<subseteq> F\<^sub>2 s \<Longrightarrow> |F\<^sub>2] P \<le> |F\<^sub>1] P"
+  unfolding fbox_def by auto
+
+lemma fbox_invariants: 
+  assumes "I \<le> |F] I" and "J \<le> |F] J"
+  shows "(\<lambda>s. I s \<and> J s) \<le> |F] (\<lambda>s. I s \<and> J s)"
+    and "(\<lambda>s. I s \<or> J s) \<le> |F] (\<lambda>s. I s \<or> J s)"
+  using assms unfolding fbox_def by auto
+
+lemma fbox_g_orbital: "|g_orbital f G U t\<^sub>0] Q = 
+  (\<lambda>s. \<forall>t. \<forall>X\<in>Sols f {t\<^sub>0--t} t\<^sub>0 s. {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0) \<longrightarrow> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> Q (X t))"
+  unfolding fbox_def g_orbital_eq apply(auto simp: fun_eq_iff)
+   apply(erule_tac x="X t" in allE, clarsimp, erule_tac x=t in allE)
+   apply(clarsimp simp: ivp_sols_def, erule_tac x=X in allE, force)
+  by (erule_tac x=t in allE, erule_tac x=X in ballE; clarsimp simp: ivp_sols_def)
+
+lemma fbox_g_orbital_ivl: "\<forall>s. is_interval (U s) \<and> t\<^sub>0 \<in> U s \<Longrightarrow> |g_orbital f G U t\<^sub>0] Q = 
+  (\<lambda>s. \<forall>t\<in>U s. \<forall>X\<in>Sols f {t\<^sub>0--t} t\<^sub>0 s. (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> Q (X t))"
+  unfolding fbox_g_orbital apply(clarsimp simp: fun_eq_iff)
+  using closed_segment_subset_interval
+  by (smt (verit, best) ends_in_segment(2) ivp_solsD(2) subset_iff)
 
 end

@@ -419,16 +419,6 @@ lemma frechet_tendsto_vec_nth:
 
 subsection \<open> Differentiability implies Lipschitz \<close>
 
-
-\<comment> \<open> Useful to remember these theorems \<close>
-thm has_derivative_componentwise_within
-thm tendsto_componentwise_iff
-thm eventually_at
-thm bounded_linear_compose
-thm c1_implies_local_lipschitz
-thm has_derivative_at_within Lim_ident_at
-
-
 lemma bounded_iff_subset_ball:
   "bounded S \<longleftrightarrow> (\<exists>e x. S \<subseteq> ball x e \<and> 0 \<le> e)"
   unfolding bounded_def ball_def subset_eq apply (clarsimp, safe)

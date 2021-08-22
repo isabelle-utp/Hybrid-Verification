@@ -110,16 +110,7 @@ subsection \<open> Lie Derivatives \<close>
 
 text \<open> Basic and necessary derivative knowledge \<close>
 
-lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) \<longleftrightarrow> bounded_linear f' \<and> 
-  (\<forall>X. open X \<longrightarrow> 0 \<in> X \<longrightarrow> (\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow> 
-    (f s - f x - f' (s - x)) /\<^sub>R \<parallel>s - x\<parallel> \<in> X))"
-  unfolding has_derivative_at_within tendsto_def eventually_at dist_norm by simp
 
-lemma "(D f = f' on S) \<longleftrightarrow> (\<forall>x\<in>S. D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) (at x within S))"
-  unfolding has_vderiv_on_def has_vector_derivative_def by simp
-
-thm has_derivative_at_within Lim_ident_at eventually_at
-thm has_field_derivative_iff_has_vector_derivative
 
 text \<open> Implementation \<close>
 
