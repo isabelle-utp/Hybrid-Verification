@@ -169,20 +169,20 @@ lemma fbox_g_orbital: "|g_orbital f G U t\<^sub>0] Q =
 
 subsection \<open> Differential Invariants \<close>
 
-definition diff_invariant :: "('a \<Rightarrow> bool) \<Rightarrow> (real \<Rightarrow> ('a::real_normed_vector) \<Rightarrow> 'a) \<Rightarrow> 
+definition diff_inv :: "('a \<Rightarrow> bool) \<Rightarrow> (real \<Rightarrow> ('a::real_normed_vector) \<Rightarrow> 'a) \<Rightarrow> 
   ('a \<Rightarrow> real set) \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
-  where "diff_invariant I f U t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital f G U t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
+  where "diff_inv I f U t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital f G U t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
-lemma diff_invariant_eq: "diff_invariant I f U t\<^sub>0 G = 
+lemma diff_inv_eq: "diff_inv I f U t\<^sub>0 G = 
   (\<forall>s. I s \<longrightarrow> (\<forall>t. \<forall>X\<in>Sols f {t\<^sub>0--t} t\<^sub>0 s. {t\<^sub>0--t} \<subseteq> U s \<longrightarrow> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> I (X t)))"
-  unfolding diff_invariant_def g_orbital_eq image_le_pred by auto
+  unfolding diff_inv_def g_orbital_eq image_le_pred by auto
 
 lemma diff_inv_eq_inv_set:
-  "diff_invariant I f U t\<^sub>0 G = (\<forall>s. I s \<longrightarrow> (g_orbital f G U t\<^sub>0 s) \<subseteq> {s. I s})"
-  unfolding diff_invariant_eq g_orbital_eq image_le_pred by auto
+  "diff_inv I f U t\<^sub>0 G = (\<forall>s. I s \<longrightarrow> (g_orbital f G U t\<^sub>0 s) \<subseteq> {s. I s})"
+  unfolding diff_inv_eq g_orbital_eq image_le_pred by auto
 
-lemma "diff_invariant I f U t\<^sub>0 (\<lambda>s. True) \<Longrightarrow> diff_invariant I f U t\<^sub>0 G"
-  unfolding diff_invariant_eq by auto
+lemma "diff_inv I f U t\<^sub>0 (\<lambda>s. True) \<Longrightarrow> diff_inv I f U t\<^sub>0 G"
+  unfolding diff_inv_eq by auto
 
 thm filter_eq_iff eventually_at eventually_at_topological \<comment> \<open> filters \<close>
 thm at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> at within \<close>
@@ -225,14 +225,14 @@ next
     by (subst \<open>{a<--<b} = {b<..<a}\<close>) auto
 qed
 
-named_theorems diff_invariant_rules "rules for certifying differential invariants"
+named_theorems diff_inv_rules "rules for certifying differential invariants"
 
-lemma diff_invariant_eq_zero:
+lemma diff_inv_eq_zero:
   fixes \<mu>::"'a::real_normed_vector \<Rightarrow> 'b::real_inner"
   assumes "\<And>X t. {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0) \<Longrightarrow> (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}) \<Longrightarrow> \<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>) \<Longrightarrow> 
     D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on {t\<^sub>0--t}"
-  shows "diff_invariant (\<lambda>s. \<mu> s = 0) f U t\<^sub>0 G"
-proof(clarsimp simp: diff_invariant_eq ivp_sols_def)
+  shows "diff_inv (\<lambda>s. \<mu> s = 0) f U t\<^sub>0 G"
+proof(clarsimp simp: diff_inv_eq ivp_sols_def)
   fix X t
   assume xivp: "D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}" "\<mu> (X t\<^sub>0) = 0"
     and "\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)" and "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)"
@@ -248,43 +248,61 @@ proof(clarsimp simp: diff_invariant_eq ivp_sols_def)
     using xivp by auto
 qed
 
-lemma diff_invariant_eq_rule [diff_invariant_rules]:
+lemma diff_inv_eq_rule [diff_inv_rules]:
   fixes \<mu>::"'a::real_normed_vector \<Rightarrow> 'b::real_inner"
   assumes "\<And>X t. {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0) \<Longrightarrow> (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}) \<Longrightarrow> \<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>) \<Longrightarrow> 
     D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on {t\<^sub>0--t}"
-  shows "diff_invariant (\<lambda>s. \<mu> s = \<nu> s) f U t\<^sub>0 G"
-  using diff_invariant_eq_zero[where \<mu>="\<lambda>s. \<mu> s - \<nu> s"] assms by auto
+  shows "diff_inv (\<lambda>s. \<mu> s = \<nu> s) f U t\<^sub>0 G"
+  using diff_inv_eq_zero[where \<mu>="\<lambda>s. \<mu> s - \<nu> s"] assms by auto
 
 text \<open> can this be generalised to @{term "\<mu>::'a::real_normed_vector \<Rightarrow> 'b::real_inner"}? \<close>
-lemma diff_invariant_leq_rule [diff_invariant_rules]:
+lemma diff_inv_leq_rule [diff_inv_rules]:
   fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
   assumes "\<And>X t. {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0) \<Longrightarrow> (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}) \<Longrightarrow> \<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>) \<Longrightarrow> 
-    D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>)) on {t\<^sub>0--t}"
-  shows "diff_invariant (\<lambda>s. 0 < \<mu> s) f U t\<^sub>0 G"
-proof(clarsimp simp: diff_invariant_eq ivp_sols_def)
+    (D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>)) on {t\<^sub>0--t}) \<and> (\<forall>\<tau>\<in>{t\<^sub>0<--<t}. (\<tau> > t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<ge> 0) \<and> (\<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> 0))"
+  shows "diff_inv (\<lambda>s. 0 < \<mu> s) f U t\<^sub>0 G"
+proof(clarsimp simp: diff_inv_eq ivp_sols_def)
   fix X t
   assume xivp: "D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}" "0 < \<mu> (X t\<^sub>0)"
-    and "\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)" and "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)"
+    and ghyp: "\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)" and ivl: "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)"
   hence key: "D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>)) on {t\<^sub>0--t}"
     using assms by auto
-  hence d_open: "\<And>\<tau>. t\<^sub>0 \<le> \<tau> \<Longrightarrow> \<tau> \<le> t \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>)) \<mapsto> (\<lambda>t. t *\<^sub>R (\<mu>' (X \<tau>))) (at \<tau> within {t\<^sub>0--t})"
-    unfolding has_vderiv_on_iff by (auto simp: closed_segment_eq_real_ivl)
   {assume "t\<^sub>0 \<noteq> t"
-    then obtain \<tau> where "\<parallel>\<mu> (X t) - \<mu> (X t\<^sub>0)\<parallel> \<le> \<parallel>\<bar>t - t\<^sub>0\<bar> *\<^sub>R \<mu>' (X \<tau>)\<parallel>" and "\<tau> \<in> {t\<^sub>0<--<t}"
-      using mvt_ivl_general[OF _ vderiv_on_continuous_on[OF key] d_open] by auto
-    note mvt_very_simple[of t\<^sub>0 t "\<lambda>t. \<mu> (X t)" "\<lambda>\<tau> t. t *\<^sub>R \<mu>' (X \<tau>)"]
-  }
-  show "0 < \<mu> (X t)"
-    sorry
+    then obtain \<tau> where mvt: "\<mu> (X t) = (t - t\<^sub>0) * \<mu>' (X \<tau>) + \<mu> (X t\<^sub>0)" and "\<tau> \<in> {t\<^sub>0<--<t}"
+      using mvt_simple_closed_segmentE[OF key] by (metis diff_add_cancel)
+    hence "t\<^sub>0 < t \<Longrightarrow> t\<^sub>0 < \<tau>" and "t\<^sub>0 > t \<Longrightarrow> t\<^sub>0 > \<tau>"
+      unfolding open_segment_eq_real_ivl by auto
+    hence "t\<^sub>0 < t \<Longrightarrow> 0 \<le> \<mu>' (X \<tau>)" and "t < t\<^sub>0 \<Longrightarrow> \<mu>' (X \<tau>) \<le> 0"
+      using assms[OF ivl xivp(1) ghyp] \<open>\<tau> \<in> {t\<^sub>0<--<t}\<close> by auto
+    hence "\<mu> (X t) > 0"
+      using mvt xivp(2) \<open>t\<^sub>0 \<noteq> t\<close> mult_nonneg_nonneg mult_neg_neg
+      by (metis add_nonneg_nonneg diff_gt_0_iff_gt le_add_same_cancel2 
+          less_eq_real_def linorder_not_le mult_eq_0_iff)}
+  thus "0 < \<mu> (X t)"
+    using xivp(2) by blast
 qed
 
-lemma diff_invariant_leq_rule [diff_invariant_rules]:
+lemma 
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  assumes "\<And>X t. {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0) \<Longrightarrow> (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}) \<Longrightarrow> \<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>) \<Longrightarrow> 
+    (D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on {t\<^sub>0--t}) \<and> 
+    (\<forall>\<tau>\<in>{t\<^sub>0<--<t}. (\<tau> > t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>)) \<and> (\<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>)))"
+  shows "diff_inv (\<lambda>s. \<nu> s < \<mu> s) f U t\<^sub>0 G"
+  apply(subgoal_tac "diff_inv (\<lambda>s. \<nu> s < \<mu> s) f U t\<^sub>0 G = diff_inv (\<lambda>s. 0 < \<mu> s - \<nu> s) f U t\<^sub>0 G")
+  using diff_inv_leq_rule[where \<mu>="\<lambda>s. \<mu> s - \<nu> s" and \<mu>'="\<lambda>s. \<mu>' s - \<nu>' s"] assms
+   apply auto[1]
+  apply(rule arg_cong[where f="\<lambda>P. diff_inv P f U t\<^sub>0 G"])
+  by auto (* HERE *)
+
+
+
+lemma diff_inv_leq_rule [diff_inv_rules]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Gg: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on {t\<^sub>0--t}) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
     and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U(X t\<^sub>0)"
-  shows "diff_invariant (\<lambda>s. \<nu> s \<le> \<mu> s) f U t\<^sub>0 G"
-proof(simp_all add: diff_invariant_eq ivp_sols_def, safe)
+  shows "diff_inv (\<lambda>s. \<nu> s \<le> \<mu> s) f U t\<^sub>0 G"
+proof(simp_all add: diff_inv_eq ivp_sols_def, safe)
   fix X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
   assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "\<nu> (X t\<^sub>0) \<le> \<mu> (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
   assume tHyp: "t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)" 
@@ -317,14 +335,14 @@ proof(simp_all add: diff_invariant_eq ivp_sols_def, safe)
     using xivp by blast
 qed
 
-lemma diff_invariant_less_rule [diff_invariant_rules]:
+lemma diff_inv_less_rule [diff_inv_rules]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
     and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U(X t\<^sub>0)"
-  shows "diff_invariant (\<lambda>s. \<nu> s < \<mu> s) f U S t\<^sub>0 G"
-proof(simp_all add: diff_invariant_eq ivp_sols_def, safe)
+  shows "diff_inv (\<lambda>s. \<nu> s < \<mu> s) f U S t\<^sub>0 G"
+proof(simp_all add: diff_inv_eq ivp_sols_def, safe)
   fix X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
   assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "\<nu> (X t\<^sub>0) < \<mu> (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
   assume tHyp: "t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)" 
@@ -357,46 +375,46 @@ proof(simp_all add: diff_invariant_eq ivp_sols_def, safe)
     using xivp by blast
 qed
 
-lemma diff_invariant_nleq_rule:
+lemma diff_inv_nleq_rule:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
-  shows "diff_invariant (\<lambda>s. \<not> \<nu> s \<le> \<mu> s) f U S t\<^sub>0 G \<longleftrightarrow> diff_invariant (\<lambda>s. \<nu> s > \<mu> s) f U S t\<^sub>0 G"
-  unfolding diff_invariant_eq apply safe
+  shows "diff_inv (\<lambda>s. \<not> \<nu> s \<le> \<mu> s) f U S t\<^sub>0 G \<longleftrightarrow> diff_inv (\<lambda>s. \<nu> s > \<mu> s) f U S t\<^sub>0 G"
+  unfolding diff_inv_eq apply safe
   by (clarsimp, erule_tac x=s in allE, simp, erule_tac x=X in ballE, force, force)+
 
-lemma diff_invariant_neq_rule [diff_invariant_rules]:
+lemma diff_inv_neq_rule [diff_inv_rules]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes "diff_invariant (\<lambda>s. \<nu> s < \<mu> s) f U S t\<^sub>0 G"
-    and "diff_invariant (\<lambda>s. \<nu> s > \<mu> s) f U S t\<^sub>0 G"
-  shows "diff_invariant (\<lambda>s. \<nu> s \<noteq> \<mu> s) f U S t\<^sub>0 G"
-proof(unfold diff_invariant_eq, clarsimp)
+  assumes "diff_inv (\<lambda>s. \<nu> s < \<mu> s) f U S t\<^sub>0 G"
+    and "diff_inv (\<lambda>s. \<nu> s > \<mu> s) f U S t\<^sub>0 G"
+  shows "diff_inv (\<lambda>s. \<nu> s \<noteq> \<mu> s) f U S t\<^sub>0 G"
+proof(unfold diff_inv_eq, clarsimp)
   fix s::'a and X::"real \<Rightarrow> 'a" and t::real
   assume "\<nu> s \<noteq> \<mu> s" and Xhyp: "X \<in> Sols f U S t\<^sub>0 s" 
      and thyp: "t \<in> U s" and Ghyp: "\<forall>\<tau>. \<tau> \<in> U s \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
   hence "\<nu> s < \<mu> s \<or> \<nu> s > \<mu> s"
     by linarith
   moreover have "\<nu> s < \<mu> s \<Longrightarrow> \<nu> (X t) < \<mu> (X t)"
-    using assms(1) Xhyp thyp Ghyp unfolding diff_invariant_eq by auto
+    using assms(1) Xhyp thyp Ghyp unfolding diff_inv_eq by auto
   moreover have "\<nu> s > \<mu> s \<Longrightarrow> \<nu> (X t) > \<mu> (X t)"
-    using assms(2) Xhyp thyp Ghyp unfolding diff_invariant_eq by auto
+    using assms(2) Xhyp thyp Ghyp unfolding diff_inv_eq by auto
   ultimately show "\<nu> (X t) = \<mu> (X t) \<Longrightarrow> False"
     by auto
 qed
 
-lemma diff_invariant_neq_rule_converse:
+lemma diff_inv_neq_rule_converse:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)" "\<And>s t. s \<in> S \<Longrightarrow> t \<in> U s \<Longrightarrow> t\<^sub>0 \<le> t"
     and conts: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<nu>"
       "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<mu>"
-    and dI:"diff_invariant (\<lambda>s. \<nu> s \<noteq> \<mu> s) f U S t\<^sub>0 G"
-  shows "diff_invariant (\<lambda>s. \<nu> s < \<mu> s) f U S t\<^sub>0 G"
-proof(unfold diff_invariant_eq ivp_sols_def, clarsimp)
+    and dI:"diff_inv (\<lambda>s. \<nu> s \<noteq> \<mu> s) f U S t\<^sub>0 G"
+  shows "diff_inv (\<lambda>s. \<nu> s < \<mu> s) f U S t\<^sub>0 G"
+proof(unfold diff_inv_eq ivp_sols_def, clarsimp)
   fix X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
   assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "\<nu> (X t\<^sub>0) < \<mu> (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
   assume tHyp: "t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)"
   hence "t\<^sub>0 \<le> t" and "\<mu> (X t) \<noteq> \<nu> (X t)"
     using xivp(3) Uhyp(2) apply force
     using dI tHyp xivp(2) Ghyp ivp_solsI[of X f U "X t\<^sub>0", OF xivp(1) _ xivp(3) t0Hyp]
-    unfolding diff_invariant_eq by force
+    unfolding diff_inv_eq by force
   moreover
   {assume ineq2:"\<nu> (X t) > \<mu> (X t)"
     note continuous_on_compose[OF vderiv_on_continuous_on[OF xivp(1)]]
@@ -414,24 +432,24 @@ proof(unfold diff_invariant_eq ivp_sols_def, clarsimp)
       by (auto simp: closed_segment_eq_real_ivl)
     hence "\<mu> (X \<tau>) \<noteq> \<nu> (X \<tau>)"
       using dI tHyp xivp(2) ivp_solsI[of X f U "X t\<^sub>0", OF xivp(1) _ xivp(3) t0Hyp]
-      unfolding diff_invariant_eq by force
+      unfolding diff_inv_eq by force
     hence "False"
       using \<open>\<mu> (X \<tau>) = \<nu> (X \<tau>)\<close> by blast}
   ultimately show "\<nu> (X t) < \<mu> (X t)"
     by fastforce
 qed
 
-lemma diff_invariant_conj_rule [diff_invariant_rules]:
-  assumes "diff_invariant I\<^sub>1 f U S t\<^sub>0 G"
-    and "diff_invariant I\<^sub>2 f U S t\<^sub>0 G"
-  shows "diff_invariant (\<lambda>s. I\<^sub>1 s \<and> I\<^sub>2 s) f U S t\<^sub>0 G"
-  using assms unfolding diff_invariant_def by auto
+lemma diff_inv_conj_rule [diff_inv_rules]:
+  assumes "diff_inv I\<^sub>1 f U S t\<^sub>0 G"
+    and "diff_inv I\<^sub>2 f U S t\<^sub>0 G"
+  shows "diff_inv (\<lambda>s. I\<^sub>1 s \<and> I\<^sub>2 s) f U S t\<^sub>0 G"
+  using assms unfolding diff_inv_def by auto
 
-lemma diff_invariant_disj_rule [diff_invariant_rules]:
-  assumes "diff_invariant I\<^sub>1 f U S t\<^sub>0 G"
-    and "diff_invariant I\<^sub>2 f U S t\<^sub>0 G"
-  shows "diff_invariant (\<lambda>s. I\<^sub>1 s \<or> I\<^sub>2 s) f U S t\<^sub>0 G"
-  using assms unfolding diff_invariant_def by auto
+lemma diff_inv_disj_rule [diff_inv_rules]:
+  assumes "diff_inv I\<^sub>1 f U S t\<^sub>0 G"
+    and "diff_inv I\<^sub>2 f U S t\<^sub>0 G"
+  shows "diff_inv (\<lambda>s. I\<^sub>1 s \<or> I\<^sub>2 s) f U S t\<^sub>0 G"
+  using assms unfolding diff_inv_def by auto
 
 
 
