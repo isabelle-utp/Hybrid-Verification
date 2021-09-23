@@ -423,33 +423,33 @@ lemma solution_eq_flow:
   apply(rule unique_solution[OF \<open>s \<in> S\<close> init_time_ex_ivl \<open>t \<in> ex_ivl s\<close>])
   using flow_has_vderiv_on_ex_ivl flow_funcset_ex_ivl \<open>s \<in> S\<close> by (auto simp: assms)
 
-(*
 lemma ivp_unique_solution:
   assumes "s \<in> S" and ivl: "is_interval (U s)" and "U s \<subseteq> T" and "t \<in> U s" 
-    and ivp1: "Y\<^sub>1 \<in> Sols f U S t\<^sub>0 s" and ivp2: "Y\<^sub>2 \<in> Sols f U S t\<^sub>0 s"
-  shows "Y\<^sub>1 t = Y\<^sub>2 t"
+    and xivp: "X \<in> Sols f (U s) t\<^sub>0 s" "X \<in> {t\<^sub>0--t} \<rightarrow> S"
+    and yivp: "Y \<in> Sols f (U s) t\<^sub>0 s" "Y \<in> {t\<^sub>0--t} \<rightarrow> S"
+  shows "X t = Y t"
 proof(rule unique_solution[OF \<open>s \<in> S\<close>, of "{t\<^sub>0--t}"], simp_all)
   have "t\<^sub>0 \<in> U s"
-    using ivp_solsD[OF ivp1] by auto
+    using ivp_solsD xivp by auto
   hence obs0: "{t\<^sub>0--t} \<subseteq> U s"
     using closed_segment_subset_interval[OF ivl] \<open>t \<in> U s\<close> by blast
-  moreover have obs1: "Y\<^sub>1 \<in> Sols f (\<lambda>s. {t\<^sub>0--t}) S t\<^sub>0 s"
-    by (rule in_ivp_sols_subset[OF _ calculation(1) ivp1], simp)
-  moreover have obs2: "Y\<^sub>2 \<in> Sols f (\<lambda>s. {t\<^sub>0--t}) S t\<^sub>0 s"
-    by (rule in_ivp_sols_subset[OF _ calculation(1) ivp2], simp)
+  moreover have obs1: "X \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s"
+    by (rule in_ivp_sols_subset[OF ends_in_segment(1) calculation(1) xivp(1)])
+  moreover have obs2: "Y \<in> Sols f {t\<^sub>0--t} t\<^sub>0 s"
+    by (rule in_ivp_sols_subset[OF ends_in_segment(1) calculation(1) yivp(1)])
   ultimately show "{t\<^sub>0--t} \<subseteq> ex_ivl s"
     apply(unfold existence_ivl_def csols_eq, clarsimp)
-    apply(rule_tac x=Y\<^sub>1 in exI, rule_tac x=t in exI)
-    using \<open>t \<in> U s\<close> and \<open>U s \<subseteq> T\<close> by force
-  show "D Y\<^sub>1 = (\<lambda>t. f t (Y\<^sub>1 t)) on {t\<^sub>0--t}"
-    by (rule ivp_solsD[OF in_ivp_sols_subset[OF _ _ ivp1]], simp_all add: obs0)
-  show "D Y\<^sub>2 = (\<lambda>t. f t (Y\<^sub>2 t)) on {t\<^sub>0--t}"
-    by (rule ivp_solsD[OF in_ivp_sols_subset[OF _ _ ivp2]], simp_all add: obs0)
-  show "Y\<^sub>1 t\<^sub>0 = s" and "Y\<^sub>2 t\<^sub>0 = s"
-    using ivp_solsD[OF ivp1] ivp_solsD[OF ivp2] by auto
-  show "Y\<^sub>1 \<in> {t\<^sub>0--t} \<rightarrow> S" and "Y\<^sub>2 \<in> {t\<^sub>0--t} \<rightarrow> S"
-    using ivp_solsD[OF obs1] ivp_solsD[OF obs2] by auto
-qed*)
+    apply(rule_tac x=X in exI, rule_tac x=t in exI)
+    using \<open>t \<in> U s\<close> \<open>U s \<subseteq> T\<close> and xivp(2) by force
+  show "D X = (\<lambda>t. f t (X t)) on {t\<^sub>0--t}"
+    by (rule ivp_solsD[OF in_ivp_sols_subset[OF _ _ xivp(1)]], simp_all add: obs0)
+  show "D Y = (\<lambda>t. f t (Y t)) on {t\<^sub>0--t}"
+    by (rule ivp_solsD[OF in_ivp_sols_subset[OF _ _ yivp(1)]], simp_all add: obs0)
+  show "X t\<^sub>0 = s" and "Y t\<^sub>0 = s"
+    using ivp_solsD[OF xivp(1)] ivp_solsD[OF yivp(1)] by auto
+  show "X \<in> {t\<^sub>0--t} \<rightarrow> S" and "Y \<in> {t\<^sub>0--t} \<rightarrow> S"
+    using xivp yivp by auto
+qed
 
 lemma g_orbital_orbit:
   assumes "s \<in> S" and ivl: "is_interval (U s)" and "U s \<subseteq> T"
@@ -457,7 +457,8 @@ lemma g_orbital_orbit:
   shows "g_orbital f G U t\<^sub>0 s = g_orbit G (U s) t\<^sub>0 Y"
 proof(rule set_eqI2)
   have eq1: "\<forall>Z \<in> Sols f (U s) t\<^sub>0 s. \<forall>t\<in>U s. Z t = Y t"
-    by (clarsimp, rule ivp_unique_solution[OF assms(1,2,3) _ _ ivp], auto)
+    apply (clarsimp, rule ivp_unique_solution[of s U, OF assms(1,2,3) _ _ _ ivp], auto)
+    sorry
   have "g_orbital f G U t\<^sub>0 s \<subseteq> g_orbit G (U s) t\<^sub>0 Y"
   proof
     fix x assume "x \<in> g_orbital f G U t\<^sub>0 s"
@@ -551,8 +552,8 @@ lemma ex_ivl_eq:
   shows "ex_ivl s = T"
   using existence_ivl_subset[of s] apply safe
   unfolding existence_ivl_def csols_eq
-  using in_ivp_sols_ivl[OF _ assms] ivp(3) apply auto
-  sorry
+  using in_ivp_sols_ivl[OF _ assms] ivp(3)[OF _ assms] 
+  by (clarsimp, rule_tac x="(\<lambda>t. \<phi> t s)" in exI, rule_tac x=x in exI, auto)
 
 lemma has_derivative_on_open1: 
   assumes  "t > 0" "t \<in> T" "s \<in> S"
@@ -688,28 +689,28 @@ qed
 
 lemma in_ivp_sols: 
   assumes "s \<in> S" and "0 \<in> U s" and "U s \<subseteq> T"
-  shows "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>t. f) U S 0 s"
-  apply(rule in_ivp_sols_subset[OF _ _ ivp_solsI, of _ _ _ "\<lambda>s. T"])
-  using  ivp(2)[OF \<open>s \<in> S\<close>] has_vderiv_on_domain[OF \<open>s \<in> S\<close>] 
-    in_domain[OF \<open>s \<in> S\<close>] assms by auto
+  shows "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>t. f) (U s) 0 s"
+  apply(rule in_ivp_sols_subset[OF assms(2,3) ivp_solsI])
+  using  ivp(2) has_vderiv_on_domain in_domain assms by auto
 
 lemma eq_solution:
   assumes "s \<in> S" and "is_interval (U s)" and "U s \<subseteq> T" and "t \<in> U s"
-    and xivp: "X \<in> Sols (\<lambda>t. f) U S 0 s"
+    and xivp: "X \<in> Sols (\<lambda>t. f) (U s) 0 s" "X \<in> {0--t} \<rightarrow> S"
   shows "X t = \<phi> t s"
-  apply(rule ivp_unique_solution[OF assms], rule in_ivp_sols)
-  by (simp_all add: ivp_solsD(4)[OF xivp] assms)
+  apply(rule ivp_unique_solution[of s U, OF assms], rule in_ivp_sols)
+  using ivp(3)[OF _ assms(1)] assms
+  by (auto simp: ivp_solsD(3)[OF xivp(1)])
 
 lemma ivp_sols_collapse: 
   assumes "T = UNIV" and "s \<in> S"
-  shows "Sols (\<lambda>t. f) (\<lambda>s. T) S 0 s = {(\<lambda>t. \<phi> t s)}"
+  shows "(T \<rightarrow> S) \<inter> (Sols (\<lambda>t. f) T 0 s) = {(\<lambda>t. \<phi> t s)}"
   apply (safe, simp_all add: fun_eq_iff, clarsimp)
-   apply(rule eq_solution[of _ "\<lambda>s. T"]; simp add: assms)
-  by (rule in_ivp_sols; simp add: assms)
+    apply(rule eq_solution[of _ "\<lambda>s. T"]; simp add: assms)
+  using ivp(3)[OF _ assms(2)] in_ivp_sols assms by auto (meson UNIV_I)
 
 lemma additive_in_ivp_sols:
   assumes "s \<in> S" and "\<P> (\<lambda>\<tau>. \<tau> + t) T \<subseteq> T"
-  shows "(\<lambda>\<tau>. \<phi> (\<tau> + t) s) \<in> Sols (\<lambda>t. f) (\<lambda>s. T) S 0 (\<phi> (0 + t) s)"
+  shows "(\<lambda>\<tau>. \<phi> (\<tau> + t) s) \<in> Sols (\<lambda>t. f) T 0 (\<phi> (0 + t) s)"
   apply(rule ivp_solsI[OF vderiv_on_composeI])
        apply(rule has_vderiv_on_subset[OF has_vderiv_on_domain])
   using in_domain assms init_time by (auto intro!: poly_derivatives)
@@ -725,12 +726,13 @@ proof-
   also have "\<phi> (0 + t\<^sub>2) s \<in> S"
     using in_domain assms by auto
   ultimately show "\<phi> (t\<^sub>1 + t\<^sub>2) s = \<phi> t\<^sub>1 (\<phi> t\<^sub>2 s)"
-    using eq_solution[OF _ _ _ _ additive_in_ivp_sols] assms by auto
+    using eq_solution[OF \<open>\<phi> (0 + t\<^sub>2) s \<in> S\<close> _ subset_refl _ additive_in_ivp_sols, unfolded assms(2)] 
+      is_interval_univ UNIV_I assms by (metis PiE Pi_I' in_domain subset_UNIV)
 qed
 
 lemma g_orbital_collapses: 
   assumes "s \<in> S" and "is_interval (U s)" and "U s \<subseteq> T" and "0 \<in> U s"
-  shows "g_orbital (\<lambda>t. f) G U S 0 s = {\<phi> t s| t. t \<in> U s \<and> (\<forall>\<tau>\<in>down (U s) t. G (\<phi> \<tau> s))}"
+  shows "g_orbital (\<lambda>t. f) G U 0 s = {\<phi> t s| t. t \<in> U s \<and> (\<forall>\<tau>\<in>down (U s) t. G (\<phi> \<tau> s))}"
   apply (subst g_orbital_orbit[of _ _ "\<lambda>t. \<phi> t s"], simp_all add: assms g_orbit_eq)
   by (rule in_ivp_sols, simp_all add: assms)
 
