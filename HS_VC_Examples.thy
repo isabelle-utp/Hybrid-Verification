@@ -282,7 +282,7 @@ lemma thermostat:
   (\<lambda>s. Tmin \<le> s$1 \<and> s$1 \<le> Tmax)"
   apply(rule fbox_loopI, simp_all add: fbox_temp_dyn[OF assms(1)] le_fun_def)
   using temp_dyn_up_real_arith[OF assms(1) _ _ assms(3), of Tmin]
-    and temp_dyn_down_real_arith[OF assms(1,2), of _ Tmax] sorry
+    and temp_dyn_down_real_arith[OF assms(1,2), of _ Tmax] by rule
 
 no_notation temp_vec_field ("f")
         and temp_flow ("\<phi>")
@@ -347,7 +347,9 @@ lemma tank_flow:
   I hmin hmax"
   apply(rule fbox_loopI, simp_all add: le_fun_def)
   apply(clarsimp simp: le_fun_def local_flow.fbox_g_ode_subset[OF local_flow_tank])
-  using assms tank_arith[OF _ assms] by auto
+  using assms tank_arith[OF _ assms]
+
+  by auto
 
 no_notation tank_vec_field ("f")
         and tank_flow ("\<phi>")
