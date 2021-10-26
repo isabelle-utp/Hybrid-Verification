@@ -11,7 +11,7 @@ introduce three methods for verifying correctness specifications of the continuo
 dynamics of a HS. \<close>
 
 theory HS_VC_Spartan
-  imports HS_ODEs
+  imports (*HS_ODEs*) Dynamical_Systems
                         
 begin
 
@@ -190,19 +190,26 @@ subsection \<open> Verification of hybrid programs \<close>
 
 text \<open> Verification by providing evolution \<close>
 
-definition g_evol :: "(('a::ord) \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'b pred \<Rightarrow> ('b \<Rightarrow> 'a set) \<Rightarrow> ('b \<Rightarrow> 'b set)" ("EVOL")
-  where "EVOL \<phi> G U = (\<lambda>s. g_orbit (\<lambda>t. \<phi> t s) G (U s))"
+definition g_evol :: "(('a::real_vector) \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'b pred \<Rightarrow> ('b \<Rightarrow> 'a set) \<Rightarrow> ('b \<Rightarrow> 'b set)" ("EVOL")
+  where "EVOL \<phi> G U = (\<lambda>s. g_orbit G (U s) 0 (\<lambda>t. \<phi> t s))"
 
 lemma fbox_g_evol[simp]: 
-  fixes \<phi> :: "('a::preorder) \<Rightarrow> 'b \<Rightarrow> 'b"
-  shows "|EVOL \<phi> G U] Q = (\<lambda>s. (\<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
-  unfolding g_evol_def g_orbit_eq fbox_def by auto
+  fixes \<phi> :: "('a::real_vector) \<Rightarrow> 'b \<Rightarrow> 'b"
+  shows "|EVOL \<phi> G U] Q = (\<lambda>s. (\<forall>t\<in>U s. (\<forall>\<tau>\<in>{0--t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
+  unfolding g_evol_def g_orbit_def fbox_def by auto
 
 text \<open> Verification by providing solutions \<close>
 
-lemma fbox_g_orbital: "|x\<acute>=f & G on U S @ t\<^sub>0] Q = 
-  (\<lambda>s. \<forall>X\<in>Sols f U S t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
+lemma fbox_g_orbital: "|g_orbital f G U S t\<^sub>0] Q = 
+  (\<lambda>s. \<forall>t. \<forall>X\<in>Sols f {t\<^sub>0--t} S t\<^sub>0 s. {t\<^sub>0--t} \<subseteq> U s \<longrightarrow> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> Q (X t))"
   unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
+
+lemma fbox_g_orbital_ivl: "\<forall>s. is_interval (U s) \<and> t\<^sub>0 \<in> U s \<Longrightarrow> |g_orbital f G U S t\<^sub>0] Q = 
+  (\<lambda>s. \<forall>t\<in>U s. \<forall>X\<in>Sols f {t\<^sub>0--t} S t\<^sub>0 s. (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> Q (X t))"
+  unfolding fbox_g_orbital apply(clarsimp simp: fun_eq_iff)
+  using closed_segment_subset_interval
+  by (smt (verit, best) ends_in_segment(2) ivp_solsD(2) subset_iff)
+
 
 context local_flow
 begin
@@ -210,18 +217,18 @@ begin
 lemma fbox_g_ode_subset:
   assumes "\<And>s. s \<in> S \<Longrightarrow> 0 \<in> U s \<and> is_interval (U s) \<and> U s \<subseteq> T"
   shows "|x\<acute>= (\<lambda>t. f) & G on U S @ 0] Q = 
-  (\<lambda> s. s \<in> S \<longrightarrow> (\<forall>t\<in>(U s). (\<forall>\<tau>\<in>down (U s) t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
+  (\<lambda> s. s \<in> S \<longrightarrow> (\<forall>t\<in>(U s). (\<forall>\<tau>\<in>{0--t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
   apply(unfold fbox_g_orbital fun_eq_iff)
   apply(clarify, rule iffI; clarify)
-   apply(force simp: in_ivp_sols assms)
+  apply (metis assms closed_segment_subset_interval in_ivp_sols_ivl subset_iff)
   apply(frule ivp_solsD(2), frule ivp_solsD(3), frule ivp_solsD(4))
-  apply(subgoal_tac "\<forall>\<tau>\<in>down (U x) t. X \<tau> = \<phi> \<tau> x")
-   apply(clarsimp, fastforce, rule ballI)
+  apply(subgoal_tac "\<forall>\<tau>\<in>{0--t}. X \<tau> = \<phi> \<tau> x"; clarsimp)
+  apply (metis Pi_iff ends_in_segment(2) ivp_solsD(3) subset_eq)
   apply(rule ivp_unique_solution[OF _ _ _ _ _ in_ivp_sols])
-  using assms by auto
+  using assms by auto blast+
                          
 lemma fbox_g_ode: "|x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. T) S @ 0] Q = 
-  (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>T. (\<forall>\<tau>\<in>down T t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
+  (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>T. (\<forall>\<tau>\<in>{0--t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
   by (subst fbox_g_ode_subset, simp_all add: init_time interval_time)
 
 lemma fbox_g_ode_ivl: "t \<ge> 0 \<Longrightarrow> t \<in> T \<Longrightarrow> |x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. {0..t}) S @ 0] Q = 
@@ -255,20 +262,20 @@ lemma fbox_g_orbital_inv:
   by (rule fbox_iso[OF assms(3)])
 
 lemma fbox_diff_inv[simp]: 
-  "(I \<le> |x\<acute>=f & G on U S @ t\<^sub>0] I) = diff_invariant I f U S t\<^sub>0 G"
-  by (auto simp: diff_invariant_def ivp_sols_def fbox_def g_orbital_eq)
+  "(I \<le> |x\<acute>=f & G on U S @ t\<^sub>0] I) = diff_inv I f U S t\<^sub>0 G"
+  by (auto simp: diff_inv_def ivp_sols_def fbox_def g_orbital_eq)
 
 lemma diff_inv_guard_ignore:
   assumes "I \<le> |x\<acute>= f & (\<lambda>s. True) on U S @ t\<^sub>0] I"
   shows "I \<le> |x\<acute>= f & G on U S @ t\<^sub>0] I"
-  using assms unfolding fbox_diff_inv diff_invariant_eq image_le_pred by auto
+  using assms unfolding fbox_diff_inv diff_inv_eq image_le_pred by auto
 
 context local_flow
 begin
 
 lemma fbox_diff_inv_eq: 
   assumes "\<And>s. s \<in> S \<Longrightarrow> 0 \<in> U s \<and> is_interval (U s) \<and> U s \<subseteq> T"
-  shows "diff_invariant I (\<lambda>t. f) U S 0 (\<lambda>s. True) = 
+  shows "diff_inv I (\<lambda>t. f) U S 0 (\<lambda>s. True) = 
   ((\<lambda>s. s \<in> S \<longrightarrow> I s) = |x\<acute>= (\<lambda>t. f) & (\<lambda>s. True) on U S @ 0] (\<lambda>s. s \<in> S \<longrightarrow> I s))"
   unfolding fbox_diff_inv[symmetric] 
   apply(subst fbox_g_ode_subset[OF assms], simp)+
@@ -279,7 +286,7 @@ lemma fbox_diff_inv_eq:
   using in_domain ivp(2) assms by force+
 
 lemma diff_inv_eq_inv_set: 
-  "diff_invariant I (\<lambda>t. f) (\<lambda>s. T) S 0 (\<lambda>s. True) = (\<forall>s. I s \<longrightarrow> \<gamma>\<^sup>\<phi> s \<subseteq> {s. I s})"
+  "diff_inv I (\<lambda>t. f) (\<lambda>s. T) S 0 (\<lambda>s. True) = (\<forall>s. I s \<longrightarrow> \<gamma>\<^sup>\<phi> s \<subseteq> {s. I s})"
   unfolding diff_inv_eq_inv_set orbit_def by simp
 
 end
@@ -308,19 +315,23 @@ lemma diff_solve_axiom1:
   assumes "local_flow f UNIV UNIV \<phi>"
   shows "|x\<acute>= f & G] Q = 
   (\<lambda>s. \<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s))"
-  by (subst local_flow.fbox_g_ode_subset[OF assms], auto)
+  by (subst local_flow.fbox_g_ode_subset[OF assms])
+    (auto simp: closed_segment_eq_real_ivl)
 
 lemma diff_solve_axiom2: 
   fixes c::"'a::{heine_borel, banach}"
   shows "|x\<acute>=(\<lambda>s. c) & G] Q = 
   (\<lambda>s. \<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (s + \<tau> *\<^sub>R c)) \<longrightarrow> Q (s + t *\<^sub>R c))"
-  by (subst local_flow.fbox_g_ode_subset[OF line_is_local_flow, of UNIV], auto)
+  by (subst local_flow.fbox_g_ode_subset[OF line_is_local_flow, of UNIV])
+    (auto simp: closed_segment_eq_real_ivl)
 
 lemma diff_solve_rule:
   assumes "local_flow f UNIV UNIV \<phi>"
     and "\<forall>s. P s \<longrightarrow> (\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s))"
   shows "P \<le> |x\<acute>= f & G] Q"
-  using assms by(subst local_flow.fbox_g_ode_subset[OF assms(1)]) auto
+  using assms 
+  by(subst local_flow.fbox_g_ode_subset[OF assms(1)])
+    (auto simp: closed_segment_eq_real_ivl)
 
 lemma diff_weak_axiom1: "( |x\<acute>= f & G on U S @ t\<^sub>0] G) s"
   unfolding fbox_def g_orbital_eq by auto
@@ -333,10 +344,10 @@ lemma diff_weak_rule: "G \<le> Q \<Longrightarrow> P \<le> |x\<acute>= f & G on 
 
 lemma fbox_g_orbital_eq_univD:
   assumes "|x\<acute>= f & G on U S @ t\<^sub>0] C = (\<lambda>s. True)" 
-    and "\<forall>\<tau>\<in>(down (U s) t). x \<tau> \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
-  shows "\<forall>\<tau>\<in>(down (U s) t). C (x \<tau>)"
+    and "\<forall>\<tau>\<in>{0--t}. x \<tau> \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
+  shows "\<forall>\<tau>\<in>{0--t}. C (x \<tau>)"
 proof
-  fix \<tau> assume "\<tau> \<in> (down (U s) t)"
+  fix \<tau> assume "\<tau> \<in> {0--t}"
   hence "x \<tau> \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s" 
     using assms(2) by blast
   also have "\<forall>s'. s' \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s \<longrightarrow> C s'"
@@ -351,19 +362,20 @@ lemma diff_cut_axiom:
 proof(rule_tac f="\<lambda> x. |x] Q" in HOL.arg_cong, rule ext, rule subset_antisym)
   fix s 
   {fix s' assume "s' \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
-    then obtain \<tau>::real and X where x_ivp: "X \<in> Sols f U S t\<^sub>0 s" 
-      and "X \<tau> = s'" and "\<tau> \<in> U s" and guard_x:"\<P> X (down (U s) \<tau>) \<subseteq> {s. G s}"
-      using g_orbitalD[of s' "f" G U S t\<^sub>0 s]  by blast
-    have "\<forall>t\<in>(down (U s) \<tau>). \<P> X (down (U s) t) \<subseteq> {s. G s}"
+    then obtain \<tau>::real and X where x_ivp: "X \<in> Sols f {t\<^sub>0--\<tau>} S t\<^sub>0 s" 
+      and "X \<tau> = s'" and "{t\<^sub>0--\<tau>} \<subseteq> U s" and guard_x:"\<P> X {t\<^sub>0--\<tau>} \<subseteq> {s. G s}"
+      using g_orbitalD[of s' "f" G U S t\<^sub>0 s] by blast
+    have "\<forall>t\<in>{t\<^sub>0--\<tau>}. \<P> X {t\<^sub>0--\<tau>} \<subseteq> {s. G s}"
       using guard_x by (force simp: image_def)
-    also have "\<forall>t\<in>(down (U s) \<tau>). t \<in> U s"
-      using \<open>\<tau> \<in> U s\<close> closed_segment_subset_interval by auto
-    ultimately have "\<forall>t\<in>(down (U s) \<tau>). X t \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
-      using g_orbitalI[OF x_ivp] by (metis (mono_tags, lifting))
-    hence "\<forall>t\<in>(down (U s) \<tau>). C (X t)" 
+    also have "\<forall>t\<in>{t\<^sub>0--\<tau>}. {t\<^sub>0--t} \<subseteq> U s"
+      using \<open>{t\<^sub>0--\<tau>} \<subseteq> U s\<close> closed_segment_closed_segment_subset by blast 
+    ultimately have "\<forall>t\<in>{t\<^sub>0--\<tau>}. X t \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
+      by (meson closed_segment_subset_interval dual_order.trans ends_in_segment(1) 
+          g_orbitalI image_mono in_ivp_sols_subset is_interval_closed_segment_1 x_ivp) 
+    hence "\<forall>t\<in>{t\<^sub>0--\<tau>}. C (X t)" 
       using assms unfolding fbox_def by meson
     hence "s' \<in> (x\<acute>= f & (\<lambda>s. G s \<and> C s) on U S @ t\<^sub>0) s"
-      using g_orbitalI[OF x_ivp \<open>\<tau> \<in> U s\<close>] guard_x \<open>X \<tau> = s'\<close> by fastforce}
+      using g_orbitalI[OF x_ivp] \<open>{t\<^sub>0--\<tau>} \<subseteq> U s\<close> guard_x \<open>X \<tau> = s'\<close> by fastforce}
   thus "(x\<acute>= f & G on U S @ t\<^sub>0) s \<subseteq> (x\<acute>= f & (\<lambda>s. G s \<and> C s) on U S @ t\<^sub>0) s"
     by blast
 next show "\<And>s. (x\<acute>= f & (\<lambda>s. G s \<and> C s) on U S @ t\<^sub>0) s \<subseteq> (x\<acute>= f & G on U S @ t\<^sub>0) s" 
@@ -375,29 +387,39 @@ lemma diff_cut_rule:
     and fbox_Q: "P \<le> |x\<acute>= f & (\<lambda>s. G s \<and> C s) on U S @ t\<^sub>0] Q"
   shows "P \<le> |x\<acute>= f & G on U S @ t\<^sub>0] Q"
 proof(subst fbox_def, subst g_orbital_eq, clarsimp)
-  fix t::real and X::"real \<Rightarrow> 'a" and s assume "P s" and "t \<in> U s"
-    and x_ivp:"X \<in> Sols f U S t\<^sub>0 s" 
-    and guard_x:"\<forall>\<tau>. \<tau> \<in> U s \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
-  have "\<forall>\<tau>\<in>(down (U s) t). X \<tau> \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
-    using g_orbitalI[OF x_ivp] guard_x unfolding image_le_pred by auto
-  hence "\<forall>\<tau>\<in>(down (U s) t). C (X \<tau>)" 
+  fix t::real and X::"real \<Rightarrow> 'a" and s 
+  assume "P s" and "{t\<^sub>0--t} \<subseteq> U s"
+    and x_ivp:"X \<in> Sols f {t\<^sub>0--t} S t\<^sub>0 s" 
+    and guard_x:"\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)"
+  have "\<forall>\<tau>\<in>{t\<^sub>0--t}. X \<tau> \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
+    using \<open>{t\<^sub>0--t} \<subseteq> U s\<close> guard_x 
+    by (smt (verit, best) closed_segment_half_open_segment_subsetI in_mono x_ivp
+        dual_order.trans ends_in_segment(1) g_orbitalI image_le_pred in_ivp_sols_subset
+        half_open_segment_closed_segmentI half_open_segment_subset(1)) 
+  hence "\<forall>\<tau>\<in>{t\<^sub>0--t}. C (X \<tau>)" 
     using fbox_C \<open>P s\<close> by (subst (asm) fbox_def, auto)
   hence "X t \<in> (x\<acute>= f & (\<lambda>s. G s \<and> C s) on U S @ t\<^sub>0) s"
-    using guard_x \<open>t \<in> U s\<close> by (auto intro!: g_orbitalI x_ivp)
+    using guard_x \<open>{t\<^sub>0--t} \<subseteq> U s\<close> by (auto intro!: g_orbitalI x_ivp)
   thus "Q (X t)"
     using \<open>P s\<close> fbox_Q by (subst (asm) fbox_def) auto
 qed
 
 lemma diff_inv_axiom1:
-  assumes "G s \<longrightarrow> I s" and "diff_invariant I (\<lambda>t. f) (\<lambda>s. {t. t \<ge> 0}) UNIV 0 G"
+  assumes "G s \<longrightarrow> I s" and "diff_inv I (\<lambda>t. f) (\<lambda>s. {t. t \<ge> 0}) UNIV 0 G"
   shows "( |x\<acute>= f & G] I) s"
-  using assms unfolding fbox_g_orbital diff_invariant_eq apply clarsimp
+  using assms unfolding fbox_g_orbital diff_inv_eq apply clarsimp
   by (erule_tac x=s in allE, frule ivp_solsD(2), clarsimp)
+
+lemma diff_inv_rule:
+  assumes "P \<le> I" and "diff_inv I f U S t\<^sub>0 G" and "I \<le> Q"
+  shows "P \<le> |x\<acute>= f & G on U S @ t\<^sub>0] Q"
+  apply(rule fbox_g_orbital_inv[OF assms(1) _ assms(3)])
+  unfolding fbox_diff_inv using assms(2) .
 
 lemma diff_inv_axiom2:
   assumes "picard_lindeloef (\<lambda>t. f) UNIV UNIV 0"
     and "\<And>s. {t::real. t \<ge> 0} \<subseteq> picard_lindeloef.ex_ivl (\<lambda>t. f) UNIV UNIV 0 s"
-    and "diff_invariant I (\<lambda>t. f) (\<lambda>s. {t::real. t \<ge> 0}) UNIV 0 G"
+    and "diff_inv I (\<lambda>t. f) (\<lambda>s. {t::real. t \<ge> 0}) UNIV 0 G"
   shows "|x\<acute>= f & G] I = |(\<lambda>s. {x. s = x \<and> G s})] I"
 proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
   fix s
@@ -411,7 +433,7 @@ proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
   hence shyp: "X 0 = s"
     using ivp_solsD by auto
   have dinv: "\<forall>s. I s \<longrightarrow> ?lhs s"
-    using assms(3) unfolding diff_invariant_eq by auto
+    using assms(3) unfolding diff_inv_eq by auto
   {assume "?lhs s" and "G s"
     hence "I s"
       by (erule_tac x=X in ballE, erule_tac x=0 in allE, auto simp: shyp xivp2)}
@@ -426,11 +448,5 @@ proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
   ultimately show "?lhs s = (G s \<longrightarrow> I s)"
     by blast
 qed
-
-lemma diff_inv_rule:
-  assumes "P \<le> I" and "diff_invariant I f U S t\<^sub>0 G" and "I \<le> Q"
-  shows "P \<le> |x\<acute>= f & G on U S @ t\<^sub>0] Q"
-  apply(rule fbox_g_orbital_inv[OF assms(1) _ assms(3)])
-  unfolding fbox_diff_inv using assms(2) .
 
 end

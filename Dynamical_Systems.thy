@@ -765,48 +765,4 @@ lemma line_is_local_flow:
   by simp_all
 
 
-subsection \<open> Verification components \<close>
-
-type_synonym 'a pred = "'a \<Rightarrow> bool"
-type_synonym 's prog = "'s \<Rightarrow> 's set"
-
-definition fbox :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred" ("|_] _" [61,81] 82)
-  where "|F] P = (\<lambda>s. (\<forall>s'. s' \<in> F s \<longrightarrow> P s'))"
-
-lemma fbox_iso: "P \<le> Q \<Longrightarrow> |F] P \<le> |F] Q"
-  unfolding fbox_def by auto
-
-lemma fbox_anti: "\<forall>s. F\<^sub>1 s \<subseteq> F\<^sub>2 s \<Longrightarrow> |F\<^sub>2] P \<le> |F\<^sub>1] P"
-  unfolding fbox_def by auto
-
-lemma fbox_invariants: 
-  assumes "I \<le> |F] I" and "J \<le> |F] J"
-  shows "(\<lambda>s. I s \<and> J s) \<le> |F] (\<lambda>s. I s \<and> J s)"
-    and "(\<lambda>s. I s \<or> J s) \<le> |F] (\<lambda>s. I s \<or> J s)"
-  using assms unfolding fbox_def by auto
-
-subsection \<open> Verification of hybrid programs \<close>
-
-text \<open> Verification by providing evolution \<close>
-
-definition g_evol :: "(('a::real_vector) \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'b pred \<Rightarrow> ('b \<Rightarrow> 'a set) \<Rightarrow> ('b \<Rightarrow> 'b set)" ("EVOL")
-  where "EVOL \<phi> G U = (\<lambda>s. g_orbit G (U s) 0 (\<lambda>t. \<phi> t s))"
-
-lemma fbox_g_evol[simp]: 
-  fixes \<phi> :: "('a::real_vector) \<Rightarrow> 'b \<Rightarrow> 'b"
-  shows "|EVOL \<phi> G U] Q = (\<lambda>s. (\<forall>t\<in>U s. (\<forall>\<tau>\<in>{0--t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
-  unfolding g_evol_def g_orbit_def fbox_def by auto
-
-text \<open> Verification by providing solutions \<close>
-
-lemma fbox_g_orbital: "|g_orbital f G U S t\<^sub>0] Q = 
-  (\<lambda>s. \<forall>t. \<forall>X\<in>Sols f {t\<^sub>0--t} S t\<^sub>0 s. {t\<^sub>0--t} \<subseteq> U s \<longrightarrow> (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> Q (X t))"
-  unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
-
-lemma fbox_g_orbital_ivl: "\<forall>s. is_interval (U s) \<and> t\<^sub>0 \<in> U s \<Longrightarrow> |g_orbital f G U S t\<^sub>0] Q = 
-  (\<lambda>s. \<forall>t\<in>U s. \<forall>X\<in>Sols f {t\<^sub>0--t} S t\<^sub>0 s. (\<forall>\<tau>\<in>{t\<^sub>0--t}. G (X \<tau>)) \<longrightarrow> Q (X t))"
-  unfolding fbox_g_orbital apply(clarsimp simp: fun_eq_iff)
-  using closed_segment_subset_interval
-  by (smt (verit, best) ends_in_segment(2) ivp_solsD(2) subset_iff)
-
 end
