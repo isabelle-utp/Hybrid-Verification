@@ -450,13 +450,10 @@ named_theorems local_flow
 dataspace water_tank = 
   constants H\<^sub>l::real H\<^sub>u::real c\<^sub>o::real c\<^sub>i::real
   assumes co: "0 < c\<^sub>o" and ci: "c\<^sub>o < c\<^sub>i"
-  variables flw::"bool" h::"real" h\<^sub>m::"real" t::"real"
+  variables pmp::"bool" h::"real" h\<^sub>m::"real" t::"real"
 
 context water_tank
 begin
-
-abbreviation tank_ode :: "real \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'st \<Rightarrow> 'st set"
-  where "tank_ode h\<^sub>x k s \<equiv> {h` = k, t` = 1 | t \<le> (h\<^sub>x - h\<^sub>m)/k}"
 
 abbreviation (input) tank_vec_field :: "real \<Rightarrow> 'st \<Rightarrow> 'st" ("f")
   where "tank_vec_field k \<equiv> [h \<leadsto> k, t \<leadsto> 1]"
@@ -467,32 +464,57 @@ abbreviation (input) tank_flow :: "real \<Rightarrow> real \<Rightarrow> 'st \<R
 lemma lflow_tank [local_flow]: "local_flow_on (f k) (h+\<^sub>Lt) UNIV UNIV (\<phi> k)"
   by (local_flow_auto)
 
-lemma lf: "local_flow_on [h \<leadsto> k, t \<leadsto> 1] (h+\<^sub>Lt) UNIV UNIV (\<lambda>\<tau>. [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t])"
-  by local_flow_auto
-
 abbreviation "ctrl \<equiv> (t, h\<^sub>m) ::= (0, h);
-     IF \<not>flw \<and> h\<^sub>m \<le> H\<^sub>l + 1 THEN flw ::= True ELSE 
-     IF flw \<and> h\<^sub>m \<ge> H\<^sub>u - 1 THEN flw ::= False ELSE skip"
+     IF \<not> pmp \<and> h\<^sub>m \<le> H\<^sub>l + 1 THEN pmp ::= True ELSE 
+     IF pmp \<and> h\<^sub>m \<ge> H\<^sub>u - 1 THEN pmp ::= False ELSE skip"
 
-abbreviation "dyn \<equiv> IF flw THEN {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/(c\<^sub>i - c\<^sub>o)} 
+abbreviation "dyn \<equiv> IF pmp THEN {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/(c\<^sub>i - c\<^sub>o)} 
      ELSE {h` = - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>l - h\<^sub>m)/(- c\<^sub>o)}"
 
-abbreviation "dyn' \<equiv> {h` = (flw*c\<^sub>i) - c\<^sub>o, t` = 1 | t \<le> ((flw*H\<^sub>u + (\<not>flw)*H\<^sub>l) - h\<^sub>m)/((flw*c\<^sub>i) - c\<^sub>o)}"
-
-lemma nm: "dyn nmods {flw, h\<^sub>m}" by (simp add: closure)
-
-lemma "\<^bold>{flw = F\<^bold>}dyn\<^bold>{flw = F\<^bold>}" by (rule nmods_invariant[OF nm], unrest)
-
-lemma 
+lemma tank_correct1:
   "\<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 
     LOOP ctrl ; dyn INV (H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
    \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
   using tank_arith[OF _ co ci]
   by (hoare_wp_auto local_flow: lflow_tank)
 
-lemma "\<^bold>{flw \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+lemma tank_correct2:
+  "\<^bold>{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+    LOOP (ctrl; dyn)
+    INV (0 \<le> t \<and> h = ((pmp * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
+   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+  using ci co by dProve
+
+lemma tank_correct:
+  "\<^bold>{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+    LOOP (
+      (t, h\<^sub>m) ::= (0, h);
+      IF \<not> pmp \<and> h\<^sub>m \<le> H\<^sub>l + 1 THEN pmp ::= True ELSE 
+      IF   pmp \<and> h\<^sub>m \<ge> H\<^sub>u - 1 THEN pmp ::= False ELSE skip;
+      IF pmp THEN 
+        {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/(c\<^sub>i - c\<^sub>o)} 
+      ELSE 
+        {h` = - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>l - h\<^sub>m)/(- c\<^sub>o)}
+      )
+      INV (0 \<le> t \<and> h = ((pmp * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
+   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+  using ci co by dProve
+
+abbreviation tank_ode :: "real \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'st \<Rightarrow> 'st set"
+  where "tank_ode h\<^sub>x k s \<equiv> {h` = k, t` = 1 | t \<le> (h\<^sub>x - h\<^sub>m)/k}"
+
+lemma lf: "local_flow_on [h \<leadsto> k, t \<leadsto> 1] (h+\<^sub>Lt) UNIV UNIV (\<lambda>\<tau>. [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t])"
+  by local_flow_auto
+
+lemma nm: "dyn nmods {pmp, h\<^sub>m}" by (simp add: closure)
+
+lemma "\<^bold>{flw = F\<^bold>}dyn\<^bold>{flw = F\<^bold>}" by (rule nmods_invariant[OF nm], unrest)
+
+abbreviation "dyn' \<equiv> {h` = (pmp*c\<^sub>i) - c\<^sub>o, t` = 1 | t \<le> ((pmp*H\<^sub>u + (\<not>pmp)*H\<^sub>l) - h\<^sub>m)/((pmp*c\<^sub>i) - c\<^sub>o)}"
+
+lemma "\<^bold>{pmp \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
          dyn'
-       \<^bold>{flw \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+       \<^bold>{pmp \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
   using ci by (dInduct_mega')
 
 lemma "\<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
@@ -500,11 +522,10 @@ lemma "\<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and
        \<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
   using ci by dInduct_mega
 
-lemma tank_correct:
-  "\<^bold>{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
-        LOOP ctrl ; dyn INV (0 \<le> t \<and> h = ((flw * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
-       \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
-  using ci co by dProve
+term "(h = ((pmp * c\<^sub>i) - c\<^sub>o)*t)\<^sub>e"
+term "(e[expr/t])\<^sub>e"
+term "(a \<sharp> b)\<^sub>e"
+term "a \<sharp> b"
 
 end
 
