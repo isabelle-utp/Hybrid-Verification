@@ -455,13 +455,13 @@ dataspace water_tank =
 context water_tank
 begin
 
-abbreviation (input) tank_vec_field :: "real \<Rightarrow> 'st \<Rightarrow> 'st" ("f")
+abbreviation tank_vec_field :: "real \<Rightarrow> 'st \<Rightarrow> 'st" ("f")
   where "tank_vec_field k \<equiv> [h \<leadsto> k, t \<leadsto> 1]"
 
-abbreviation (input) tank_flow :: "real \<Rightarrow> real \<Rightarrow> 'st \<Rightarrow> 'st" ("\<phi>")
+abbreviation tank_flow :: "real \<Rightarrow> real \<Rightarrow> 'st \<Rightarrow> 'st" ("\<phi>")
   where "tank_flow k \<tau> \<equiv> [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t]"
 
-lemma lflow_tank [local_flow]: "local_flow_on (f k) (h+\<^sub>Lt) UNIV UNIV (\<phi> k)"
+lemma lflow_tank : "local_flow_on (f k) (h+\<^sub>Lt) UNIV UNIV (\<phi> k)"
   by (local_flow_auto)
 
 abbreviation "ctrl \<equiv> (t, h\<^sub>m) ::= (0, h);
@@ -528,6 +528,23 @@ term "(a \<sharp> b)\<^sub>e"
 term "a \<sharp> b"
 
 end
+
+full_exprs
+(*pretty_exprs*)
+
+locale mini_lenses =
+  fixes y :: "real \<Longrightarrow> real^4"
+    and v :: "real \<Longrightarrow> real^4"
+  assumes y_def [simp]: "y \<equiv> vec_lens 1"
+    and v_def [simp]: "v \<equiv> vec_lens 2"
+begin
+
+term "(0 \<le> y \<and> v\<^sup>2 \<le> 2 * g * (H - y))\<^sub>e"
+
+end
+
+
+
 
 locale example_9b = 
   fixes Kp::real 

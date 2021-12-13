@@ -398,7 +398,7 @@ qed
 
 lemma picard_lindeloef_first_order_linear: "t\<^sub>0 \<in> T \<Longrightarrow> open T \<Longrightarrow> is_interval T \<Longrightarrow> 
   continuous_on T c \<Longrightarrow> picard_lindeloef (\<lambda>t x::real. c t * x) T UNIV t\<^sub>0"
-  apply(unfold_locales; clarsimp?)
+  apply(unfold_locales; clarsimp?) (* do we need dependent types? *)
    apply(intro continuous_intros, assumption)
   by (rule local_lipschitz_first_order_linear)
 
@@ -411,7 +411,46 @@ proof-
      (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
-    let "?c" = "(\<lambda>t.  X t$1 + X t$2)"
+    let "?c" = "(\<lambda>t. X t$1 + X t$2)"
+    assume init: "?c 0 = 0"
+      and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. A * (X t$1)\<^sup>2 + B * X t$1) on {0--t}"
+      and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. A * X t$2 * X t$1 + B * X t$2) on {0--t}"
+    hence "D ?c = (\<lambda>t. ?c t * (A * (X t$1) + B)) on {0--t}"
+      by (auto intro!: poly_derivatives simp: field_simps)
+    hence Dc: "D ?c = (\<lambda>t. (A * X t$1 + B) * (X t$1 + X t$2)) on {0--t}"
+      by (simp add: mult.commute)
+    moreover have "continuous_on {0--t} (\<lambda>t. A * (X t$1) + B)"
+      apply(rule vderiv_on_continuous_on)
+      using D1 by (auto intro!: poly_derivatives simp: field_simps)
+    moreover have Dz: "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B) * 0) on {0--t}"
+      by (auto simp: init intro!: poly_derivatives)
+    moreover note picard_lindeloef.unique_solution_closed_ivl[
+        where X="?c" and Y="\<lambda>s. 0" and t\<^sub>0=0 and t=t and S=UNIV, OF _ _ init, simplified, 
+        OF picard_lindeloef_first_order_linear[OF UNIV_I, simplified],
+        OF _ Dc _ Dz]
+    (*moreover note picard_lindeloef.ivp_unique_solution[OF 
+      picard_lindeloef_first_order_linear[OF UNIV_I open_UNIV is_interval_univ calculation(2)] 
+      UNIV_I is_interval_closed_segment_1 subset_UNIV _ 
+      ivp_solsI[of ?c]
+      ivp_solsI[of "\<lambda>t. 0"], of t "\<lambda>s. 0" 0 "\<lambda>s. t" 0]*)
+    ultimately show "X t$1 + X t$2 = 0"
+      using init by auto
+  qed
+  show ?thesis
+    apply(subgoal_tac "(\<lambda>s. 0 = - s$1 - s$2) = (\<lambda>s. s$1 + s$2 = 0)", erule ssubst)
+    using key by auto
+qed
+
+(* x+z=0 -> [{x'=(A*x^2+B()*x), z' = A*z*x+B()*z}] 0=-x-z *)
+lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le> 
+  |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
+  (\<lambda>s. 0 = - s$1 - s$2)"
+proof-
+  have key: "diff_inv (\<lambda>s. s$1 + s$2 = 0)
+     (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
+  proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
+    fix X::"real\<Rightarrow>real^2" and t::real
+    let "?c" = "(\<lambda>t. X t$1 + X t$2)"
     assume init: "?c 0 = 0"
       and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. A * (X t$1)\<^sup>2 + B * X t$1) on UNIV"
       and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. A * X t$2 * X t$1 + B * X t$2) on UNIV"

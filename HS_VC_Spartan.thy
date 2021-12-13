@@ -420,30 +420,33 @@ lemma diff_inv_axiom2:
   assumes "picard_lindeloef (\<lambda>t. f) UNIV UNIV 0"
     and "\<And>s. {t::real. t \<ge> 0} \<subseteq> picard_lindeloef.ex_ivl (\<lambda>t. f) UNIV UNIV 0 s"
     and "diff_inv I (\<lambda>t. f) (\<lambda>s. {t::real. t \<ge> 0}) UNIV 0 G"
-  shows "|x\<acute>= f & G] I = |(\<lambda>s. {x. s = x \<and> G s})] I"
-proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
+  shows "|x\<acute>= f & G] I = |\<questiondown>G?] I"
+proof(simp, subst fbox_g_orbital_ivl; clarsimp simp: fun_eq_iff)
   fix s
   let "?ex_ivl s" = "picard_lindeloef.ex_ivl (\<lambda>t. f) UNIV UNIV 0 s"
-  let "?lhs s" = 
-    "\<forall>X\<in>Sols (\<lambda>t. f) (\<lambda>s. {t. t \<ge> 0}) UNIV 0 s. \<forall>t\<ge>0. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)) \<longrightarrow> I (X t)"
-  obtain X where xivp1: "X \<in> Sols (\<lambda>t. f) (\<lambda>s. ?ex_ivl s) UNIV 0 s"
+  let "?lhs s" = "\<forall>t\<ge>0. \<forall>X\<in>Sols (\<lambda>t. f) {0--t} UNIV 0 s. (\<forall>\<tau>\<in>{0--t}. G (X \<tau>)) \<longrightarrow> I (X t)"
+  obtain X where xivp1: "X \<in> Sols (\<lambda>t. f) (?ex_ivl s) UNIV 0 s"
     using picard_lindeloef.flow_in_ivp_sols_ex_ivl[OF assms(1)] by auto
-  have xivp2: "X \<in> Sols (\<lambda>t. f) (\<lambda>s. Collect ((\<le>) 0)) UNIV 0 s"
+  have xivp2: "X \<in> Sols (\<lambda>t. f) (Collect ((\<le>) 0)) UNIV 0 s"
     by (rule in_ivp_sols_subset[OF _ _ xivp1], simp_all add: assms(2))
   hence shyp: "X 0 = s"
     using ivp_solsD by auto
   have dinv: "\<forall>s. I s \<longrightarrow> ?lhs s"
-    using assms(3) unfolding diff_inv_eq by auto
+    using assms(3) unfolding diff_inv_eq 
+    by (auto simp: closed_segment_eq_real_ivl split: if_splits)
+      (metis atLeastAtMost_iff mem_Collect_eq subsetI)
   {assume "?lhs s" and "G s"
     hence "I s"
-      by (erule_tac x=X in ballE, erule_tac x=0 in allE, auto simp: shyp xivp2)}
+      by (erule_tac x=0 in allE) (metis closed_segment_idem closed_segment_subset_interval 
+          dual_order.refl ends_in_segment(1) in_ivp_sols_subset 
+          is_interval_real_nonneg ivp_solsD(3) shyp singletonD xivp2)}
   hence "?lhs s \<longrightarrow> (G s \<longrightarrow> I s)" 
     by blast
   moreover
   {assume "G s \<longrightarrow> I s"
     hence "?lhs s"
-      apply(clarify, subgoal_tac "\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)")
-       apply(erule_tac x=0 in allE, frule ivp_solsD(2), simp)
+      apply(clarify, subgoal_tac "\<forall>\<tau>\<in>{0--t}. G (X \<tau>)")
+       apply(erule_tac x=0 in ballE, frule ivp_solsD(2), simp)
       using dinv by blast+}
   ultimately show "?lhs s = (G s \<longrightarrow> I s)"
     by blast
