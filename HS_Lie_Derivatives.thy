@@ -336,7 +336,7 @@ proof (unfold local_lipschitz_on_def, clarify)
 qed
 
 lemma c1_local_lipschitz_on:
-  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
+  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's::topological_space"
   assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV"
     "\<exists> f. \<forall> x s. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at x) = f" 
   shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"

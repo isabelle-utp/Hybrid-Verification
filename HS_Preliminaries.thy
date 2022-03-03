@@ -433,6 +433,21 @@ lemma real_compact_intervalI:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
 
+(********************************************************************************)
+thm filter_eq_iff eventually_at eventually_at_topological \<comment> \<open> filters \<close>
+thm at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> at within \<close>
+thm has_derivative_at_within Lim_ident_at \<comment> \<open> derivative at within \<close>
+thm has_field_derivative_iff_has_vector_derivative \<comment> \<open> real vs vector derivative \<close>
+thm Rolle_deriv mvt mvt_simple mvt_very_simple mvt_general \<comment> \<open> mean value theorem \<close>
+thm banach_fix banach_fix_type \<comment> \<open> banach fixpoint theorems \<close>
+thm has_derivative_componentwise_within tendsto_componentwise_iff bounded_linear_compose
+thm c1_implies_local_lipschitz
+
+thm blinfun_apply
+
+thm local_lipschitz_def lipschitz_on_def
+(********************************************************************************)
+
 lemma c1_local_lipschitz: 
   fixes f::"real \<Rightarrow> ('a::{banach,perfect_space}) \<Rightarrow> 'a"
   assumes "open S" and "open T"
