@@ -87,7 +87,7 @@ proof-
   thus ?thesis by auto
 qed
 
-lemma "diff_inv (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0) (\<lambda>t. f g) (\<lambda>s. UNIV) S t\<^sub>0 G"
+lemma "diff_inv (\<lambda>s. UNIV) S G (\<lambda>t. f g) t\<^sub>0 (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0)"
   by (auto intro!: poly_derivatives diff_inv_rules)
 
 lemma bouncing_ball_inv: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
@@ -407,8 +407,8 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_inv (\<lambda>s. s$1 + s$2 = 0)
-     (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
+  have key: "diff_inv (\<lambda>s. UNIV) UNIV G 
+  (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) 0 (\<lambda>s. s$1 + s$2 = 0)"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
     let "?c" = "(\<lambda>t. X t$1 + X t$2)"
@@ -424,6 +424,9 @@ proof-
       using D1 by (auto intro!: poly_derivatives simp: field_simps)
     moreover have Dz: "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B) * 0) on {0--t}"
       by (auto simp: init intro!: poly_derivatives)
+    moreover note picard_lindeloef.unique_solution_closed_ivl[
+        where X="?c" and Y="\<lambda>s. 0" and t\<^sub>0=0 and t=t, OF _ _ init
+          ]
     moreover note picard_lindeloef.unique_solution_closed_ivl[
         where X="?c" and Y="\<lambda>s. 0" and t\<^sub>0=0 and t=t and S=UNIV, OF _ _ init, simplified, 
         OF picard_lindeloef_first_order_linear[OF UNIV_I, simplified],
@@ -446,8 +449,8 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_inv (\<lambda>s. s$1 + s$2 = 0)
-     (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
+  have key: "diff_inv (\<lambda>s. UNIV) UNIV G 
+  (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) 0 (\<lambda>s. s$1 + s$2 = 0)"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
     let "?c" = "(\<lambda>t. X t$1 + X t$2)"
@@ -455,12 +458,12 @@ proof-
       and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. A * (X t$1)\<^sup>2 + B * X t$1) on UNIV"
       and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. A * X t$2 * X t$1 + B * X t$2) on UNIV"
     hence "D ?c = (\<lambda>t. ?c t * (A * (X t$1) + B)) on UNIV"
-      by (auto intro!: poly_derivatives simp: field_simps power2_eq_square)
+      by (auto intro!: poly_derivatives simp: field_simps)
     hence "D ?c = (\<lambda>t. (A * X t$1 + B) * (X t$1 + X t$2)) on {0--t}"
       using has_vderiv_on_subset[OF _ subset_UNIV[of "{0--t}"]] by (simp add: mult.commute)
     moreover have "continuous_on UNIV (\<lambda>t. A * (X t$1) + B)"
       apply(rule vderiv_on_continuous_on)
-      using D1 by (auto intro!: poly_derivatives simp: field_simps power2_eq_square)
+      using D1 by (auto intro!: poly_derivatives simp: field_simps)
     moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B) * 0) on {0--t}"
       by (auto intro!: poly_derivatives)
     moreover note picard_lindeloef.ivp_unique_solution[OF 
@@ -475,6 +478,7 @@ proof-
     apply(subgoal_tac "(\<lambda>s. 0 = - s$1 - s$2) = (\<lambda>s. s$1 + s$2 = 0)", erule ssubst)
     using key by auto
 qed
+  oops
 
 
 subsubsection \<open> Dynamics: Fractional Darboux equality \<close> (*N 30 *)
@@ -507,12 +511,12 @@ lemma picard_lindeloef_darboux_ineq: "picard_lindeloef (\<lambda>t. f) UNIV {s. 
     apply(cases "i = 1")
      apply clarsimp
      apply(subst Blinfun_inverse, clarsimp)
-      apply(subst bounded_linear_coordinate, clarsimp)
+      apply(subst bounded_linear_component, clarsimp)
     subgoal for j
     using exhaust_2[of j] by (auto intro!: bounded_linear_intros)
       apply(auto intro!: derivative_eq_intros)[1]
   apply(subst Blinfun_inverse, clarsimp)
-      apply(subst bounded_linear_coordinate, clarsimp)
+      apply(subst bounded_linear_component, clarsimp)
  subgoal for j
     using exhaust_2[of j] by (auto intro!: bounded_linear_intros)
   by (auto intro!: derivative_eq_intros)[1]
@@ -538,8 +542,8 @@ proof-
     hence "1 - t * s\<^sub>1 \<le> 1"
       using \<open>0 \<le> t\<close> by auto
     thus ?thesis
-      by (metis (mono_tags, hide_lams) False add.left_neutral antisym_conv assms(3) 
-          diff_le_eq ln_ge_zero_iff ln_one mult_zero_right not_le order_refl zero_le_mult_iff)
+      by (metis False assms(3) diff_gt_0_iff_gt less_eq_real_def 
+          ln_less_zero ln_one mult_cancel_right2 mult_le_0_iff)
   qed
   hence "s\<^sub>1 + s\<^sub>2 - s\<^sub>1 * ln (1 - t * s\<^sub>1) \<ge> s\<^sub>1 + s\<^sub>2"
     by linarith
@@ -570,9 +574,9 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^3. s$1 + s$3 = 0) \<le>
   |x\<acute>= (\<lambda> s. (\<chi> i::3. if i=1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else (if i = 3 then (A*(s$1)+B)/s$3 else 0))) & (\<lambda>s. (s$2) = (s$1)^2 \<and> (s$3)^2 > 0)] 
   (\<lambda>s. s$1 + s$3 = 0)"
 proof-
-  have "diff_inv (\<lambda>s::real^3. s$1 + s$3 = 0)
-     (\<lambda>t s. \<chi> i::3. if i = 1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else if i = 3 then (A*(s$1)+B)/s$3 else 0) (\<lambda>s. Collect ((\<le>) 0))
-     UNIV 0 (\<lambda>s. s$2 = (s$1)\<^sup>2 \<and> s$3 \<noteq> 0)"
+  have "diff_inv (\<lambda>s. Collect ((\<le>) 0)) UNIV  (\<lambda>s. s$2 = (s$1)\<^sup>2 \<and> s$3 \<noteq> 0)
+  (\<lambda>t s. \<chi> i::3. if i = 1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else if i = 3 then (A*(s$1)+B)/s$3 else 0) 0
+  (\<lambda>s::real^3. s$1 + s$3 = 0)"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_3)
     fix X::"real\<Rightarrow>real^3" and t::real
     let "?c" = "(\<lambda>t.  X t$1 + X t$3)"
@@ -618,6 +622,7 @@ proof-
   thus ?thesis
     by auto
 qed
+  oops
 
 subsection \<open> STTT Tutorial: Example 9b \<close>
 
