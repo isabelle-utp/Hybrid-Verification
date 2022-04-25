@@ -1465,11 +1465,14 @@ proof-
   hence "b^2 * t^2 - 2 * b * v * t \<ge> 2 * b * x - 2 * b * m"
     by (auto simp: field_simps power2_diff)
   hence "(b^2/b) * t^2 - 2 * (b/b) * v * t \<ge> 2 * (b/b) * x - 2 * (b/b) * m"
-    using \<open>b > 0\<close> by (auto simp: field_simps)
+    using \<open>b > 0\<close> apply (auto simp: field_simps)
+    apply (clarsimp simp: power2_eq_square[symmetric])
+    apply (subst (asm) algebra_simps(18)[symmetric])+
+    using mult_left_le_imp_le[of b "x * 2 + t * (v * 2)" "b * t^2 + m * 2"]
+    by blast
   thus ?thesis
     using \<open>b > 0\<close>
-
-    by (simp add:)
+    by (simp add: field_simps)
 qed
 
 lemma LICSexample5_arith2:
