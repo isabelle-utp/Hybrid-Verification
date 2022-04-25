@@ -109,6 +109,7 @@ lemma inv_conserv_at_ground[bb_real_arith]:
 proof-
   from pos have "g * \<tau>\<^sup>2  + 2 * v * \<tau> + 2 * x = 0" by auto
   then have "g\<^sup>2 * \<tau>\<^sup>2  + 2 * g * v * \<tau> + 2 * g * x = 0"
+
     by (metis (mono_tags, hide_lams) Groups.mult_ac(1,3) mult_zero_right
         monoid_mult_class.power2_eq_square semiring_class.distrib_left)
   hence "g\<^sup>2 * \<tau>\<^sup>2 + 2 * g * v * \<tau> + v\<^sup>2 + 2 * g * h = 0"
