@@ -57,26 +57,26 @@ lemma g_orbital_onI:
 
 subsection \<open> Differential Invariants \<close>
 
-definition diff_invariant_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> 
+definition diff_inv_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> 
   ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
-  where "diff_invariant_on I a f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
+  where "diff_inv_on I a f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
-lemma diff_invariant_on_eq: "diff_invariant_on I a f U S t\<^sub>0 G = 
+lemma diff_inv_on_eq: "diff_inv_on I a f U S t\<^sub>0 G = 
   (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s). (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
-  unfolding diff_invariant_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
+  unfolding diff_inv_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
 
-lemma diff_invariant_on_id_lens: "diff_invariant_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_invariant I f U S t\<^sub>0 G"
-  by (simp add: diff_invariant_on_def diff_invariant_def g_orbital_on_id_lens)
+lemma diff_inv_on_id_lens: "diff_inv_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_inv I f U S t\<^sub>0 G"
+  by (simp add: diff_inv_on_def diff_inv_def g_orbital_on_id_lens)
 
-named_theorems diff_invariant_on_rules "rules for certifying (localised) differential invariants"
+named_theorems diff_inv_on_rules "rules for certifying (localised) differential invariants"
 
-lemma diff_invariant_on_eq_rule_expr [diff_invariant_on_rules]:
+lemma diff_inv_on_eq_rule_expr [diff_inv_on_rules]:
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on U (get\<^bsub>a\<^esub> s)) \<Longrightarrow>
   \<forall>\<tau>\<in>(down (U(get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = ((*\<^sub>R) 0) on U (get\<^bsub>a\<^esub> s))"
-  shows "diff_invariant_on (\<mu> = \<nu>)\<^sub>e a f U S t\<^sub>0 G"
-proof(simp add: diff_invariant_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
+  shows "diff_inv_on (\<mu> = \<nu>)\<^sub>e a f U S t\<^sub>0 G"
+proof(simp add: diff_inv_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
   fix X t s
   assume xivp: "D X = (\<lambda>\<tau>. loc_subst a f s \<tau> (X \<tau>)) on U (get\<^bsub>a\<^esub> s)" "\<mu> s = \<nu> s" "X \<in> U (get\<^bsub>a\<^esub> s) \<rightarrow> S"
     and tHyp: "t \<in> U (get\<^bsub>a\<^esub> s)" and t0Hyp: "t\<^sub>0 \<in> U (get\<^bsub>a\<^esub> s)" and init: "X t\<^sub>0 = get\<^bsub>a\<^esub> s"
@@ -92,13 +92,13 @@ proof(simp add: diff_invariant_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
     using xivp(2) assms(1) init by simp
 qed
 
-lemma diff_invariant_on_eq_rule_expr_inner [diff_invariant_on_rules]:
+lemma diff_inv_on_eq_rule_expr_inner [diff_inv_on_rules]:
   fixes \<mu> \<nu> :: "_ \<Rightarrow> 'c::real_inner"
   assumes "vwb_lens a"
     and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on {t\<^sub>0..}) \<Longrightarrow>
   \<forall>\<tau>\<in>(down {t\<^sub>0..} t). G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))- \<nu> (put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda> t. 0) on {t\<^sub>0..})"
-  shows "diff_invariant_on (\<mu> = \<nu>)\<^sub>e a f (\<lambda> _. {t\<^sub>0..}) S t\<^sub>0 G"
-proof(simp add: diff_invariant_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
+  shows "diff_inv_on (\<mu> = \<nu>)\<^sub>e a f (\<lambda> _. {t\<^sub>0..}) S t\<^sub>0 G"
+proof(simp add: diff_inv_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
   fix X t s
   assume xivp: "D X = (\<lambda>\<tau>. loc_subst a f s \<tau> (X \<tau>)) on {t\<^sub>0..}" "\<mu> s = \<nu> s" "X \<in> {t\<^sub>0..} \<rightarrow> S"
     and t0Hyp: "t\<^sub>0 \<le> t" and init: "X t\<^sub>0 = get\<^bsub>a\<^esub> s"
@@ -130,7 +130,7 @@ proof(simp add: diff_invariant_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
   qed
 qed
 
-lemma diff_invariant_on_le_rule_expr [diff_invariant_on_rules]:
+lemma diff_inv_on_le_rule_expr [diff_inv_on_rules]:
   fixes \<mu>::"'a \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
@@ -140,9 +140,9 @@ lemma diff_invariant_on_le_rule_expr [diff_invariant_on_rules]:
   (\<forall>\<tau>\<in>U(get\<^bsub>a\<^esub> s). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
     and dX: "\<And>X s. D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on U (get\<^bsub>a\<^esub> s) \<Longrightarrow> 
   D (\<lambda>\<tau>. \<mu>(put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>\<tau>. \<mu>'(put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>'(put\<^bsub>a\<^esub> s (X \<tau>))) on U(get\<^bsub>a\<^esub> s)"
-  shows diff_invariant_on_leq_rule_expr: "diff_invariant_on (\<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
-    and diff_invariant_on_less_rule_expr: "diff_invariant_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
-proof(simp_all add: diff_invariant_on_eq ivp_sols_def, safe)
+  shows diff_inv_on_leq_rule_expr: "diff_inv_on (\<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+    and diff_inv_on_less_rule_expr: "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+proof(simp_all add: diff_inv_on_eq ivp_sols_def, safe)
   fix s X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>a\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
   assume xivp: "D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on (U (get\<^bsub>a\<^esub> s))" "X \<in> U (get\<^bsub>a\<^esub> s) \<rightarrow> S"
   assume tHyp: "t \<in> U (get\<^bsub>a\<^esub> s)" and t0Hyp: "t\<^sub>0 \<in> U (get\<^bsub>a\<^esub> s)" "X t\<^sub>0 = get\<^bsub>a\<^esub> s"
@@ -187,79 +187,79 @@ proof(simp_all add: diff_invariant_on_eq ivp_sols_def, safe)
 qed
 
 lemma 
-  assumes "diff_invariant_on (I\<^sub>1)\<^sub>e a f U S t\<^sub>0 G"
-    and "diff_invariant_on (I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-  shows diff_invariant_on_conj_rule_expr: "diff_invariant_on (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-    and diff_invariant_on_disj_rule_expr: "diff_invariant_on (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-  using assms unfolding diff_invariant_on_eq by auto
+  assumes "diff_inv_on (I\<^sub>1)\<^sub>e a f U S t\<^sub>0 G"
+    and "diff_inv_on (I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
+  shows diff_inv_on_conj_rule_expr: "diff_inv_on (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
+    and diff_inv_on_disj_rule_expr: "diff_inv_on (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
+  using assms unfolding diff_inv_on_eq by auto
 
-named_theorems diff_invariant_rule_expr "encapsulating rules for (non-localised) differential invariants"
+named_theorems diff_inv_rule_expr "encapsulating rules for (non-localised) differential invariants"
 
-lemma diff_invariant_eq_rule_expr [diff_invariant_rule_expr]:
+lemma diff_inv_eq_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and dX: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
   \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
-  shows "diff_invariant (\<mu> = \<nu>)\<^sub>e f U S t\<^sub>0 G"
-  using assms by (simp add: SEXP_def, rule diff_invariant_eq_rule, simp_all)
+  shows "diff_inv (\<mu> = \<nu>)\<^sub>e f U S t\<^sub>0 G"
+  using assms by (simp add: SEXP_def, rule diff_inv_eq_rule, simp_all)
 
-lemma diff_invariant_leq_rule_expr [diff_invariant_rule_expr]:
+lemma diff_inv_leq_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
     and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
-  shows "diff_invariant (\<nu> \<le> \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv (\<nu> \<le> \<mu>)\<^sub>e f U S t\<^sub>0 G"
   using assms
-  by (simp add: SEXP_def, rule diff_invariant_leq_rule, simp_all)
+  by (simp add: SEXP_def, rule diff_inv_leq_rule, simp_all)
 
-lemma diff_invariant_less_rule_expr [diff_invariant_rule_expr]:
+lemma diff_inv_less_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
     and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
-  shows "diff_invariant (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
   using assms
-  by (simp add: SEXP_def, rule diff_invariant_less_rule, simp_all)
+  by (simp add: SEXP_def, rule diff_inv_less_rule, simp_all)
 
-lemma diff_invariant_nleq_rule_expr:
+lemma diff_inv_nleq_rule_expr:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
-  shows "diff_invariant (\<not> \<nu> \<le> \<mu>)\<^sub>e f U S t\<^sub>0 G \<longleftrightarrow> diff_invariant (\<nu> > \<mu>)\<^sub>e f U S t\<^sub>0 G"
-  by (simp add: SEXP_def, subst diff_invariant_nleq_rule, simp_all)
+  shows "diff_inv (\<not> \<nu> \<le> \<mu>)\<^sub>e f U S t\<^sub>0 G \<longleftrightarrow> diff_inv (\<nu> > \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  by (simp add: SEXP_def, subst diff_inv_nleq_rule, simp_all)
 
-lemma diff_invariant_neq_rule_expr [diff_invariant_rule_expr]:
+lemma diff_inv_neq_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes "diff_invariant (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
-    and "diff_invariant (\<nu> > \<mu>)\<^sub>e f U S t\<^sub>0 G"
-  shows "diff_invariant (\<nu> \<noteq> \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  assumes "diff_inv (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
+    and "diff_inv (\<nu> > \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv (\<nu> \<noteq> \<mu>)\<^sub>e f U S t\<^sub>0 G"
   using assms apply(simp add: SEXP_def)
-  by (rule diff_invariant_neq_rule, simp_all)
+  by (rule diff_inv_neq_rule, simp_all)
 
-lemma diff_invariant_neq_rule_expr_converse:
+lemma diff_inv_neq_rule_expr_converse:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)" "\<And>s t. s \<in> S \<Longrightarrow> t \<in> U s \<Longrightarrow> t\<^sub>0 \<le> t"
     and conts: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<nu>"
       "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<mu>"
-    and dI:"diff_invariant (\<nu> \<noteq> \<mu>)\<^sub>e f U S t\<^sub>0 G"
-  shows "diff_invariant (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
+    and dI:"diff_inv (\<nu> \<noteq> \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
   using assms apply(simp add: SEXP_def)
-  by (rule diff_invariant_neq_rule_converse, simp_all)
+  by (rule diff_inv_neq_rule_converse, simp_all)
 
-lemma diff_invariant_cnn_rule_expr:
-  assumes "diff_invariant (I\<^sub>1)\<^sub>e f U S t\<^sub>0 G"
-    and "diff_invariant (I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
-  shows diff_invariant_conj_rule_expr [diff_invariant_rule_expr]: "diff_invariant (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
-    and diff_invariant_disj_rule_expr [diff_invariant_rule_expr]: "diff_invariant (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
-  using assms unfolding diff_invariant_eq by auto
+lemma diff_inv_cnn_rule_expr:
+  assumes "diff_inv (I\<^sub>1)\<^sub>e f U S t\<^sub>0 G"
+    and "diff_inv (I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
+  shows diff_inv_conj_rule_expr [diff_inv_rule_expr]: "diff_inv (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
+    and diff_inv_disj_rule_expr [diff_inv_rule_expr]: "diff_inv (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
+  using assms unfolding diff_inv_eq by auto
 
 lemma diff_ghost_very_simple:
   assumes 
     "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B"
-    "diff_invariant_on (G)\<^sub>e (a +\<^sub>L y) (\<lambda>t. \<sigma>(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 B"
-  shows "diff_invariant_on (G \\ $y)\<^sub>e a (\<lambda>t. \<sigma>) (Collect ((\<le>) 0))\<^sub>e UNIV 0 B"
+    "diff_inv_on (G)\<^sub>e (a +\<^sub>L y) (\<lambda>t. \<sigma>(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 B"
+  shows "diff_inv_on (G \\ $y)\<^sub>e a (\<lambda>t. \<sigma>) (Collect ((\<le>) 0))\<^sub>e UNIV 0 B"
   using assms(5)
-  apply (simp add: expr_defs diff_invariant_on_eq)
+  apply (simp add: expr_defs diff_inv_on_eq)
   apply (auto)
   apply (rename_tac s X s' t)
   apply (drule_tac x="s \<triangleleft>\<^bsub>y\<^esub> s'" in spec)

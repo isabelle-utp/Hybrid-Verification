@@ -42,7 +42,9 @@ proof(rule continuous_onI, simp add: dist_norm)
     also have "... \<le> ?\<epsilon> * (\<parallel>s\<parallel>)"
       using dHyp \<open>\<tau> \<in> T\<close> \<open>\<bar>\<tau> - t\<bar> < \<delta>\<close> mult_right_mono norm_ge_zero by blast 
     finally have "\<parallel>A \<tau> *v s - A t *v s\<parallel> \<le> e"
-      by (subst (asm) obs) (metis (mono_tags, hide_lams) \<open>0 < e\<close> less_eq_real_def order_trans)}
+      apply (subst (asm) obs)
+      by (metis (mono_tags, opaque_lifting) \<open>0 < e\<close> nle_le norm_ge_zero order_le_less) 
+    }
   thus "\<exists>d>0. \<forall>\<tau>\<in>T. \<bar>\<tau> - t\<bar> < d \<longrightarrow> \<parallel>A \<tau> *v s - A t *v s\<parallel> \<le> e"
     using dHyp by blast
 qed
@@ -170,7 +172,7 @@ lemma vderiv_on_mtx_vec_multI[poly_derivatives]:
     shows "D (\<lambda>t. A t *\<^sub>V u t) = g on T"
   using assms unfolding has_vderiv_on_def has_vector_derivative_def apply clarsimp
   apply(erule_tac x=x in ballE, simp_all)+
-  apply(rule derivative_eq_intros(160))
+  apply(rule derivative_eq_intros(161))
   by (auto simp: fun_eq_iff mtx_vec_scaleR_commute pth_6 scaleR_mtx_vec_assoc)
 
 lemmas has_vderiv_on_ivl_integral = ivl_integral_has_vderiv_on[OF vderiv_on_continuous_on]

@@ -323,11 +323,11 @@ lemma derivation_lemma1:
   apply (simp)
   done
 
-lemma lie_diff_invariant_on_eq:
+lemma lie_diff_inv_on_eq:
   fixes e :: "'s \<Rightarrow> _::real_inner" and a :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable\<^sub>e e on a" "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = 0`"
-  shows "diff_invariant_on (e = 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-  using assms apply(simp_all add: diff_invariant_on_eq ivp_sols_def)
+  shows "diff_inv_on (e = 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+  using assms apply(simp_all add: diff_inv_on_eq ivp_sols_def)
 proof(auto simp: lens_defs expr_defs)
   fix t :: real and X :: "real \<Rightarrow> 'c" and s :: "'s"
   assume a1:"\<forall>s. (\<lambda>x. e (put\<^bsub>a\<^esub> s x)) differentiable at (get\<^bsub>a\<^esub> s)" and a2: "0 \<le> t" 
@@ -368,21 +368,21 @@ proof(auto simp: lens_defs expr_defs)
   qed
 qed
 
-lemma lie_diff_invariant_simple:
+lemma lie_diff_inv_simple:
   fixes e :: "'s::real_normed_vector \<Rightarrow> real"
   assumes "differentiable\<^sub>e e" "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e = 0`"
-  shows "diff_invariant (e = 0)\<^sub>e (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-  apply (simp add: diff_invariant_on_id_lens[THEN sym])
-  apply (rule lie_diff_invariant_on_eq)
+  shows "diff_inv (e = 0)\<^sub>e (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+  apply (simp add: diff_inv_on_id_lens[THEN sym])
+  apply (rule lie_diff_inv_on_eq)
     apply (simp_all add: assms)
   done
 
-lemma lie_diff_invariant_on_le_less:
+lemma lie_diff_inv_on_le_less:
   fixes e :: "'s \<Rightarrow> real" and a :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable\<^sub>e e on a" "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a \<ge> 0`"
-  shows lie_diff_invariant_on_leq: "diff_invariant_on (e \<ge> 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-    and lie_diff_invariant_on_less: "diff_invariant_on (e > 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-  using assms apply(simp_all add: diff_invariant_on_eq ivp_sols_def)
+  shows lie_diff_inv_on_leq: "diff_inv_on (e \<ge> 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+    and lie_diff_inv_on_less: "diff_inv_on (e > 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+  using assms apply(simp_all add: diff_inv_on_eq ivp_sols_def)
 proof(auto simp: lens_defs expr_defs)
   fix t :: real and X :: "real \<Rightarrow> 'c" and s :: "'s"
   assume a1:"\<forall>s. (\<lambda>x. e (put\<^bsub>a\<^esub> s x)) differentiable at (get\<^bsub>a\<^esub> s)" and a2: "0 \<le> t" 
@@ -419,10 +419,10 @@ qed
 lemma lie_deriv_eq_rule:
   fixes e :: "'s \<Rightarrow> 'a::real_inner" and a :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable\<^sub>e e on a" "differentiable\<^sub>e f on a"
-  shows lie_deriv_eq: "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = \<L>\<^bsub>F\<^esub> f on a` \<Longrightarrow> diff_invariant_on (e = f)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e" (is "_ \<Longrightarrow> ?thesis1")
+  shows lie_deriv_eq: "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = \<L>\<^bsub>F\<^esub> f on a` \<Longrightarrow> diff_inv_on (e = f)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e" (is "_ \<Longrightarrow> ?thesis1")
 proof -
-  have "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = \<L>\<^bsub>F\<^esub> f on a` \<Longrightarrow> diff_invariant_on (e - f = 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-    by (rule lie_diff_invariant_on_eq, simp_all add: lie_deriv closure assms)
+  have "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = \<L>\<^bsub>F\<^esub> f on a` \<Longrightarrow> diff_inv_on (e - f = 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+    by (rule lie_diff_inv_on_eq, simp_all add: lie_deriv closure assms)
   moreover have "(e - f = 0)\<^sub>e = (e = f)\<^sub>e"
     by (simp add: expr_defs)
   ultimately show "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = \<L>\<^bsub>F\<^esub> f on a` \<Longrightarrow> ?thesis1"
@@ -432,10 +432,10 @@ qed
 lemma lie_deriv_le_rule:
   fixes e :: "'s \<Rightarrow> real" and a :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable\<^sub>e e on a" "differentiable\<^sub>e f on a"
-  shows lie_deriv_le: "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_invariant_on (e \<ge> f)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e" (is "_ \<Longrightarrow> ?thesis2")
+  shows lie_deriv_le: "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_inv_on (e \<ge> f)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e" (is "_ \<Longrightarrow> ?thesis2")
 proof -
-  have "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_invariant_on (e - f \<ge> 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-    by (rule lie_diff_invariant_on_leq, simp_all add: lie_deriv closure assms)
+  have "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_inv_on (e - f \<ge> 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+    by (rule lie_diff_inv_on_leq, simp_all add: lie_deriv closure assms)
   moreover have "(e - f \<ge> 0)\<^sub>e = (e \<ge> f)\<^sub>e"
     by (simp add: expr_defs)
   ultimately show "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> ?thesis2"
@@ -445,10 +445,10 @@ qed
 lemma lie_deriv_less_rule:
   fixes e :: "'s \<Rightarrow> real" and a :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable\<^sub>e e on a" "differentiable\<^sub>e f on a"
-  shows lie_deriv_less: "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_invariant_on (e > f)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e" (is "_ \<Longrightarrow> ?thesis2")
+  shows lie_deriv_less: "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_inv_on (e > f)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e" (is "_ \<Longrightarrow> ?thesis2")
 proof -
-  have "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_invariant_on (e - f > 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
-    by (rule lie_diff_invariant_on_less, simp_all add: lie_deriv closure assms)
+  have "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> diff_inv_on (e - f > 0)\<^sub>e a (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+    by (rule lie_diff_inv_on_less, simp_all add: lie_deriv closure assms)
   moreover have "(e - f \<ge> 0)\<^sub>e = (e \<ge> f)\<^sub>e"
     by (simp add: expr_defs)
   ultimately show "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> f on a \<le> \<L>\<^bsub>F\<^esub> e on a` \<Longrightarrow> ?thesis2"

@@ -90,7 +90,7 @@ lemma has_vderiv_on_proj [poly_derivatives]:
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   apply(simp add: hoare_diff_inv_on)
-  apply(rule diff_invariant_on_eq_rule_expr)
+  apply(rule diff_inv_on_eq_rule_expr)
   by clarsimp+ (expr_auto, auto intro!: poly_derivatives simp: case_prod_beta)
 
 end
@@ -108,7 +108,7 @@ abbreviation fpend :: "real^2 \<Rightarrow> real^2" ("f")
   where "fpend \<equiv> [x \<leadsto> y, y \<leadsto> -x]"
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
-  by (simp, expr_auto) (auto intro!: diff_invariant_rules poly_derivatives)
+  by (simp, expr_auto) (auto intro!: diff_inv_rules poly_derivatives)
 
 \<comment> \<open>Verified with the flow in @{text "\<real>\<^sup>2"} \<close>
 
@@ -179,7 +179,7 @@ abbreviation "BBall_dinv \<equiv>
 
 lemma ball_diff_inv: "\<^bold>{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y)\<^bold>} (x\<acute>= f & (0 \<le> $y)\<^sub>e) \<^bold>{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y)\<^bold>}"
   apply(subst hoare_diff_inv)
-   apply(rule_tac \<mu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" and \<nu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" in diff_invariant_leq_rule_expr)
+   apply(rule_tac \<mu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" and \<nu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" in diff_inv_leq_rule_expr)
       apply (simp_all add: is_interval_def)
   by expr_auto (auto intro!: poly_derivatives)
 

@@ -34,7 +34,7 @@ lemma pendulum_dyn: "(\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2) \<l
 \<comment> \<open>Verified with differential invariants. \<close>
 
 lemma pendulum_inv: "(\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2) \<le> |x\<acute>= f & G] (\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2)"
-  by (auto intro!: diff_invariant_rules poly_derivatives)
+  by (auto intro!: diff_inv_rules poly_derivatives)
 
 \<comment> \<open>Verified with the flow. \<close>
 
@@ -87,8 +87,8 @@ proof-
   thus ?thesis by auto
 qed
 
-lemma "diff_invariant (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0) (\<lambda>t. f g) (\<lambda>s. UNIV) S t\<^sub>0 G"
-  by (auto intro!: poly_derivatives diff_invariant_rules)
+lemma "diff_inv (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0) (\<lambda>t. f g) (\<lambda>s. UNIV) S t\<^sub>0 G"
+  by (auto intro!: poly_derivatives diff_inv_rules)
 
 lemma bouncing_ball_inv: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
   (\<lambda>s. s$1 = h \<and> s$2 = 0) \<le>
@@ -98,7 +98,7 @@ lemma bouncing_ball_inv: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
   INV (\<lambda>s. 0 \<le> s$1 \<and> 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0)]
   (\<lambda>s. 0 \<le> s$1 \<and> s$1 \<le> h)"
   apply(rule fbox_loopI, simp_all, force, force simp: bb_real_arith)
-  by (rule fbox_g_odei) (auto intro!: poly_derivatives diff_invariant_rules)
+  by (rule fbox_g_odei) (auto intro!: poly_derivatives diff_inv_rules)
 
 \<comment> \<open>Verified with annotated dynamics. \<close>
 
@@ -405,9 +405,9 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_invariant (\<lambda>s. s$1 + s$2 = 0)
+  have key: "diff_inv (\<lambda>s. s$1 + s$2 = 0)
      (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
-  proof(clarsimp simp: diff_invariant_eq ivp_sols_def forall_2)
+  proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
     let "?c" = "(\<lambda>t.  X t$1 + X t$2)"
     assume init: "?c 0 = 0"
@@ -529,10 +529,10 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^3. s$1 + s$3 = 0) \<le>
   |x\<acute>= (\<lambda> s. (\<chi> i::3. if i=1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else (if i = 3 then (A*(s$1)+B)/s$3 else 0))) & (\<lambda>s. (s$2) = (s$1)^2 \<and> (s$3)^2 > 0)] 
   (\<lambda>s. s$1 + s$3 = 0)"
 proof-
-  have "diff_invariant (\<lambda>s::real^3. s$1 + s$3 = 0)
+  have "diff_inv (\<lambda>s::real^3. s$1 + s$3 = 0)
      (\<lambda>t s. \<chi> i::3. if i = 1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else if i = 3 then (A*(s$1)+B)/s$3 else 0) (\<lambda>s. Collect ((\<le>) 0))
      UNIV 0 (\<lambda>s. s$2 = (s$1)\<^sup>2 \<and> s$3 \<noteq> 0)"
-  proof(clarsimp simp: diff_invariant_eq ivp_sols_def forall_3)
+  proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_3)
     fix X::"real\<Rightarrow>real^3" and t::real
     let "?c" = "(\<lambda>t.  X t$1 + X t$3)"
     assume init: "?c 0 = 0" and "t \<ge> 0"

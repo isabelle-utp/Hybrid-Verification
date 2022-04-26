@@ -205,22 +205,22 @@ lemma "(\<lambda>s::real^4. s$1 \<ge> 0 \<and> s$2 \<ge> 0 \<and> s$3 \<ge> 0 \<
   apply(rule_tac C="\<lambda>s. s$4 \<ge> 0" in diff_cut_rule)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$4 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)\<^sup>2" in diff_invariant_leq_rule; simp?)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)\<^sup>2" in diff_inv_leq_rule; simp?)
    apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
   apply(rule_tac C="\<lambda>s. s$3 \<ge> 0" in diff_cut_rule, simp_all)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$3 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)" in diff_invariant_rules(2); simp?) 
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)" in diff_inv_rules(2); simp?) 
    apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
   apply(rule_tac C="\<lambda>s. s$2 \<ge> 0" in diff_cut_rule, simp_all)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$2 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$3)" in diff_invariant_rules(2); simp?)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$3)" in diff_inv_rules(2); simp?)
    apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
   apply(rule_tac C="\<lambda>s. s$1 \<ge> 0" in diff_cut_rule, simp_all)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_invariant_rules(2); simp?)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_inv_rules(2); simp?)
     apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
   by (rule diff_weak_rule, simp add: le_fun_def)
 
@@ -282,11 +282,11 @@ lemma "(\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 0) \<le>
   apply(rule_tac C="\<lambda>s. s$2 \<ge> 0" in diff_cut_rule)
    apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$2 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)^2" in diff_invariant_rules(2); (simp add: forall_2)?)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)^2" in diff_inv_rules(2); (simp add: forall_2)?)
   apply(simp add: le_fun_def, rule_tac C="\<lambda>s. s$1 \<ge> 0" in diff_cut_rule, simp_all)
    apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_invariant_rules(2); (simp add: forall_2)?)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_inv_rules(2); (simp add: forall_2)?)
   by (simp add: le_fun_def, rule diff_weak_rule, simp add: le_fun_def)
 
 
@@ -296,7 +296,7 @@ subsubsection \<open> Dynamics: Exponential growth (4) \<close> (* sic *)
 lemma "(\<lambda>s::real^1. s$1 > 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. (s$1)\<^sup>2)) & G] (\<lambda>s. s$1 > 0)"
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 > 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-  by (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2" in diff_invariant_rules(3), simp_all add: le_fun_def)
+  by (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2" in diff_inv_rules(3), simp_all add: le_fun_def)
 
 
 subsubsection \<open> Dynamics: Exponential growth (5) \<close>
@@ -305,12 +305,12 @@ subsubsection \<open> Dynamics: Exponential growth (5) \<close>
 lemma "(\<lambda>s::real^1. s$1 \<ge> 1) \<le> 
   |x\<acute>=(\<lambda>s. (\<chi> i. (s$1)\<^sup>2 + 2 * (s$1)^4)) & G] (\<lambda>s. s$1^3 \<ge> (s$1)\<^sup>2)"
   apply(rule_tac C="\<lambda>s. s$1 \<ge> 1" in diff_cut_rule; simp?)
-   apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2 + 2 * s$1 ^ 4" in diff_invariant_rules(2); simp?)
+   apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2 + 2 * s$1 ^ 4" in diff_inv_rules(2); simp?)
   apply(force intro!: poly_derivatives)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1^3 \<ge>  (s$1)\<^sup>2 "])
 apply(rule fbox_g_odei, simp add: le_fun_def, simp_all add: power_increasing)
   apply (rule_tac \<nu>'="\<lambda>s. 2 * s$1 * ((s$1)\<^sup>2 + 2 * (s$1)^ 4)"
-              and \<mu>'="\<lambda>s. 3 * (s$1)\<^sup>2 * ((s$1)\<^sup>2 + 2 * (s$1)^4)" in diff_invariant_rules(2); clarsimp?)
+              and \<mu>'="\<lambda>s. 3 * (s$1)\<^sup>2 * ((s$1)\<^sup>2 + 2 * (s$1)^4)" in diff_inv_rules(2); clarsimp?)
   apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))
   apply(subgoal_tac "X \<tau> $ 1 \<ge> 1")
    apply(subgoal_tac "2 + 4 * (X \<tau>)$1 ^ 2 \<le> 3 * (X \<tau>)$1 + 6 * (X \<tau>)$1 ^ 3")
@@ -326,7 +326,7 @@ subsubsection \<open> Dynamics: Rotational dynamics (1) \<close>
 (* x\<^sup>2+y\<^sup>2=1 -> [{x'=-y, y'=x}]x\<^sup>2+y\<^sup>2=1 *)
 lemma "(\<lambda>s::real^2. (s$1)\<^sup>2 + (s$2)\<^sup>2 = 1) \<le> |x\<acute>= (\<lambda>s.(\<chi> i. if i = 1 then - s$2 else s$1)) & G]
   (\<lambda>s. (s$1)\<^sup>2 + (s$2)\<^sup>2 = 1)"
-  by (auto intro!: poly_derivatives diff_invariant_rules)
+  by (auto intro!: poly_derivatives diff_inv_rules)
 
 
 subsubsection \<open> Dynamics: Rotational dynamics (2) \<close> (* proved as a linear system *)
@@ -341,7 +341,7 @@ subsubsection \<open> Dynamics: Rotational dynamics (3) \<close>
 lemma "(\<lambda>s::real^4. (s$3)\<^sup>2 + (s$4)\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> s$3 = - w * s$2 \<and> s$4 = w * s$1) \<le> 
   |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then s$3 else (if i=2 then s$4 else (if i = 3 then - w * s$4 else w * s$3)))) & G]
   (\<lambda>s. (s$3)\<^sup>2 + (s$4)\<^sup>2 = w\<^sup>2*p\<^sup>2 \<and> s$3 = - w * s$2 \<and> s$4= w * s$1)"
-  by (auto intro!: diff_invariant_rules poly_derivatives)
+  by (auto intro!: diff_inv_rules poly_derivatives)
 
 
 subsubsection \<open> Dynamics: Spiral to equilibrium \<close>
@@ -353,12 +353,12 @@ lemma "(\<lambda>s::real^3. (s$3) \<ge> 0 \<and> s$1=0 \<and> s$2=3) \<le>
   apply(rule_tac C="\<lambda>s. s$3 \<ge> 0" in diff_cut_rule; simp?)
    apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$3 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-    apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 0" in diff_invariant_rules(2))
+    apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 0" in diff_inv_rules(2))
        apply(simp_all add: forall_3, simp add: le_fun_def)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. (s$3)\<^sup>2*(s$1)\<^sup>2 + (s$2)\<^sup>2 \<le> 9"])
   apply(rule fbox_g_odei, simp add: le_fun_def, simp_all add: power_increasing)
    apply(rule_tac \<nu>'="\<lambda>s. 2 * (s$3)\<^sup>2 * (s$1) * (s$2) + 2 * (s$2) * (- (s$3)\<^sup>2*(s$1) - 2*(s$3)*(s$2))"
-      and \<mu>'="\<lambda>s. 0" in diff_invariant_rules(2))
+      and \<mu>'="\<lambda>s. 0" in diff_inv_rules(2))
   by (auto intro!: poly_derivatives simp: forall_3 field_simps) 
     (simp add: mult.assoc[symmetric])
 
@@ -472,7 +472,7 @@ qed
 lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1^3>5 \<and> s$2>2) \<le> 
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then s$1^3 + s$1^4 else 5 * s$2 + s$2^2)) & G on (\<lambda>s. {0..}) UNIV @ 0]
   (\<lambda>s. s$1^3>5 \<and> s$2>2)"
-  apply(simp, rule diff_invariant_rules, simp_all add: diff_invariant_eq ivp_sols_def forall_2; clarsimp)
+  apply(simp, rule diff_inv_rules, simp_all add: diff_inv_eq ivp_sols_def forall_2; clarsimp)
    apply(frule_tac x="\<lambda>t. X t $ 1 ^ 3" and g="\<lambda>t. 3 * t^2 + 3 * (root 3 t)^5" in current_vderiv_ge_always_ge)
       apply(rule poly_derivatives, simp, assumption, simp)
   apply (rule ext)
@@ -490,9 +490,9 @@ lemma "z = - 2 \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 1 \<and> s$2 = 1
   |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then s$2 else z + (s$2)^2 - s$2)) & (\<lambda>s. s$2 \<ge> 0)]
   (\<lambda>s. s$1 \<ge> 1 \<and> s$2 \<ge> 0)"
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 1 \<and> s$2 \<ge> 0"])
-  apply(rule fbox_g_odei, simp_all, simp add: le_fun_def, rule diff_invariant_rules)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2" in diff_invariant_rules(2))
-  by (simp_all add: diff_invariant_eq, force intro!: poly_derivatives)
+  apply(rule fbox_g_odei, simp_all, simp add: le_fun_def, rule diff_inv_rules)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2" in diff_inv_rules(2))
+  by (simp_all add: diff_inv_eq, force intro!: poly_derivatives)
 
 
 subsubsection \<open> Dynamics: Conserved quantity \<close>
@@ -520,7 +520,7 @@ lemma "(\<lambda>s::real^2. (s$1)^4*(s$2)^2+(s$1)^2*(s$2)^4-3*(s$1)^2*(s$2)^2 + 
   |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then 2*(s$1)^4*(s$2)+4*(s$1)^2*(s$2)^3-6*(s$1)^2*(s$2) 
     else -4*(s$1)^3*(s$2)^2-2*(s$1)*(s$2)^4+6*(s$1)*(s$2)^2)) & G] 
   (\<lambda>s. (s$1)^4*(s$2)^2+(s$1)^2*(s$2)^4-3*(s$1)^2*(s$2)^2 + 1 \<le> c)"
-  apply(simp, rule_tac \<mu>'="\<lambda>s. 0" and \<nu>'="\<lambda>s. 0" in diff_invariant_rules(2); clarsimp simp: forall_2)
+  apply(simp, rule_tac \<mu>'="\<lambda>s. 0" and \<nu>'="\<lambda>s. 0" in diff_inv_rules(2); clarsimp simp: forall_2)
   apply(intro poly_derivatives; (assumption)?, (rule poly_derivatives)?)
   apply force+
   apply(clarsimp simp: algebra_simps(17,18,19,20) semiring_normalization_rules(27,28))
@@ -577,9 +577,9 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_invariant (\<lambda>s. s $ 1 + s $ 2 = 0)
+  have key: "diff_inv (\<lambda>s. s $ 1 + s $ 2 = 0)
      (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
-  proof(clarsimp simp: diff_invariant_eq ivp_sols_def forall_2)
+  proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
     let "?c" = "(\<lambda>t.  X t $ 1 + X t $ 2)"
     assume init: "?c 0 = 0"
@@ -698,7 +698,7 @@ qed
 lemma "r \<le> 0 \<Longrightarrow> \<exists>c. (\<lambda>s::real^1. s$1 = c) \<le> 
   |x\<acute>= (\<lambda>t s. (\<chi> i. r + (s$1)^2)) & G on (\<lambda>s. UNIV) UNIV @ 0] 
   (\<lambda>s. s$1 = c)"
-proof(rule_tac x="sqrt \<bar>r\<bar>" in exI, clarsimp simp: diff_invariant_eq ivp_sols_def)
+proof(rule_tac x="sqrt \<bar>r\<bar>" in exI, clarsimp simp: diff_inv_eq ivp_sols_def)
   fix X::"real\<Rightarrow>real^1" and t::real
   assume init: "X 0 $ 1 = sqrt (- r)" and "r \<le> 0"
      and D1: "D (\<lambda>x. X x $ 1) = (\<lambda>x. r + (X x $ 1)\<^sup>2) on UNIV"
@@ -744,7 +744,7 @@ subsubsection \<open> Dynamics: Nonlinear 1 \<close>
 lemma "(\<lambda>s::real^1. s$1^3 \<ge> -1) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. (s$1 - 3)^4 + a) & (\<lambda>s. a \<ge> 0)]
   (\<lambda>s. s$1^3 \<ge> -1)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * ((s$1 - 3)^4 + a)" in diff_invariant_rules(2))
+  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * ((s$1 - 3)^4 + a)" in diff_inv_rules(2))
   by (auto intro!: poly_derivatives)
 
 
@@ -754,7 +754,7 @@ subsubsection \<open> Dynamics: Nonlinear 2 \<close>
 lemma "(\<lambda>s::real^2. s$1 + (s$2^2)/2 = a) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$1 * s$2 else - s$1) & G]
   (\<lambda>s. s$1 + (s$2^2)/2 = a)"
-  by (auto intro!: diff_invariant_rules poly_derivatives)
+  by (auto intro!: diff_inv_rules poly_derivatives)
 
 
 subsubsection \<open> Dynamics: Nonlinear 4 \<close>
@@ -763,7 +763,7 @@ subsubsection \<open> Dynamics: Nonlinear 4 \<close>
 lemma "(\<lambda>s::real^2. (s$1)^2/2 - (s$2^2)/2 \<ge> a) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 + s$1 * (s$2^2) else - s$1 + s$1^2 * s$2) & (\<lambda>s. s$1 \<ge> 0 \<and> s$2 \<ge> 0)]
   (\<lambda>s. (s$1)^2/2 - (s$2^2)/2 \<ge> a)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$1*(s$2 + s$1 * (s$2^2)) - s$2 * (- s$1 + s$1^2 * s$2)" in diff_invariant_rules(2))
+  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$1*(s$2 + s$1 * (s$2^2)) - s$2 * (- s$1 + s$1^2 * s$2)" in diff_inv_rules(2))
   by (auto intro!: poly_derivatives simp: field_simps)
 
 
@@ -773,7 +773,7 @@ subsubsection \<open> Dynamics: Nonlinear 5 \<close>
 lemma "(\<lambda>s::real^2. -(s$1) *(s$2) \<ge> a) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$1 - s$2 + s$1 * s$2 else - s$2 - s$2^2) & G]
   (\<lambda>s. -(s$1)*(s$2) \<ge> a)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (- s$1 + s$2 - s$1 * s$2) * s$2 - s$1 * (- s$2 - s$2^2)" in diff_invariant_rules(2))
+  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (- s$1 + s$2 - s$1 * s$2) * s$2 - s$1 * (- s$2 - s$2^2)" in diff_inv_rules(2))
   by (auto intro!: poly_derivatives simp: field_simps)
 
 
@@ -783,7 +783,7 @@ subsubsection \<open> Dynamics: Riccati \<close>
 lemma "(\<lambda>s::real^1. 2 * s$1^3 \<ge> 1/4) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. s$1^2 + s$1^4) & G]
   (\<lambda>s. 2 * s$1^3 \<ge> 1/4)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 24 * (s$1^2) * (s$1^2 + s$1^4)" in diff_invariant_rules(2); clarsimp)
+  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 24 * (s$1^2) * (s$1^2 + s$1^4)" in diff_inv_rules(2); clarsimp)
   by (auto intro!: poly_derivatives simp: field_simps)
 
 
@@ -793,11 +793,11 @@ subsubsection \<open> Dynamics: Nonlinear differential cut \<close>
 lemma "(\<lambda>s::real^2. s$1^3 \<ge> - 1 \<and> s$2^5 \<ge> 0) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then (s$1 - 3)^4 else s$2^2) & G]
   (\<lambda>s. s$1^3 \<ge> - 1 \<and> s$2^5 \<ge> 0)"
-  apply(simp, rule diff_invariant_rules)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * (s$1 - 3)^4" in diff_invariant_rules(2))
+  apply(simp, rule diff_inv_rules)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * (s$1 - 3)^4" in diff_inv_rules(2))
    apply(simp_all add: forall_2, force intro!: poly_derivatives)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2^2" in diff_invariant_rules(2))
-  by (auto intro!: diff_invariant_rules poly_derivatives simp: forall_2)
+   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2^2" in diff_inv_rules(2))
+  by (auto intro!: diff_inv_rules poly_derivatives simp: forall_2)
 
 
 subsubsection \<open> STTT Tutorial: Example 1 \<close>
@@ -1191,7 +1191,7 @@ lemma "c > 0 \<Longrightarrow> Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow>
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 else -Kp*(s$1-xr) - Kd*(s$2) ) & G]
   (\<lambda>s. (5/4)*(s$1-xr)^2 + (s$1-xr)*(s$2)/2 + (s$2)^2/4 < c)"
   apply(simp, rule_tac \<mu>'="\<lambda>s. 0" and \<nu>'="\<lambda>s. 10*(s$1-xr)*(s$2)/4 + (s$2^2)/2 + 
-    (s$1-xr)*(-Kp*(s$1-xr)-Kd*(s$2))/2 + (s$2)*(-Kp*(s$1-xr)-Kd*(s$2))/2" in diff_invariant_rules(3); 
+    (s$1-xr)*(-Kp*(s$1-xr)-Kd*(s$2))/2 + (s$2)*(-Kp*(s$1-xr)-Kd*(s$2))/2" in diff_inv_rules(3); 
       clarsimp simp: forall_2 STTexample9a_arith)
   apply(intro poly_derivatives; (rule poly_derivatives)?)
   by force+ (auto simp: field_simps)

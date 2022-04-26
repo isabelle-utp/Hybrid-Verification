@@ -182,7 +182,8 @@ lemma has_vderiv_on_pair [poly_derivatives]:
 lemma safety_property_1_in_one_go:
   "\<^bold>{0 \<le> h \<and> v\<^sup>2 \<le> 2*g*(H - h)\<^bold>}BBall\<^bold>{0 \<le> h \<and> h \<le> H\<^bold>}"
   apply (simp add: BBall_def, rule_tac I=Inv in hoare_kstarI)
-   apply(expr_simp, smt g_pos predicate1I zero_le_mult_iff zero_le_power2) 
+    apply(expr_simp)
+  apply (smt (verit, ccfv_SIG) SEXP_def g_pos taut_def zero_le_mult_iff zero_le_power2)
     \<comment> \<open> discharging second proof obligation \<close>
   apply(simp add: wp) \<comment> \<open> we need rules to simplify ODEs with wlps too \<close>
   (* apply(rule_tac I=Inv in diff_inv_on_rule) \<comment> \<open> should we change this rule? \<close> 
