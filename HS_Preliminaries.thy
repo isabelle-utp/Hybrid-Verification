@@ -1,5 +1,4 @@
 (*  Title:       Preliminaries for hybrid systems verification
-    Author:      Jonathan Julián Huerta y Munive, 2020
     Maintainer:  Jonathan Julián Huerta y Munive <jonjulian23@gmail.com>
 *)
 
@@ -9,15 +8,35 @@ text \<open>Hybrid systems combine continuous dynamics with discrete control. Th
 auxiliary lemmas for verification of hybrid systems.\<close>
 
 theory HS_Preliminaries
-  imports "Ordinary_Differential_Equations.Picard_Lindeloef_Qualitative" "Hybrid-Library.Matrix_Syntax"
+  imports 
+    "Ordinary_Differential_Equations.Picard_Lindeloef_Qualitative" 
+    "Hybrid-Library.Matrix_Syntax"
 begin
 
-\<comment> \<open> Syntax \<close>
+\<comment> \<open> Notation \<close>
+
+bundle derivative_notation
+begin
 
 no_notation has_vderiv_on (infix "(has'_vderiv'_on)" 50)
 
 notation has_derivative ("(1(D _ \<mapsto> (_))/ _)" [65,65] 61)
      and has_vderiv_on ("(1 D _ = (_)/ on _)" [65,65] 61)
+
+end
+
+bundle derivative_no_notation
+begin
+
+notation has_vderiv_on (infix "(has'_vderiv'_on)" 50)
+
+no_notation has_derivative ("(1(D _ \<mapsto> (_))/ _)" [65,65] 61)
+     and has_vderiv_on ("(1 D _ = (_)/ on _)" [65,65] 61)
+
+end
+
+unbundle derivative_notation \<comment> \<open> enable notation \<close>
+
 
 subsection \<open> Real vector arithmetic \<close>
 
@@ -119,8 +138,8 @@ lemma vderiv_divI[poly_derivatives]:
    apply(erule ssubst, rule poly_derivatives(5)[OF assms(2)])
   apply(rule vderiv_on_composeI[where g=g and f="\<lambda>t. 1/t" and f'="\<lambda>t. - 1/t^2", OF _ assms(3)])
   apply(subst has_vderiv_on_def, subst has_vector_derivative_def, clarsimp)
-   using assms(1) apply(force intro!: derivative_eq_intros simp: fun_eq_iff power2_eq_square)
-   using assms by (auto simp: field_simps power2_eq_square)
+  using assms(1) apply(force intro!: derivative_eq_intros simp: fun_eq_iff power2_eq_square)
+  using assms by (auto simp: field_simps)
 
 lemma vderiv_cosI[poly_derivatives]:
   assumes "D (f::real \<Rightarrow> real) = f' on T" and "g = (\<lambda>t. - (f' t) * sin (f t))"
@@ -361,6 +380,12 @@ lemma has_derivative_coordinate[simp]:
   by (simp add: has_derivative_within tendsto_nth_iff 
       bounded_linear_coordinate all_conj_distrib)
 
+lemma has_vderiv_on_component[simp]:
+  fixes x::"real \<Rightarrow> ('a::banach)^('n::finite)"
+  shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
+  unfolding has_vderiv_on_def has_vector_derivative_def by auto
+
+
 (***************** PREVIOUS RESULTS GENERALISED ABOVE **************)
 
 lemma frechet_tendsto_vec_lambda:
@@ -405,26 +430,24 @@ lemma has_derivative_vec_nth_old:
   using  assms 
   by (subst (asm) has_derivative_coordinate, simp)
 
-lemma 
-  assumes "\<forall>e\<in>Basis. D (\<lambda>x. (f x) \<bullet> e) \<mapsto> (\<lambda>x. (f' x) \<bullet> e) at x within S"
-  shows "D f \<mapsto> f' at x within S"
-  using has_derivative_componentwise_within[of f f' x S] assms by blast
-
-lemma has_vderiv_on_vec_eq_old[simp]:
-  fixes x::"real \<Rightarrow> ('a::banach)^('n::finite)"
-  shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
-  unfolding has_vderiv_on_def has_vector_derivative_def by auto
-
 
 subsection \<open> Differentiability implies Lipschitz \<close>
 
-
+(********************************************************************************)
 \<comment> \<open> Useful to remember these theorems \<close>
-thm has_derivative_componentwise_within
-thm tendsto_componentwise_iff
-thm eventually_at
+thm filter_eq_iff eventually_at eventually_at_topological \<comment> \<open> filters \<close>
+thm at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> at within \<close>
+thm has_derivative_at_within Lim_ident_at \<comment> \<open> derivative at within \<close>
+thm has_field_derivative_iff_has_vector_derivative \<comment> \<open> real vs vector derivative \<close>
+thm Rolle_deriv mvt mvt_simple mvt_very_simple mvt_general \<comment> \<open> mean value theorem \<close>
+thm banach_fix banach_fix_type \<comment> \<open> banach fixpoint theorems \<close>
+thm has_derivative_componentwise_within tendsto_componentwise_iff bounded_linear_compose
 thm bounded_linear_compose
 thm c1_implies_local_lipschitz
+
+thm blinfun_apply
+thm local_lipschitz_def lipschitz_on_def
+(********************************************************************************)
 
 lemma bounded_iff_subset_ball:
   "bounded S \<longleftrightarrow> (\<exists>e x. S \<subseteq> ball x e \<and> 0 \<le> e)"
