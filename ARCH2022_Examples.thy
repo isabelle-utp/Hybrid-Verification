@@ -479,7 +479,6 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1^3>5 \<and> s$2>2) \<
      apply (auto simp: field_simps odd_real_root_power_cancel)[1]
   apply (smt (verit, ccfv_SIG) numeral_One power3_eq_cube power4_eq_xxxx power_add_numeral power_commutes power_one_right semiring_norm(5) semiring_norm(8))
   apply (force simp: add_nonneg_pos, force)
-     apply (force simp: field_simps odd_real_root_power_cancel, force simp: add_nonneg_pos, force)
   apply(frule_tac x="\<lambda>t. X t $ 2" in current_vderiv_ge_always_ge)
   by (force, force, force simp: add_nonneg_pos, simp)
 
@@ -623,7 +622,7 @@ abbreviation darboux_ineq_flow2 :: "real \<Rightarrow> real^2 \<Rightarrow> real
   where "\<phi> t s \<equiv> (\<chi> i. if i=1 then (s$1/(1 - t * s$1)) else
       (s$2 - s$1 * ln(1 - t * s$1))/(1 - t * s$1))"
 
-lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>t. f) (\<lambda>s. {t. 0 \<le> t \<and> t * s $ 1 < 1}) UNIV 0 s"
+lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>s. {t. 0 \<le> t \<and> t * s $ 1 < 1}) UNIV (\<lambda>t. f) 0 s"
   by (rule ivp_solsI) (auto intro!: poly_derivatives 
       simp: forall_2 add_divide_distrib power_divide vec_eq_iff power2_eq_square)
 

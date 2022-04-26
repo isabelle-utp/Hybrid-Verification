@@ -45,12 +45,12 @@ lemma g_orbital_on_id_lens: "g_orbital_on \<one>\<^sub>L = g_orbital"
   by (simp add: g_orbital_on_def fun_eq_iff lens_defs)
 
 lemma g_orbital_on_eq: "g_orbital_on a f G U S t\<^sub>0 s = 
-  {put\<^bsub>a\<^esub> s (X t) |t X. t \<in> U (get\<^bsub>a\<^esub> s) \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s} \<and> X \<in> Sols (loc_subst a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)}"
+  {put\<^bsub>a\<^esub> s (X t) |t X. t \<in> U (get\<^bsub>a\<^esub> s) \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s} \<and> X \<in> Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s)}"
   unfolding g_orbital_on_def g_orbital_eq image_le_pred 
   by (auto simp: image_def)
 
 lemma g_orbital_onI:
-  assumes "X \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c))) U S t\<^sub>0 (get\<^bsub>a\<^esub> s)"
+  assumes "X \<in> Sols U S (\<lambda>t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c))) t\<^sub>0 (get\<^bsub>a\<^esub> s)"
     and "t \<in> U (get\<^bsub>a\<^esub> s)" and "(\<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> Collect G)"
   shows "put\<^bsub>a\<^esub> s (X t) \<in> g_orbital_on a f G U S t\<^sub>0 s"
   using assms unfolding g_orbital_on_eq by auto
@@ -62,7 +62,7 @@ definition diff_invariant_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: rea
   where "diff_invariant_on I a f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
 lemma diff_invariant_on_eq: "diff_invariant_on I a f U S t\<^sub>0 G = 
-  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols (loc_subst a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s). (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
+  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s). (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
   unfolding diff_invariant_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
 
 lemma diff_invariant_on_id_lens: "diff_invariant_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_invariant I f U S t\<^sub>0 G"

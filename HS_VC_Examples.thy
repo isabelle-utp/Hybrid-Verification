@@ -477,7 +477,7 @@ lemma picard_lindeloef_darboux_ineq: "picard_lindeloef (\<lambda>t. f) UNIV {s. 
   by (auto intro!: derivative_eq_intros)[1]
   sorry
 
-lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>t. f) (\<lambda>s. {t. 0 \<le> t \<and> t * s$1 < 1}) UNIV 0 s"
+lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>s. {t. 0 \<le> t \<and> t * s$1 < 1}) UNIV (\<lambda>t. f) 0 s"
   by (rule ivp_solsI) (auto intro!: poly_derivatives 
       simp: forall_2 power2_eq_square add_divide_distrib power_divide vec_eq_iff)
 

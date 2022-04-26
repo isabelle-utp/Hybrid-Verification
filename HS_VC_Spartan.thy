@@ -201,7 +201,7 @@ lemma fbox_g_evol[simp]:
 text \<open> Verification by providing solutions \<close>
 
 lemma fbox_g_orbital: "|x\<acute>=f & G on U S @ t\<^sub>0] Q = 
-  (\<lambda>s. \<forall>X\<in>Sols f U S t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
+  (\<lambda>s. \<forall>X\<in>Sols U S f t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
   unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
 
 context local_flow
@@ -351,7 +351,7 @@ lemma diff_cut_axiom:
 proof(rule_tac f="\<lambda> x. |x] Q" in HOL.arg_cong, rule ext, rule subset_antisym)
   fix s 
   {fix s' assume "s' \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
-    then obtain \<tau>::real and X where x_ivp: "X \<in> Sols f U S t\<^sub>0 s" 
+    then obtain \<tau>::real and X where x_ivp: "X \<in> Sols U S f t\<^sub>0 s" 
       and "X \<tau> = s'" and "\<tau> \<in> U s" and guard_x:"\<P> X (down (U s) \<tau>) \<subseteq> {s. G s}"
       using g_orbitalD[of s' "f" G U S t\<^sub>0 s]  by blast
     have "\<forall>t\<in>(down (U s) \<tau>). \<P> X (down (U s) t) \<subseteq> {s. G s}"
@@ -376,7 +376,7 @@ lemma diff_cut_rule:
   shows "P \<le> |x\<acute>= f & G on U S @ t\<^sub>0] Q"
 proof(subst fbox_def, subst g_orbital_eq, clarsimp)
   fix t::real and X::"real \<Rightarrow> 'a" and s assume "P s" and "t \<in> U s"
-    and x_ivp:"X \<in> Sols f U S t\<^sub>0 s" 
+    and x_ivp:"X \<in> Sols U S f t\<^sub>0 s" 
     and guard_x:"\<forall>\<tau>. \<tau> \<in> U s \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
   have "\<forall>\<tau>\<in>(down (U s) t). X \<tau> \<in> (x\<acute>= f & G on U S @ t\<^sub>0) s"
     using g_orbitalI[OF x_ivp] guard_x unfolding image_le_pred by auto
@@ -403,10 +403,10 @@ proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
   fix s
   let "?ex_ivl s" = "picard_lindeloef.ex_ivl (\<lambda>t. f) UNIV UNIV 0 s"
   let "?lhs s" = 
-    "\<forall>X\<in>Sols (\<lambda>t. f) (\<lambda>s. {t. t \<ge> 0}) UNIV 0 s. \<forall>t\<ge>0. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)) \<longrightarrow> I (X t)"
-  obtain X where xivp1: "X \<in> Sols (\<lambda>t. f) (\<lambda>s. ?ex_ivl s) UNIV 0 s"
+    "\<forall>X\<in>Sols (\<lambda>s. {t. t \<ge> 0}) UNIV (\<lambda>t. f) 0 s. \<forall>t\<ge>0. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)) \<longrightarrow> I (X t)"
+  obtain X where xivp1: "X \<in> Sols (\<lambda>s. ?ex_ivl s) UNIV (\<lambda>t. f) 0 s"
     using picard_lindeloef.flow_in_ivp_sols_ex_ivl[OF assms(1)] by auto
-  have xivp2: "X \<in> Sols (\<lambda>t. f) (\<lambda>s. Collect ((\<le>) 0)) UNIV 0 s"
+  have xivp2: "X \<in> Sols (\<lambda>s. Collect ((\<le>) 0)) UNIV (\<lambda>t. f) 0 s"
     by (rule in_ivp_sols_subset[OF _ _ xivp1], simp_all add: assms(2))
   hence shyp: "X 0 = s"
     using ivp_solsD by auto

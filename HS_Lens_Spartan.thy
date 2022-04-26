@@ -597,18 +597,18 @@ term "(x, y):{x` = 1, y` = 2*$x}"
 term "(x,y):{(x, y)` = (1, 2*$x), z` = $y}"
 
 lemma fbox_g_ode_on: "|{x` = f | G on U S @ t\<^sub>0}] Q = 
-  (\<lambda>s. \<forall>X \<in> Sols (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) (U)\<^sub>e S t\<^sub>0 (get\<^bsub>x\<^esub> s). 
+  (\<lambda>s. \<forall>X \<in> Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s). 
   \<forall>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>x\<^esub> s)) t. G (put\<^bsub>x\<^esub> s (X \<tau>))) \<longrightarrow> Q (put\<^bsub>x\<^esub> s (X t)))"
   unfolding fbox_def g_orbital_on_eq by (auto simp: fun_eq_iff SEXP_def)
 
 notation g_orbital ("(1x\<acute>=_ & _ on _ _ @ _)")
 
 lemma fbox_g_orbital: "|x\<acute>=f & G on U S @ t\<^sub>0] Q = 
-  (\<lambda>s. \<forall>X\<in>Sols f U S t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
+  (\<lambda>s. \<forall>X\<in>Sols U S f t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
   unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
 
 lemma fbox_g_orbital_on: "|g_orbital_on a f G U S t\<^sub>0] Q =
-  (\<lambda>s. \<forall>X\<in>Sols (loc_subst a f s) U S t\<^sub>0 (get\<^bsub>a\<^esub> s).
+  (\<lambda>s. \<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s).
         \<forall>t\<in>U (get\<^bsub>a\<^esub> s). (\<forall>x. x \<in> U (get\<^bsub>a\<^esub> s) \<and> x \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X x))) \<longrightarrow> Q (put\<^bsub>a\<^esub> s (X t)))"
   by (auto simp add: g_orbital_on_def fbox_def g_orbital_eq fun_eq_iff)
 
@@ -621,10 +621,10 @@ proof (unfold fbox_g_orbital_on fun_eq_iff, simp add: expr_defs, clarify)
   let ?sol = "(\<lambda>t. get\<^bsub>a\<^esub> (\<phi> t s))"
   interpret local_flow "(\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))" T "UNIV" _ "(loc_subst a \<phi> s)"
     by (simp add: assms)
-  have sol: "?sol \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV 0 (get\<^bsub>a\<^esub> s)"
+  have sol: "?sol \<in> Sols (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) 0 (get\<^bsub>a\<^esub> s)"
     using in_ivp_sols[of "(get\<^bsub>a\<^esub> s)" "(\<lambda>\<s>. Collect ((\<le>) 0))"] assms(2,3)
     by auto
-  show "(\<forall>X\<in>Sols (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV 0 (get\<^bsub>a\<^esub> s).
+  show "(\<forall>X\<in>Sols (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) 0 (get\<^bsub>a\<^esub> s).
              \<forall>t\<ge>0. (\<forall>xa. 0 \<le> xa \<and> xa \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X xa))) \<longrightarrow> Q (put\<^bsub>a\<^esub> s (X t))) =
          (\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (s \<oplus>\<^sub>L \<phi> \<tau> s on a)) \<longrightarrow> Q (s \<oplus>\<^sub>L \<phi> t s on a))" (is "?lhs = ?rhs")
   proof 
@@ -635,7 +635,7 @@ proof (unfold fbox_g_orbital_on fun_eq_iff, simp add: expr_defs, clarify)
       fix X and t :: real
       assume 
         a: "\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (s \<oplus>\<^sub>L \<phi> \<tau> s on a)) \<longrightarrow> Q (s \<oplus>\<^sub>L \<phi> t s on a)"
-        "X \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV 0 (get\<^bsub>a\<^esub> s)" "0 \<le> t"
+        "X \<in> Sols (\<lambda>\<s>. Collect ((\<le>) 0)) UNIV (\<lambda>t c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) 0 (get\<^bsub>a\<^esub> s)" "0 \<le> t"
       hence "\<forall>\<tau>\<in>{0..t}. X \<tau> = (loc_subst a \<phi> s) \<tau> (get\<^bsub>a\<^esub> s)"
       proof (safe)
         fix \<tau>
@@ -693,7 +693,7 @@ lemma fbox_g_ode_subset:
 
 lemma 
   assumes "s \<in> S" and "0 \<in> U (get\<^bsub>x\<^esub> s)" and "U (get\<^bsub>x\<^esub> s) \<subseteq> T"
-  shows "(\<lambda>t. put\<^bsub>x\<^esub> s (\<phi> \<tau> s)) \<in> Sols (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) (\<lambda>s. U (get\<^bsub>x\<^esub> s)) S 0 s"
+  shows "(\<lambda>t. put\<^bsub>x\<^esub> s (\<phi> \<tau> s)) \<in> Sols (\<lambda>s. U (get\<^bsub>x\<^esub> s)) S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) 0 s"
   apply (rule in_ivp_sols_subset[OF _ _ ivp_solsI, of _ _ _ "\<lambda>s. T"])
   using  ivp(2)[OF \<open>s \<in> S\<close>] has_vderiv_on_domain[OF \<open>s \<in> S\<close>] 
     in_domain[OF \<open>s \<in> S\<close>] 
@@ -855,7 +855,7 @@ proof(rule_tac f="\<lambda> x. |x] Q" in HOL.arg_cong, rule ext, rule subset_ant
   fix s::'a
   {fix s' assume "s' \<in> {x` = f | G on U S @ t\<^sub>0} s"
     then obtain \<tau>::real and X where "s' = put\<^bsub>x\<^esub> s (X \<tau>)" and "\<tau> \<in> (U (get\<^bsub>x\<^esub> s))" 
-      and  x_ivp: "X \<in> Sols (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) (U)\<^sub>e S t\<^sub>0 (get\<^bsub>x\<^esub> s)"  
+      and  x_ivp: "X \<in> Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s)"  
       and guard_x: "\<P> (\<lambda>t. put\<^bsub>x\<^esub> s (X t)) (down (U (get\<^bsub>x\<^esub> s)) \<tau>) \<subseteq> Collect (G)\<^sub>e"
       unfolding g_orbital_on_eq SEXP_def by auto
     have "\<forall>t\<in>(down (U (get\<^bsub>x\<^esub> s)) \<tau>). \<P> (\<lambda>t. put\<^bsub>x\<^esub> s (X t)) (down (U (get\<^bsub>x\<^esub> s)) t) \<subseteq> {s. G s}"
@@ -883,7 +883,7 @@ lemma diff_cut_on_rule:
 proof(subst fbox_def, subst g_orbital_on_eq, clarsimp)
   fix t::real and X::"real \<Rightarrow> 'b" and s   
   assume "P s" and "t \<in> U (get\<^bsub>a\<^esub> s)"
-    and x_ivp:"X \<in> Sols (\<lambda>t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c))) (U)\<^sub>e S t\<^sub>0 (get\<^bsub>a\<^esub> s)" 
+    and x_ivp:"X \<in> Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c))) t\<^sub>0 (get\<^bsub>a\<^esub> s)" 
     and guard_x:"\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>a\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
   have a: "\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). put\<^bsub>a\<^esub> s (X \<tau>) \<in> g_orbital_on a f (G)\<^sub>e U S t\<^sub>0 s"
     using g_orbital_onI[OF x_ivp] guard_x unfolding image_le_pred by (auto simp: SEXP_def)
@@ -927,10 +927,10 @@ proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
   fix s
   let "?ex_ivl s" = "picard_lindeloef.ex_ivl (\<lambda>t. f) UNIV UNIV 0 s"
   let "?lhs s" = 
-    "\<forall>X\<in>Sols (\<lambda>t. f) (\<lambda>s. {t. t \<ge> 0}) UNIV 0 s. \<forall>t\<ge>0. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)) \<longrightarrow> I (X t)"
-  obtain X where xivp1: "X \<in> Sols (\<lambda>t. f) (\<lambda>s. ?ex_ivl s) UNIV 0 s"
+    "\<forall>X\<in>Sols (\<lambda>s. {t. t \<ge> 0}) UNIV (\<lambda>t. f) 0 s. \<forall>t\<ge>0. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)) \<longrightarrow> I (X t)"
+  obtain X where xivp1: "X \<in> Sols (\<lambda>s. ?ex_ivl s) UNIV (\<lambda>t. f) 0 s"
     using picard_lindeloef.flow_in_ivp_sols_ex_ivl[OF assms(1)] by auto
-  have xivp2: "X \<in> Sols (\<lambda>t. f) (\<lambda>s. Collect ((\<le>) 0)) UNIV 0 s"
+  have xivp2: "X \<in> Sols (\<lambda>s. Collect ((\<le>) 0)) UNIV (\<lambda>t. f) 0 s"
     by (rule in_ivp_sols_subset[OF _ _ xivp1], simp_all add: assms(2))
   hence shyp: "X 0 = s"
     using ivp_solsD by auto
