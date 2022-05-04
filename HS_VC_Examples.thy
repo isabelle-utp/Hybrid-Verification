@@ -9,7 +9,7 @@ text \<open> We prove partial correctness specifications of some hybrid systems 
 verification components.\<close>
 
 theory HS_VC_Examples
-  imports HS_VC_Spartan
+  imports HS_VC_Spartan Real_Arith_Tactics
 
 begin
 
@@ -107,16 +107,18 @@ lemma inv_conserv_at_ground[bb_real_arith]:
     and pos: "g * \<tau>\<^sup>2 / 2 + v * \<tau> + (x::real) = 0"
   shows "2 * g * h + (g * \<tau> + v) * (g * \<tau> + v) = 0"
 proof-
-  from pos have "g * \<tau>\<^sup>2  + 2 * v * \<tau> + 2 * x = 0" by auto
+  from pos have "g * \<tau>\<^sup>2  + 2 * v * \<tau> + 2 * x = 0" 
+    by auto
+  hence "g * (g * \<tau>\<^sup>2  + 2 * v * \<tau> + 2 * x) = 0"
+    by auto
   then have "g\<^sup>2 * \<tau>\<^sup>2  + 2 * g * v * \<tau> + 2 * g * x = 0"
-
-    by (metis (mono_tags, hide_lams) Groups.mult_ac(1,3) mult_zero_right
-        monoid_mult_class.power2_eq_square semiring_class.distrib_left)
+    apply -
+    by distribute (mon_simp_vars g x)
   hence "g\<^sup>2 * \<tau>\<^sup>2 + 2 * g * v * \<tau> + v\<^sup>2 + 2 * g * h = 0"
     using invar by (simp add: monoid_mult_class.power2_eq_square)
   hence obs: "(g * \<tau> + v)\<^sup>2 + 2 * g * h = 0"
-    apply(subst power2_sum) by (metis (no_types, hide_lams) Groups.add_ac(2, 3)
-        Groups.mult_ac(2, 3) monoid_mult_class.power2_eq_square nat_distrib(2))
+    by bin_unfold
+      (metis (no_types, opaque_lifting) add.commute add.left_commute mult.assoc mult.commute)
   thus "2 * g * h + (g * \<tau> + v) * (g * \<tau> + v) = 0"
     by (simp add: add.commute distrib_right power2_eq_square)
 qed
@@ -414,12 +416,12 @@ proof-
       and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. A * (X t$1)\<^sup>2 + B * X t$1) on UNIV"
       and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. A * X t$2 * X t$1 + B * X t$2) on UNIV"
     hence "D ?c = (\<lambda>t. ?c t * (A * (X t$1) + B)) on UNIV"
-      by (auto intro!: poly_derivatives simp: field_simps power2_eq_square)
+      by (auto intro!: poly_derivatives simp: field_simps)
     hence "D ?c = (\<lambda>t. (A * X t$1 + B) * (X t$1 + X t$2)) on {0--t}"
       using has_vderiv_on_subset[OF _ subset_UNIV[of "{0--t}"]] by (simp add: mult.commute)
     moreover have "continuous_on UNIV (\<lambda>t. A * (X t$1) + B)"
       apply(rule vderiv_on_continuous_on)
-      using D1 by (auto intro!: poly_derivatives simp: field_simps power2_eq_square)
+      using D1 by (auto intro!: poly_derivatives simp: field_simps)
     moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B) * 0) on {0--t}"
       by (auto intro!: poly_derivatives)
     moreover note picard_lindeloef.ivp_unique_solution[OF 
@@ -497,8 +499,7 @@ proof-
     hence "1 - t * s\<^sub>1 \<le> 1"
       using \<open>0 \<le> t\<close> by auto
     thus ?thesis
-      by (metis (mono_tags, hide_lams) False add.left_neutral antisym_conv assms(3) 
-          diff_le_eq ln_ge_zero_iff ln_one mult_zero_right not_le order_refl zero_le_mult_iff)
+      by (metis False add_0 assms(3) less_diff_eq ln_le_zero_iff mult_le_0_iff nle_le)
   qed
   hence "s\<^sub>1 + s\<^sub>2 - s\<^sub>1 * ln (1 - t * s\<^sub>1) \<ge> s\<^sub>1 + s\<^sub>2"
     by linarith

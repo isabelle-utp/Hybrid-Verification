@@ -3,9 +3,9 @@ section \<open> Examples \<close>
 text \<open> We prove partial correctness specifications of some hybrid systems with our 
 verification components.\<close>
 
-theory ARCH2022_Examples
+theory ARCH2020_Examples
   imports 
-    HS_Lens_Spartan
+    "HS_VC_Spartan" 
     Real_Arith_Tactics
 
 begin
@@ -16,59 +16,31 @@ subsection \<open> Basic \<close>
 
 subsubsection \<open> Basic assignment \<close> 
 
-
-dataspace two_vars =
-  variables x :: real y :: real 
-
-context two_vars
-begin
-
 (* x>=0 -> [x:=x+1;]x>=1 *)
-lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] (x \<ge> 1)"
-  by hoare_wp_simp
+lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> |1 ::= (\<lambda>s. s$1 +1)] (\<lambda>s. s$1 \<ge> 1)"
+  by simp
 
-end
 
 subsubsection \<open> Overwrite assignment on some branches \<close>
 
-context two_vars
-begin
-
 (* x>=0 -> [x:=x+1;][x:=x+1; ++ y:=x+1;]x>=1 *)
-lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |x ::= x + 1 \<sqinter> y ::= x + 1] (x \<ge> 1)"
-  by hoare_wp_simp
+lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> |1 ::= (\<lambda>s. s$1 +1)] 
+  |(\<lambda>s. (1 ::= (\<lambda>s. s$1 +1)) s \<union> (2 ::= (\<lambda>s. s$1 +1)) s)] (\<lambda>s. s$1 \<ge> 1)"
+  by (simp add: fbox_choice le_fun_def)
 
-end
 
 subsubsection \<open> Overwrite assignment in loop \<close>
 
-context two_vars
-begin
-
 (* x>=0 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1)]x>=1 *)
-lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |LOOP x ::= x + 1 INV (x \<ge> 1)] (x \<ge> 1)"
-  apply (subst fbox_kcomp[symmetric])
-  apply (rule fbox_loopI_break)
-  by hoare_wp_auto+
-
-end
+lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> |1 ::= (\<lambda>s. s$1 +1)] 
+ |LOOP (1 ::= (\<lambda>s. s$1 +1)) INV (\<lambda>s. s$1 \<ge> 1)] (\<lambda>s. s$1 \<ge> 1)"
+  apply(subst fbox_kcomp[symmetric])
+  by (rule wp_loopI_break, auto)
 
 
 subsubsection \<open> Overwrite assignment in ODE \<close>
 
-
-context two_vars
-begin
-
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
-lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
-
-  apply (subst fbox_kcomp[symmetric])
-  apply (rule fbox_loopI_break)
-  by hoare_wp_auto+
-
-end
-
 lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> 
   |1 ::= (\<lambda>s. s$1 +1)] |x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then 2 else 0)) & G] 
   (\<lambda>s. s$1 \<ge> 1)" 
