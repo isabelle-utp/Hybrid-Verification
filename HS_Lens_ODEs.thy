@@ -65,7 +65,7 @@ lemma diff_inv_on_eq: "diff_inv_on I a f U S t\<^sub>0 G =
   (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s). (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
   unfolding diff_inv_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
 
-lemma diff_inv_on_id_lens: "diff_inv_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_inv I f U S t\<^sub>0 G"
+lemma diff_inv_on_id_lens: "diff_inv_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_inv U S G f t\<^sub>0 I"
   by (simp add: diff_inv_on_def diff_inv_def g_orbital_on_id_lens)
 
 named_theorems diff_inv_on_rules "rules for certifying (localised) differential invariants"
@@ -200,7 +200,7 @@ lemma diff_inv_eq_rule_expr [diff_inv_rule_expr]:
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and dX: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
   \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
-  shows "diff_inv (\<mu> = \<nu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv U S G f t\<^sub>0 (\<mu> = \<nu>)\<^sub>e"
   using assms by (simp add: SEXP_def, rule diff_inv_eq_rule, simp_all)
 
 lemma diff_inv_leq_rule_expr [diff_inv_rule_expr]:
@@ -209,7 +209,7 @@ lemma diff_inv_leq_rule_expr [diff_inv_rule_expr]:
     and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
     and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
-  shows "diff_inv (\<nu> \<le> \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv U S G f t\<^sub>0 (\<nu> \<le> \<mu>)\<^sub>e"
   using assms
   by (simp add: SEXP_def, rule diff_inv_leq_rule, simp_all)
 
@@ -219,20 +219,20 @@ lemma diff_inv_less_rule_expr [diff_inv_rule_expr]:
     and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
     and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
-  shows "diff_inv (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
   using assms
   by (simp add: SEXP_def, rule diff_inv_less_rule, simp_all)
 
 lemma diff_inv_nleq_rule_expr:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
-  shows "diff_inv (\<not> \<nu> \<le> \<mu>)\<^sub>e f U S t\<^sub>0 G \<longleftrightarrow> diff_inv (\<nu> > \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  shows "diff_inv U S G f t\<^sub>0 (\<not> \<nu> \<le> \<mu>)\<^sub>e \<longleftrightarrow> diff_inv U S G f t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
   by (simp add: SEXP_def, subst diff_inv_nleq_rule, simp_all)
 
 lemma diff_inv_neq_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes "diff_inv (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
-    and "diff_inv (\<nu> > \<mu>)\<^sub>e f U S t\<^sub>0 G"
-  shows "diff_inv (\<nu> \<noteq> \<mu>)\<^sub>e f U S t\<^sub>0 G"
+  assumes "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
+    and "diff_inv U S G f t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
+  shows "diff_inv U S G f t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
   using assms apply(simp add: SEXP_def)
   by (rule diff_inv_neq_rule, simp_all)
 
@@ -241,16 +241,16 @@ lemma diff_inv_neq_rule_expr_converse:
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)" "\<And>s t. s \<in> S \<Longrightarrow> t \<in> U s \<Longrightarrow> t\<^sub>0 \<le> t"
     and conts: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<nu>"
       "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<mu>"
-    and dI:"diff_inv (\<nu> \<noteq> \<mu>)\<^sub>e f U S t\<^sub>0 G"
-  shows "diff_inv (\<nu> < \<mu>)\<^sub>e f U S t\<^sub>0 G"
+    and dI:"diff_inv U S G f t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
+  shows "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
   using assms apply(simp add: SEXP_def)
   by (rule diff_inv_neq_rule_converse, simp_all)
 
 lemma diff_inv_cnn_rule_expr:
-  assumes "diff_inv (I\<^sub>1)\<^sub>e f U S t\<^sub>0 G"
-    and "diff_inv (I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
-  shows diff_inv_conj_rule_expr [diff_inv_rule_expr]: "diff_inv (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
-    and diff_inv_disj_rule_expr [diff_inv_rule_expr]: "diff_inv (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e f U S t\<^sub>0 G"
+  assumes "diff_inv U S G f t\<^sub>0 (I\<^sub>1)\<^sub>e"
+    and "diff_inv U S G f t\<^sub>0 (I\<^sub>2)\<^sub>e"
+  shows diff_inv_conj_rule_expr [diff_inv_rule_expr]: "diff_inv U S G f t\<^sub>0 (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e"
+    and diff_inv_disj_rule_expr [diff_inv_rule_expr]: "diff_inv U S G f t\<^sub>0 (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e"
   using assms unfolding diff_inv_eq by auto
 
 lemma diff_ghost_very_simple:

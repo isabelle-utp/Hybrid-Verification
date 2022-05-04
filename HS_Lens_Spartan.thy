@@ -743,11 +743,11 @@ lemma fbox_g_orbital_inv:
   by (rule fbox_iso[OF assms(3)])
 
 lemma fbox_diff_inv: 
-  "(I \<le> |x\<acute>=f & G on U S @ t\<^sub>0] I) = diff_inv I f U S t\<^sub>0 G"
+  "(I \<le> |x\<acute>=f & G on U S @ t\<^sub>0] I) = diff_inv U S G f t\<^sub>0 I"
   by (auto simp: diff_inv_def ivp_sols_def fbox_def g_orbital_eq)
 
 lemma hoare_diff_inv[simp]:
-  "\<^bold>{I\<^bold>} (x\<acute>=f & G on U S @ t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv (I)\<^sub>e f (U)\<^sub>e S t\<^sub>0 (G)\<^sub>e"
+  "\<^bold>{I\<^bold>} (x\<acute>=f & G on U S @ t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv (U)\<^sub>e S (G)\<^sub>e f t\<^sub>0 (I)\<^sub>e"
   using fbox_diff_inv[of I f G U S t\<^sub>0] by (simp add: SEXP_def)
 
 lemma fbox_diff_inv_on: 
@@ -772,7 +772,7 @@ begin
 
 lemma fbox_diff_inv_eq: 
   assumes "\<And>s. s \<in> S \<Longrightarrow> 0 \<in> U s \<and> is_interval (U s) \<and> U s \<subseteq> T"
-  shows "diff_inv I (\<lambda>t. f) U S 0 (\<lambda>s. True) = 
+  shows "diff_inv U S (\<lambda>s. True) (\<lambda>t. f) 0 I = 
   ((\<lambda>s. s \<in> S \<longrightarrow> I s) = |x\<acute>= (\<lambda>t. f) & (\<lambda>s. True) on U S @ 0] (\<guillemotleft>\<s>\<guillemotright> \<in> \<guillemotleft>S\<guillemotright> \<longrightarrow> I))"
   unfolding fbox_diff_inv[symmetric] 
   apply(subst fbox_g_ode_subset[OF assms], simp)+
@@ -783,7 +783,7 @@ lemma fbox_diff_inv_eq:
   using in_domain ivp(2) assms by force+
 
 lemma diff_inv_eq_inv_set: 
-  "diff_inv I (\<lambda>t. f) (\<lambda>s. T) S 0 (\<lambda>s. True) = (\<forall>s. I s \<longrightarrow> \<gamma>\<^sup>\<phi> s \<subseteq> {s. I s})"
+  "diff_inv (\<lambda>s. T) S (\<lambda>s. True) (\<lambda>t. f) 0 I = (\<forall>s. I s \<longrightarrow> \<gamma>\<^sup>\<phi> s \<subseteq> {s. I s})"
   unfolding diff_inv_eq_inv_set orbit_def by simp
 
 end
@@ -913,7 +913,7 @@ lemma diff_cut_on_split':
   by (metis (mono_tags) SEXP_def assms(1) assms(2) diff_cut_on_rule hoare_weaken_pre(1) hoare_weaken_pre(2))
 
 lemma diff_inv_axiom1:
-  assumes "G s \<longrightarrow> I s" and "diff_inv I (\<lambda>t. f) (\<lambda>s. {t. t \<ge> 0}) UNIV 0 G"
+  assumes "G s \<longrightarrow> I s" and "diff_inv (\<lambda>s. {t. t \<ge> 0}) UNIV G (\<lambda>t. f) 0 I"
   shows "( |x\<acute>= f & G] I) s"
   using assms unfolding fbox_g_orbital diff_inv_eq apply clarsimp
   by (erule_tac x=s in allE, frule ivp_solsD(2), clarsimp)
@@ -921,7 +921,7 @@ lemma diff_inv_axiom1:
 lemma diff_inv_axiom2:
   assumes "picard_lindeloef (\<lambda>t. f) UNIV UNIV 0"
     and "\<And>s. {t::real. t \<ge> 0} \<subseteq> picard_lindeloef.ex_ivl (\<lambda>t. f) UNIV UNIV 0 s"
-    and "diff_inv I (\<lambda>t. f) (\<lambda>s. {t::real. t \<ge> 0}) UNIV 0 G"
+    and "diff_inv (\<lambda>s. {t. t \<ge> 0}) UNIV G (\<lambda>t. f) 0 I"
   shows "|x\<acute>= f & G] I = |(\<lambda>s. {x. s = x \<and> G s})] I"
 proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
   fix s
@@ -952,7 +952,7 @@ proof(unfold fbox_g_orbital, subst fbox_def, clarsimp simp: fun_eq_iff)
 qed
 
 lemma diff_inv_rule:
-  assumes "P \<le> I" and "diff_inv I f U S t\<^sub>0 G" and "I \<le> Q"
+  assumes "P \<le> I" and "diff_inv U S G f t\<^sub>0 I" and "I \<le> Q"
   shows "P \<le> |x\<acute>= f & G on U S @ t\<^sub>0] Q"
   apply(rule fbox_g_orbital_inv[OF assms(1) _ assms(3)])
   unfolding fbox_diff_inv using assms(2) .

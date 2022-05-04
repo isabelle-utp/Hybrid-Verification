@@ -579,8 +579,8 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_inv (\<lambda>s. s $ 1 + s $ 2 = 0)
-     (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
+  have key: "diff_inv (\<lambda>s. UNIV) UNIV G 
+  (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) 0 (\<lambda>s. s $ 1 + s $ 2 = 0)"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
     let "?c" = "(\<lambda>t.  X t $ 1 + X t $ 2)"

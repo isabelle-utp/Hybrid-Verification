@@ -87,7 +87,7 @@ proof-
   thus ?thesis by auto
 qed
 
-lemma "diff_inv (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0) (\<lambda>t. f g) (\<lambda>s. UNIV) S t\<^sub>0 G"
+lemma "diff_inv (\<lambda>s. UNIV) S G (\<lambda>t. f g) t\<^sub>0 (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0)"
   by (auto intro!: poly_derivatives diff_inv_rules)
 
 lemma bouncing_ball_inv: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
@@ -407,8 +407,8 @@ lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le>
   |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
   (\<lambda>s. 0 = - s$1 - s$2)"
 proof-
-  have key: "diff_inv (\<lambda>s. s$1 + s$2 = 0)
-     (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
+  have key: "diff_inv (\<lambda>s. UNIV) UNIV G 
+  (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) 0 (\<lambda>s. s$1 + s$2 = 0)"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
     fix X::"real\<Rightarrow>real^2" and t::real
     let "?c" = "(\<lambda>t.  X t$1 + X t$2)"
@@ -530,9 +530,9 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^3. s$1 + s$3 = 0) \<le>
   |x\<acute>= (\<lambda> s. (\<chi> i::3. if i=1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else (if i = 3 then (A*(s$1)+B)/s$3 else 0))) & (\<lambda>s. (s$2) = (s$1)^2 \<and> (s$3)^2 > 0)] 
   (\<lambda>s. s$1 + s$3 = 0)"
 proof-
-  have "diff_inv (\<lambda>s::real^3. s$1 + s$3 = 0)
-     (\<lambda>t s. \<chi> i::3. if i = 1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else if i = 3 then (A*(s$1)+B)/s$3 else 0) (\<lambda>s. Collect ((\<le>) 0))
-     UNIV 0 (\<lambda>s. s$2 = (s$1)\<^sup>2 \<and> s$3 \<noteq> 0)"
+  have "diff_inv (\<lambda>s. Collect ((\<le>) 0)) UNIV (\<lambda>s. s$2 = (s$1)\<^sup>2 \<and> s$3 \<noteq> 0) 
+  (\<lambda>t s. \<chi> i::3. if i = 1 then (A*(s$2)+B*(s$1))/(s$3)\<^sup>2 else if i = 3 then (A*(s$1)+B)/s$3 else 0) 
+  0 (\<lambda>s::real^3. s$1 + s$3 = 0)"
   proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_3)
     fix X::"real\<Rightarrow>real^3" and t::real
     let "?c" = "(\<lambda>t.  X t$1 + X t$3)"
