@@ -115,124 +115,100 @@ lemma "diff_inv U S (\<lambda>s. True) f t\<^sub>0 I \<Longrightarrow> diff_inv 
 
 named_theorems diff_inv_rules "rules for certifying differential invariants"
 
-lemma diff_inv_eq_rule [diff_inv_rules]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and dX: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
-  \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
+lemma diff_inv_eq0I:
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> 'b::real_inner"
+  assumes ivl: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
+    and dX: "\<And>X t. D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0) \<Longrightarrow> \<forall>\<tau>\<in>(down (U (X t\<^sub>0)) t). G (X \<tau>) 
+    \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U (X t\<^sub>0)"
+  shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<mu> s = 0)"
+proof(clarsimp simp: diff_inv_eq ivp_sols_def)
+  fix X t
+  assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "\<mu> (X t\<^sub>0) = 0"
+    and G_hyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
+    and set_hyps: "t\<^sub>0 \<in> U (X t\<^sub>0)" "t \<in> U (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
+  hence sub_ivl: "{t\<^sub>0<--<t} \<subseteq> U (X t\<^sub>0)" "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)"
+    using ivl[of "X t\<^sub>0"]
+    by (meson PiE closed_segment_subset_interval segment_open_subset_closed subset_trans)
+      (metis Pi_mem ivl closed_segment_subset_interval set_hyps)
+  hence key: "D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on {t\<^sub>0--t}"
+    using has_vderiv_on_subset[OF dX[of X, OF xivp(1)] sub_ivl(2)] G_hyp
+    by blast
+  hence "\<forall>\<tau>\<in>{t\<^sub>0<--<t}. D (\<lambda>\<tau>. \<mu> (X \<tau>)) \<mapsto> (\<lambda>t. 0) (at \<tau>)"
+    using has_vderiv_on_subset[OF key segment_open_subset_closed, unfolded has_vderiv_on_iff] 
+    at_within_open[OF _ open_real_segment, of _ t\<^sub>0 t] by auto
+  moreover note mvt_ivl_general[OF _ vderiv_on_continuous_on[OF key], of "\<lambda>\<tau> t. 0"]
+  ultimately have "t\<^sub>0 \<noteq> t \<Longrightarrow> \<parallel>\<mu> (X t)\<parallel> = 0"
+    using xivp by auto
+  thus "\<mu> (X t) = 0"
+    using xivp by auto
+qed
+
+lemma diff_inv_eqI [diff_inv_rules]:
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> 'b::real_inner"
+  assumes "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
+    and "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) 
+    \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
   shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<mu> s = \<nu> s)"
-proof(simp add: diff_inv_eq ivp_sols_def, clarsimp)
-  fix X t 
-  assume xivp:"D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)" "\<mu> (X t\<^sub>0) = \<nu> (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
-    and tHyp:"t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)" 
-    and GHyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
-  hence "D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
-    using dX by auto
-  hence "D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on {t\<^sub>0--t}"
-    apply(rule has_vderiv_on_subset[OF _ closed_segment_subset_interval[OF Uhyp t0Hyp tHyp]])
-    using xivp t0Hyp by auto
-  then obtain \<tau> where "\<mu> (X t) - \<nu> (X t) - (\<mu> (X t\<^sub>0) - \<nu> (X t\<^sub>0)) = (t - t\<^sub>0) * \<tau> *\<^sub>R 0"
-    using mvt_very_simple_closed_segmentE by blast
-  thus "\<mu> (X t) = \<nu> (X t)"
-    by (simp add: xivp(2))
+  using diff_inv_eq0I[where \<mu>="\<lambda>s. \<mu> s - \<nu> s"] assms by auto
+
+text \<open> can this be generalised to @{term "\<mu>::'a::real_normed_vector \<Rightarrow> 'b::real_inner"}? \<close>
+lemma 
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  assumes ivl: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
+    and dX: "\<And>X t. D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0) \<Longrightarrow> \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>)  
+    \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>)) on U(X t\<^sub>0)) 
+      \<and> (\<forall>\<tau>\<in>{t\<^sub>0<--<t}. (\<tau> > t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<ge> 0) \<and> (\<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> 0))"
+  shows diff_inv_leq0I: "diff_inv U S G f t\<^sub>0 (\<lambda>s. 0 \<le> \<mu> s) "
+    and diff_inv_less0I: "diff_inv U S G f t\<^sub>0 (\<lambda>s. 0 < \<mu> s)"
+proof(auto simp: diff_inv_eq ivp_sols_def)
+  fix X t
+  assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)"
+    and G_hyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
+    and set_hyps: "t\<^sub>0 \<in> U (X t\<^sub>0)" "t \<in> U (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
+  hence sub_ivl: "{t\<^sub>0<--<t} \<subseteq> U (X t\<^sub>0)" "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)"
+    using ivl[of "X t\<^sub>0"]
+    by (meson PiE closed_segment_subset_interval segment_open_subset_closed subset_trans)
+      (metis Pi_mem ivl closed_segment_subset_interval set_hyps)
+  hence key: "D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>)) on {t\<^sub>0--t}"
+    using G_hyp has_vderiv_on_subset[OF conjunct1[OF dX[of X, OF xivp(1)]]] 
+    by auto
+  {assume "t\<^sub>0 \<noteq> t"
+    then obtain \<tau> where mvt: "\<mu> (X t) = (t - t\<^sub>0) * \<mu>' (X \<tau>) + \<mu> (X t\<^sub>0)" and "\<tau> \<in> {t\<^sub>0<--<t}"
+      using mvt_simple_closed_segmentE[OF key] 
+      by (metis diff_add_cancel)
+    hence "t\<^sub>0 < t \<Longrightarrow> t\<^sub>0 < \<tau>" and "t\<^sub>0 > t \<Longrightarrow> t\<^sub>0 > \<tau>"
+      unfolding open_segment_eq_real_ivl 
+      by auto
+    hence "t\<^sub>0 < t \<Longrightarrow> 0 \<le> \<mu>' (X \<tau>)" and "t < t\<^sub>0 \<Longrightarrow> \<mu>' (X \<tau>) \<le> 0"
+      using conjunct2[OF dX[OF xivp(1) _ ]] G_hyp \<open>\<tau> \<in> {t\<^sub>0<--<t}\<close> 
+      by auto
+    hence "(0 < \<mu> (X t\<^sub>0) \<longrightarrow> \<mu> (X t) > 0) \<and> (0 \<le> \<mu> (X t\<^sub>0) \<longrightarrow> 0 \<le> \<mu> (X t))"
+      using mvt \<open>t\<^sub>0 \<noteq> t\<close> mult_nonneg_nonneg mult_neg_neg
+      by (metis add_nonneg_nonneg diff_gt_0_iff_gt le_add_same_cancel2 
+          less_eq_real_def linorder_not_le mult_eq_0_iff)}
+  thus "0 < \<mu> (X t\<^sub>0) \<Longrightarrow> 0 < \<mu> (X t)" 
+    and "0 \<le> \<mu> (X t\<^sub>0) \<Longrightarrow> 0 \<le> \<mu> (X t)"
+    by blast+
 qed
 
-lemma diff_inv_eq_rule_old:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = ((*\<^sub>R) 0) on U(X t\<^sub>0))"
-  shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<mu> s = \<nu> s)"
-  apply(rule diff_inv_eq_rule[OF Uhyp], simp)
-  by (frule dX, simp)
+lemma 
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  assumes ivl: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
+    and dX: "\<And>X t. D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0) \<Longrightarrow> \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) 
+    \<Longrightarrow> (D (\<lambda>\<tau>. \<mu>(X \<tau>) - \<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>) - \<nu>'(X \<tau>)) on U (X t\<^sub>0)) \<and> 
+    (\<forall>\<tau>\<in>{t\<^sub>0<--<t}. (\<tau> > t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>)) \<and> (\<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>)))"
+  shows diff_inv_leqI [diff_inv_rules]: "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s \<le> \<mu> s) "
+    and diff_inv_lessI [diff_inv_rules]: "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s < \<mu> s)"
+  using diff_inv_less0I[where \<mu>="\<lambda>s. \<mu> s - \<nu> s" and \<mu>'="\<lambda>s. \<mu>' s - \<nu>' s"] assms 
+  diff_inv_leq0I[where \<mu>="\<lambda>s. \<mu> s - \<nu> s" and \<mu>'="\<lambda>s. \<mu>' s - \<nu>' s"] by auto
 
-lemma diff_inv_leq_rule [diff_inv_rules]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
-    and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
-    and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U(X t\<^sub>0)"
-  shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s \<le> \<mu> s)"
-proof(simp_all add: diff_inv_eq ivp_sols_def, safe)
-  fix X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
-  assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "\<nu> (X t\<^sub>0) \<le> \<mu> (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
-  assume tHyp: "t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)" 
-  hence obs1: "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)" "{t\<^sub>0<--<t} \<subseteq> U (X t\<^sub>0)"
-    using closed_segment_subset_interval[OF Uhyp t0Hyp tHyp] xivp(3) segment_open_subset_closed
-    by (force, metis PiE \<open>X t\<^sub>0 \<in> S \<Longrightarrow> {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)\<close> dual_order.trans)
-  hence obs2: "D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>) - \<nu>' (X \<tau>)) on {t\<^sub>0--t}"
-    using has_vderiv_on_subset[OF dX[OF xivp(1)]] by auto
-  {assume "t \<noteq> t\<^sub>0"
-    then obtain r where rHyp: "r \<in> {t\<^sub>0<--<t}" 
-      and "(\<mu>(X t)-\<nu>(X t)) - (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) = (\<lambda>\<tau>. \<tau>*(\<mu>'(X r)-\<nu>'(X r))) (t - t\<^sub>0)"
-      using mvt_simple_closed_segmentE obs2 by blast
-    hence mvt: "\<mu>(X t)-\<nu>(X t) = (t - t\<^sub>0)*(\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0))"
-      by force
-    have primed: "\<And>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<Longrightarrow> \<tau> > t\<^sub>0 \<Longrightarrow> G (X \<tau>) \<Longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>)" 
-      "\<And>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<Longrightarrow> \<tau> < t\<^sub>0 \<Longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>)"
-      using Gg[OF xivp(1)] Gl[OF xivp(1)] by auto
-    have "t > t\<^sub>0 \<Longrightarrow> r > t\<^sub>0 \<and> G (X r)" "\<not> t\<^sub>0 \<le> t \<Longrightarrow> r < t\<^sub>0" "r \<in> U (X t\<^sub>0)"
-      using \<open>r \<in> {t\<^sub>0<--<t}\<close> obs1 Ghyp
-      unfolding open_segment_eq_real_ivl closed_segment_eq_real_ivl by auto
-    moreover have "r > t\<^sub>0 \<Longrightarrow> G (X r) \<Longrightarrow> (\<mu>'(X r)- \<nu>'(X r)) \<ge> 0" "r < t\<^sub>0 \<Longrightarrow> (\<mu>'(X r)-\<nu>'(X r)) \<le> 0"
-      using primed(1,2)[OF \<open>r \<in> U (X t\<^sub>0)\<close>] by auto
-    ultimately have "(t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) \<ge> 0"
-      by (case_tac "t \<ge> t\<^sub>0", force, auto simp: split_mult_pos_le)
-    hence "(t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) \<ge> 0"
-      using xivp(2) by auto
-    hence "\<nu> (X t) \<le> \<mu> (X t)"
-      using mvt by simp}
-  thus "\<nu> (X t) \<le> \<mu> (X t)"
-    using xivp by blast
-qed
-
-lemma diff_inv_less_rule [diff_inv_rules]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
-    and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
-    and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U(X t\<^sub>0)"
-  shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s < \<mu> s)"
-proof(simp_all add: diff_inv_eq ivp_sols_def, safe)
-  fix X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
-  assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "\<nu> (X t\<^sub>0) < \<mu> (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
-  assume tHyp: "t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)" 
-  hence obs1: "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)" "{t\<^sub>0<--<t} \<subseteq> U (X t\<^sub>0)"
-    using closed_segment_subset_interval[OF Uhyp t0Hyp tHyp] xivp(3) segment_open_subset_closed
-    by (force, metis PiE \<open>X t\<^sub>0 \<in> S \<Longrightarrow> {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)\<close> dual_order.trans)
-  hence obs2: "D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>) - \<nu>' (X \<tau>)) on {t\<^sub>0--t}"
-    using has_vderiv_on_subset[OF dX[OF xivp(1)]] by auto
-  {assume "t \<noteq> t\<^sub>0"
-    then obtain r where rHyp: "r \<in> {t\<^sub>0<--<t}" 
-      and "(\<mu>(X t)-\<nu>(X t)) - (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) = (\<lambda>\<tau>. \<tau>*(\<mu>'(X r)-\<nu>'(X r))) (t - t\<^sub>0)"
-      using mvt_simple_closed_segmentE obs2 by blast
-    hence mvt: "\<mu>(X t)-\<nu>(X t) = (t - t\<^sub>0)*(\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0))"
-      by force
-    have primed: "\<And>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<Longrightarrow> \<tau> > t\<^sub>0 \<Longrightarrow> G (X \<tau>) \<Longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>)" 
-      "\<And>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<Longrightarrow> \<tau> < t\<^sub>0 \<Longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>)"
-      using Gg[OF xivp(1)] Gl[OF xivp(1)] by auto
-    have "t > t\<^sub>0 \<Longrightarrow> r > t\<^sub>0 \<and> G (X r)" "\<not> t\<^sub>0 \<le> t \<Longrightarrow> r < t\<^sub>0" "r \<in> U (X t\<^sub>0)"
-      using \<open>r \<in> {t\<^sub>0<--<t}\<close> obs1 Ghyp
-      unfolding open_segment_eq_real_ivl closed_segment_eq_real_ivl by auto
-    moreover have "r > t\<^sub>0 \<Longrightarrow> G (X r) \<Longrightarrow> (\<mu>'(X r)- \<nu>'(X r)) \<ge> 0" "r < t\<^sub>0 \<Longrightarrow> (\<mu>'(X r)-\<nu>'(X r)) \<le> 0"
-      using primed(1,2)[OF \<open>r \<in> U (X t\<^sub>0)\<close>] by auto
-    ultimately have "(t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) \<ge> 0"
-      by (case_tac "t \<ge> t\<^sub>0", force, auto simp: split_mult_pos_le)
-    hence "(t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) > 0"
-      using xivp(2) by auto
-    hence "\<nu> (X t) < \<mu> (X t)"
-      using mvt by simp}
-  thus "\<nu> (X t) < \<mu> (X t)"
-    using xivp by blast
-qed
-
-lemma diff_inv_nleq_rule:
+lemma diff_inv_nleq_iff:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<not> \<nu> s \<le> \<mu> s) \<longleftrightarrow> diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s > \<mu> s)"
-  unfolding diff_inv_eq apply safe
-  by (clarsimp, erule_tac x=s in allE, simp, erule_tac x=X in ballE, force, force)+
+  unfolding diff_inv_eq approximation_preproc_push_neg(2) by presburger
 
-lemma diff_inv_neq_rule [diff_inv_rules]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
+lemma diff_inv_neqI [diff_inv_rules]:
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
   assumes "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s < \<mu> s)"
     and "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s > \<mu> s)"
   shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s \<noteq> \<mu> s)"
@@ -250,8 +226,8 @@ proof(unfold diff_inv_eq, clarsimp)
     by auto
 qed
 
-lemma diff_inv_neq_rule_converse:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
+lemma diff_inv_neqE:
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)" "\<And>s t. s \<in> S \<Longrightarrow> t \<in> U s \<Longrightarrow> t\<^sub>0 \<le> t"
     and conts: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<nu>"
       "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<mu>"
@@ -289,17 +265,56 @@ proof(unfold diff_inv_eq ivp_sols_def, clarsimp)
     by fastforce
 qed
 
-lemma diff_inv_conj_rule [diff_inv_rules]:
+lemma
   assumes "diff_inv U S G f t\<^sub>0 I\<^sub>1"
     and "diff_inv U S G f t\<^sub>0 I\<^sub>2"
-  shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. I\<^sub>1 s \<and> I\<^sub>2 s)"
+  shows diff_inv_conjI [diff_inv_rules]: "diff_inv U S G f t\<^sub>0 (\<lambda>s. I\<^sub>1 s \<and> I\<^sub>2 s)"
+    and diff_inv_disjI [diff_inv_rules]: "diff_inv U S G f t\<^sub>0 (\<lambda>s. I\<^sub>1 s \<or> I\<^sub>2 s)"
   using assms unfolding diff_inv_def by auto
 
-lemma diff_inv_disj_rule [diff_inv_rules]:
-  assumes "diff_inv U S G f t\<^sub>0 I\<^sub>1"
-    and "diff_inv U S G f t\<^sub>0 I\<^sub>2"
-  shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. I\<^sub>1 s \<or> I\<^sub>2 s)"
-  using assms unfolding diff_inv_def by auto
+lemma 
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
+    and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
+    and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
+    and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U(X t\<^sub>0)"
+  shows diff_inv_leq_alt: "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s \<le> \<mu> s)"
+    and diff_inv_less_alt: "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s < \<mu> s)"
+proof(simp_all add: diff_inv_eq ivp_sols_def, safe)
+  fix X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<and> \<tau> \<le> t \<longrightarrow> G (X \<tau>)"
+  assume xivp: "D X = (\<lambda>x. f x (X x)) on U (X t\<^sub>0)" "X \<in> U (X t\<^sub>0) \<rightarrow> S"
+  assume tHyp: "t \<in> U (X t\<^sub>0)" and t0Hyp: "t\<^sub>0 \<in> U (X t\<^sub>0)" 
+  hence obs1: "{t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)" "{t\<^sub>0<--<t} \<subseteq> U (X t\<^sub>0)"
+    using closed_segment_subset_interval[OF Uhyp t0Hyp tHyp] xivp(2) segment_open_subset_closed
+    by (force, metis PiE \<open>X t\<^sub>0 \<in> S \<Longrightarrow> {t\<^sub>0--t} \<subseteq> U (X t\<^sub>0)\<close> dual_order.trans)
+  hence obs2: "D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<mu>' (X \<tau>) - \<nu>' (X \<tau>)) on {t\<^sub>0--t}"
+    using has_vderiv_on_subset[OF dX[OF xivp(1)]] by auto
+  {assume "t \<noteq> t\<^sub>0"
+    then obtain r where rHyp: "r \<in> {t\<^sub>0<--<t}" 
+      and "(\<mu>(X t)-\<nu>(X t)) - (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) = (\<lambda>\<tau>. \<tau>*(\<mu>'(X r)-\<nu>'(X r))) (t - t\<^sub>0)"
+      using mvt_simple_closed_segmentE obs2 by blast
+    hence mvt: "\<mu>(X t)-\<nu>(X t) = (t - t\<^sub>0)*(\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0))"
+      by force
+    have primed: "\<And>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<Longrightarrow> \<tau> > t\<^sub>0 \<Longrightarrow> G (X \<tau>) \<Longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>)" 
+      "\<And>\<tau>. \<tau> \<in> U (X t\<^sub>0) \<Longrightarrow> \<tau> < t\<^sub>0 \<Longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>)"
+      using Gg[OF xivp(1)] Gl[OF xivp(1)] by auto
+    have "t > t\<^sub>0 \<Longrightarrow> r > t\<^sub>0 \<and> G (X r)" "\<not> t\<^sub>0 \<le> t \<Longrightarrow> r < t\<^sub>0" "r \<in> U (X t\<^sub>0)"
+      using \<open>r \<in> {t\<^sub>0<--<t}\<close> obs1 Ghyp
+      unfolding open_segment_eq_real_ivl closed_segment_eq_real_ivl by auto
+    moreover have "r > t\<^sub>0 \<Longrightarrow> G (X r) \<Longrightarrow> (\<mu>'(X r)- \<nu>'(X r)) \<ge> 0" "r < t\<^sub>0 \<Longrightarrow> (\<mu>'(X r)-\<nu>'(X r)) \<le> 0"
+      using primed(1,2)[OF \<open>r \<in> U (X t\<^sub>0)\<close>] by auto
+    ultimately have "(t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) \<ge> 0"
+      by (case_tac "t \<ge> t\<^sub>0", force, auto simp: split_mult_pos_le)
+    hence "\<nu> (X t\<^sub>0) \<le> \<mu> (X t\<^sub>0) \<Longrightarrow> (t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) \<ge> 0"
+      and "\<nu> (X t\<^sub>0) < \<mu> (X t\<^sub>0) \<Longrightarrow> (t - t\<^sub>0) * (\<mu>'(X r)-\<nu>'(X r)) + (\<mu>(X t\<^sub>0)-\<nu>(X t\<^sub>0)) > 0"
+      using xivp(2) by auto
+    hence "\<nu> (X t\<^sub>0) \<le> \<mu> (X t\<^sub>0) \<Longrightarrow> \<nu> (X t) \<le> \<mu> (X t)"
+      and "\<nu> (X t\<^sub>0) < \<mu> (X t\<^sub>0) \<Longrightarrow> \<nu> (X t) < \<mu> (X t)"
+      using mvt by simp_all}
+  thus "\<nu> (X t\<^sub>0) \<le> \<mu> (X t\<^sub>0) \<Longrightarrow> \<nu> (X t) \<le> \<mu> (X t)"
+    and "\<nu> (X t\<^sub>0) < \<mu> (X t\<^sub>0) \<Longrightarrow> \<nu> (X t) < \<mu> (X t)"
+    using xivp by blast+
+qed
 
 subsection \<open> Picard-Lindeloef \<close>
 

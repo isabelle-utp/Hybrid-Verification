@@ -371,7 +371,7 @@ qed
 lemma lie_diff_inv_simple:
   fixes e :: "'s::real_normed_vector \<Rightarrow> real"
   assumes "differentiable\<^sub>e e" "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e = 0`"
-  shows "diff_inv (e = 0)\<^sub>e (\<lambda> _. F) ({t. t \<ge> 0})\<^sub>e UNIV 0 (B)\<^sub>e"
+  shows "diff_inv ({t. t \<ge> 0})\<^sub>e UNIV (B)\<^sub>e (\<lambda> _. F) 0 (e = 0)\<^sub>e "
   apply (simp add: diff_inv_on_id_lens[THEN sym])
   apply (rule lie_diff_inv_on_eq)
     apply (simp_all add: assms)

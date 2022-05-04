@@ -201,7 +201,7 @@ lemma diff_inv_eq_rule_expr [diff_inv_rule_expr]:
     and dX: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
   \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
   shows "diff_inv U S G f t\<^sub>0 (\<mu> = \<nu>)\<^sub>e"
-  using assms by (simp add: SEXP_def, rule diff_inv_eq_rule, simp_all)
+  using assms by (simp add: SEXP_def, rule diff_inv_eqI, simp_all)
 
 lemma diff_inv_leq_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
@@ -211,7 +211,7 @@ lemma diff_inv_leq_rule_expr [diff_inv_rule_expr]:
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
   shows "diff_inv U S G f t\<^sub>0 (\<nu> \<le> \<mu>)\<^sub>e"
   using assms
-  by (simp add: SEXP_def, rule diff_inv_leq_rule, simp_all)
+  by (simp add: SEXP_def, rule diff_inv_leq_alt, simp_all)
 
 lemma diff_inv_less_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
@@ -221,12 +221,12 @@ lemma diff_inv_less_rule_expr [diff_inv_rule_expr]:
     and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
   shows "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
   using assms
-  by (simp add: SEXP_def, rule diff_inv_less_rule, simp_all)
+  by (simp add: SEXP_def, rule diff_inv_less_alt, simp_all)
 
 lemma diff_inv_nleq_rule_expr:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
   shows "diff_inv U S G f t\<^sub>0 (\<not> \<nu> \<le> \<mu>)\<^sub>e \<longleftrightarrow> diff_inv U S G f t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
-  by (simp add: SEXP_def, subst diff_inv_nleq_rule, simp_all)
+  by (simp add: SEXP_def, subst diff_inv_nleq_iff, simp_all)
 
 lemma diff_inv_neq_rule_expr [diff_inv_rule_expr]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
@@ -234,7 +234,7 @@ lemma diff_inv_neq_rule_expr [diff_inv_rule_expr]:
     and "diff_inv U S G f t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
   shows "diff_inv U S G f t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
   using assms apply(simp add: SEXP_def)
-  by (rule diff_inv_neq_rule, simp_all)
+  by (rule diff_inv_neqI, simp_all)
 
 lemma diff_inv_neq_rule_expr_converse:
   fixes \<mu>::"'a::banach \<Rightarrow> real"
@@ -244,7 +244,7 @@ lemma diff_inv_neq_rule_expr_converse:
     and dI:"diff_inv U S G f t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
   shows "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
   using assms apply(simp add: SEXP_def)
-  by (rule diff_inv_neq_rule_converse, simp_all)
+  by (rule diff_inv_neqE, simp_all)
 
 lemma diff_inv_cnn_rule_expr:
   assumes "diff_inv U S G f t\<^sub>0 (I\<^sub>1)\<^sub>e"

@@ -65,6 +65,9 @@ lemma real_ivl_eqs:
 lemma is_interval_real_nonneg[simp]: "is_interval (Collect ((\<le>) (0::real)))"
   by (auto simp: is_interval_def)
 
+lemma open_real_segment: "open {a<--<b}" for a::real
+  unfolding open_segment_eq_real_ivl by auto
+
 lemma norm_rotate_eq[simp]:
   fixes x :: "'a:: {banach,real_normed_field}"
   shows "(x * cos t - y * sin t)\<^sup>2 + (x * sin t + y * cos t)\<^sup>2 = x\<^sup>2 + y\<^sup>2"
@@ -244,6 +247,29 @@ next
     using \<open>a \<ge> b\<close> unfolding closed_segment_eq_real_ivl by auto force
 qed
 
+lemma mvt_ivl_general:
+  fixes f :: "real \<Rightarrow> 'a::real_inner"
+  assumes "a \<noteq> b" and "continuous_on {a--b} f"
+    and "\<forall>x\<in>{a<--<b}. D f \<mapsto> (f' x) (at x)"
+  shows "\<exists>x\<in>{a<--<b}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x \<bar>b - a\<bar>\<parallel>"
+proof(cases "a < b")
+  case True
+  thus ?thesis 
+    using closed_segment_eq_real_ivl open_segment_eq_real_ivl
+      assms mvt_general[of a b f] by force
+next
+  case False
+  hence "b < a" "{a--b} = {b..a}" "{a<--<b} = {b<..<a}"
+    using assms closed_segment_eq_real_ivl open_segment_eq_real_ivl by auto
+  hence cont: "continuous_on {b..a} f" and "\<forall>x\<in>{b<..<a}. D f \<mapsto> (f' x) (at x)"
+    using assms by auto
+  hence "\<exists>x\<in>{b<..<a}. \<parallel>f b - f a\<parallel> \<le> \<parallel>f' x \<bar>a - b\<bar>\<parallel>"
+    using mvt_general[OF \<open>b < a\<close> cont, of f'] 
+    by (auto simp: Real_Vector_Spaces.real_normed_vector_class.norm_minus_commute)
+  thus ?thesis 
+    by (subst \<open>{a<--<b} = {b<..<a}\<close>) auto
+qed
+
 
 subsection \<open> Filters \<close>
 
@@ -385,6 +411,13 @@ lemma has_vderiv_on_component[simp]:
   shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
   unfolding has_vderiv_on_def has_vector_derivative_def by auto
 
+lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) \<longleftrightarrow> bounded_linear f' \<and> 
+  (\<forall>X. open X \<longrightarrow> 0 \<in> X \<longrightarrow> (\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow> (f s - f x - f' (s - x)) /\<^sub>R \<parallel>s - x\<parallel> \<in> X))"
+  unfolding has_derivative_at_within tendsto_def eventually_at dist_norm by simp
+
+lemma has_vderiv_on_iff: 
+  "(D f = f' on T) \<longleftrightarrow> (\<forall>x\<in>T. D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) (at x within T))"
+  unfolding has_vderiv_on_def has_vector_derivative_def by simp
 
 (***************** PREVIOUS RESULTS GENERALISED ABOVE **************)
 
