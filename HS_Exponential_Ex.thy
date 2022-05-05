@@ -68,17 +68,18 @@ lemma dG_example: "\<^bold>{x > 0\<^bold>}dyn\<^bold>{x > 0\<^bold>}"
 abbreviation (input) "exp_f \<equiv> [x \<leadsto> -x]" (* x>0 -> [{x'=-x}](x>0) *)
 abbreviation (input) "exp_flow \<tau> \<equiv> [x \<leadsto> x * exp (- \<tau>)]"
 
+
 term exp_f 
 term exp_flow
 
-term "loc_ode (\<lambda> _. exp_f) x s"
+term "loc_subst x (\<lambda> _. exp_f) s"
 
 lemma "D (\<lambda>t. loc_subst x exp_flow s t (get\<^bsub>x\<^esub> s)) = (\<lambda> t. loc_subst x (\<lambda> _. exp_f) s t (loc_subst x exp_flow s t (get\<^bsub>x\<^esub> s))) on {0--t}"
   by (expr_auto, auto intro!: poly_derivatives)
 
 term "(\<lambda>t. exp_f (exp_flow t s))"
 
-term "loc_ode (\<lambda> t. exp_f)"
+term "loc_subst x (\<lambda> t. exp_f)"
 
 lemma "\<^bold>{x > 0\<^bold>}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0}))\<^bold>{x > 0\<^bold>}"
   by (simp add: fbox_g_evol) expr_auto

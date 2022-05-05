@@ -323,6 +323,8 @@ lemma derivation_lemma1:
   apply (simp)
   done
 
+thm expr_differentiable_when_on_def
+
 lemma lie_diff_inv_on_eq:
   fixes e :: "'s \<Rightarrow> _::real_inner" and a :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens a" "differentiable\<^sub>e e on a" "`B \<longrightarrow> \<L>\<^bsub>F\<^esub> e on a = 0`"

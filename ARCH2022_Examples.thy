@@ -62,7 +62,6 @@ begin
 
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
-
   apply (subst fbox_kcomp[symmetric])
   apply (rule fbox_loopI_break)
   by hoare_wp_auto+

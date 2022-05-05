@@ -17,35 +17,28 @@ subsection \<open> ODEs and Orbits  \<close>
 text \<open> Localise a substitution using a lens. Useful for localising both ODEs and flows. \<close>
 
 abbreviation loc_subst :: 
-  "('c \<Longrightarrow> 's) \<comment> \<open> A lens selecting a local region \<close> 
-   \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) \<comment> \<open> Substitution on the global state space\<close>
-   \<Rightarrow> 's \<comment> \<open> An initial global state \<close>
-   \<Rightarrow> (real \<Rightarrow> 'c \<Rightarrow> 'c)" \<comment> \<open> Substitution on the local state space \<close>
+  "('c \<Longrightarrow> 's)              \<comment> \<open> lens selecting @{typ 'c}, a local region \<close> 
+   \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's)     \<comment> \<open> substitution on the global state space @{typ 's}\<close>
+   \<Rightarrow> 's                    \<comment> \<open> initial global state \<close>
+   \<Rightarrow> (real \<Rightarrow> 'c \<Rightarrow> 'c)"    \<comment> \<open> substitution on the local state space @{typ 'c} \<close>
    where "loc_subst a f s \<equiv> (\<lambda> t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c)))"
 
 text \<open> A version of guarded orbits localised by a lens \<close>
 
 text \<open> A version of orbital localised by a lens \<close>
 
-definition
-  g_orbital_on :: 
-    "('c::real_normed_vector \<Longrightarrow> 'a) 
-      \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
-      \<Rightarrow> ('a \<Rightarrow> bool) 
-      \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real => 'a \<Rightarrow> 'a set"
-    where "g_orbital_on a f G U S t\<^sub>0 
-            = (\<lambda> s. put\<^bsub>a\<^esub> s 
-              ` g_orbital 
-                  (loc_subst a f s) 
-                  (\<lambda> c. G (put\<^bsub>a\<^esub> s c))
-                  U S
-                  t\<^sub>0 (get\<^bsub>a\<^esub> s))"
+definition g_orbital_on :: "('c::real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
+  \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real => 'a \<Rightarrow> 'a set"
+  where "g_orbital_on a f G U S t\<^sub>0 s
+    = \<P> (put\<^bsub>a\<^esub> s) (g_orbital (loc_subst a f s) (\<lambda>c. G (put\<^bsub>a\<^esub> s c)) U S t\<^sub>0 (get\<^bsub>a\<^esub> s))"
 
 lemma g_orbital_on_id_lens: "g_orbital_on \<one>\<^sub>L = g_orbital"
   by (simp add: g_orbital_on_def fun_eq_iff lens_defs)
 
-lemma g_orbital_on_eq: "g_orbital_on a f G U S t\<^sub>0 s = 
-  {put\<^bsub>a\<^esub> s (X t) |t X. t \<in> U (get\<^bsub>a\<^esub> s) \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s} \<and> X \<in> Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s)}"
+lemma g_orbital_on_eq: "g_orbital_on a f G U S t\<^sub>0 s = {put\<^bsub>a\<^esub> s (X t) |t X. 
+  t \<in> U (get\<^bsub>a\<^esub> s) 
+  \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s} 
+  \<and> X \<in> Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s)}"
   unfolding g_orbital_on_def g_orbital_eq image_le_pred 
   by (auto simp: image_def)
 
@@ -62,18 +55,29 @@ definition diff_inv_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: real_norm
   where "diff_inv_on I a f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
 lemma diff_inv_on_eq: "diff_inv_on I a f U S t\<^sub>0 G = 
-  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s). (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
+  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s). 
+    (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
   unfolding diff_inv_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
 
 lemma diff_inv_on_id_lens: "diff_inv_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_inv U S G f t\<^sub>0 I"
   by (simp add: diff_inv_on_def diff_inv_def g_orbital_on_id_lens)
 
+lemma 
+  fixes a::"'c:: real_normed_vector \<Longrightarrow> 'a"
+  assumes "diff_inv_on I a f U S t\<^sub>0 G" and "vwb_lens a"
+  shows "\<forall>s. diff_inv U S (\<lambda>c. G (put\<^bsub>a\<^esub> s c)) (loc_subst a f s) t\<^sub>0 (\<lambda>c. I (put\<^bsub>a\<^esub> s c))"
+  using assms
+  by (auto simp: diff_inv_on_eq diff_inv_eq)
+
 named_theorems diff_inv_on_rules "rules for certifying (localised) differential invariants"
 
+term "(\<lambda>\<tau>. loc_subst a f s \<tau> (X \<tau>)) = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>))))"
+thm diff_inv_eq0I diff_inv_eqI
+
 lemma diff_inv_on_eq_rule_expr [diff_inv_on_rules]:
-  assumes "vwb_lens a"
+  assumes "vwb_lens a" (* do we need derivative rules for loc_subst then? *)
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on U (get\<^bsub>a\<^esub> s)) \<Longrightarrow>
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (get\<^bsub>a\<^esub> s)) \<Longrightarrow>
   \<forall>\<tau>\<in>(down (U(get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = ((*\<^sub>R) 0) on U (get\<^bsub>a\<^esub> s))"
   shows "diff_inv_on (\<mu> = \<nu>)\<^sub>e a f U S t\<^sub>0 G"
 proof(simp add: diff_inv_on_eq ivp_sols_def, clarsimp simp: SEXP_def)
