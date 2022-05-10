@@ -222,6 +222,15 @@ lemma fdia_kcomp:
   shows"|G ; F\<rangle> P = |G\<rangle> H"
   unfolding fdia_def kcomp_def assms by auto
 
+lemma hl_fwd_assign:
+  assumes "vwb_lens x" "\<And> x\<^sub>0. \<^bold>{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>\<^bold>} S \<^bold>{Q\<^bold>}"
+  shows "\<^bold>{P\<^bold>} x ::= e ; S \<^bold>{Q\<^bold>}"
+  using assms
+  apply (auto simp add: kcomp_def assigns_def fbox_def le_fun_def)
+  apply (expr_simp)
+  apply (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
+  done
+
 \<comment> \<open> Conditional statement \<close>
 
 definition ifthenelse :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set)" where
