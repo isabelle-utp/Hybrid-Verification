@@ -102,142 +102,56 @@ lemma diff_inv_on_eqI [diff_inv_on_intros]:
   using assms diff_inv_on_eq0I[OF assms(1,2), where \<mu>="\<lambda>s. \<mu> s - \<nu> s"]
   by auto
 
-lemma
-  fixes \<mu> \<mu>'::"'a::real_normed_vector \<Rightarrow> real"
+lemma diff_inv_on_leqI [diff_inv_on_intros]:
+  fixes \<mu> ::"'a::real_normed_vector \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<longrightarrow> 0 \<le> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow>
-  \<forall>\<tau>\<in>(down (U (X t\<^sub>0)) t). G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>t. 0) on U (X t\<^sub>0))"
-  shows "diff_inv_on (0 \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+      \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<longrightarrow> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
+    and Gl: "\<And>X s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U(X t\<^sub>0)) 
+      \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+      \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu> (put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>\<tau>. \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))) on U (X t\<^sub>0))"
+  shows "diff_inv_on (\<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
   apply (clarsimp simp: diff_inv_on_iff[OF assms(1)])
-  apply (rule diff_inv_leq_alt[OF Uhyp, where \<nu>'="\<lambda>t. 0" and \<nu>="\<lambda>t. 0" and \<mu>'="\<lambda>s c. \<mu>' (put\<^bsub>a\<^esub> s c)"], simp)
-  subgoal for s X
-  using Gg[of X s]
+  apply (rule diff_inv_leq_alt[OF Uhyp, where \<mu>'="\<lambda>c. \<mu>' (put\<^bsub>a\<^esub> _ c)" and \<nu>'="\<lambda>c. \<nu>' (put\<^bsub>a\<^esub> _ c)"])
+  using assms by auto
 
-
-lemma diff_inv_on_le_rule_expr [diff_inv_on_intros]:
-  fixes \<mu>::"'a \<Rightarrow> real"
+lemma diff_inv_on_lessI [diff_inv_on_intros]:
+  fixes \<mu> ::"'a::real_normed_vector \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X s. D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on U (X t\<^sub>0) \<Longrightarrow> 
-  (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<ge> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and Gl: "\<And>X s. D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on U (X t\<^sub>0) \<Longrightarrow> 
-  (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and dX: "\<And>X s. D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on U (X t\<^sub>0) \<Longrightarrow> 
-  D (\<lambda>\<tau>. \<mu>(put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>\<tau>. \<mu>'(put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>'(put\<^bsub>a\<^esub> s (X \<tau>))) on U (X t\<^sub>0)"
-  shows diff_inv_on_leq_rule_expr: "diff_inv_on (\<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
-    and diff_inv_on_less_rule_expr: "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
-proof(simp_all add: diff_inv_on_eq ivp_sols_def, safe)
-  fix s X t assume Ghyp: "\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>a\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
-  assume xivp: "D X = (\<lambda>\<tau>. get\<^bsub>a\<^esub> (f \<tau> (put\<^bsub>a\<^esub> s (X \<tau>)))) on (U (get\<^bsub>a\<^esub> s))" "X \<in> U (get\<^bsub>a\<^esub> s) \<rightarrow> S"
-  assume tHyp: "t \<in> U (get\<^bsub>a\<^esub> s)" and t0Hyp: "t\<^sub>0 \<in> U (get\<^bsub>a\<^esub> s)" "X t\<^sub>0 = get\<^bsub>a\<^esub> s"
-  hence obs1: "{t\<^sub>0--t} \<subseteq> U (get\<^bsub>a\<^esub> s)" "{t\<^sub>0<--<t} \<subseteq> U (get\<^bsub>a\<^esub> s)"
-    using closed_segment_subset_interval[OF Uhyp t0Hyp(1) tHyp] xivp(2) 
-    by (metis Pi_iff, metis PiE \<open>get\<^bsub>a\<^esub> s \<in> S \<Longrightarrow> {t\<^sub>0--t} \<subseteq> U (get\<^bsub>a\<^esub> s)\<close> 
-        dual_order.trans segment_open_subset_closed)
-  hence obs2: "D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu> (put\<^bsub>a\<^esub> s (X \<tau>))) = 
-  (\<lambda>\<tau>. \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))) on {t\<^sub>0--t}"
-    using t0Hyp has_vderiv_on_subset[OF dX[OF xivp(1)]] by auto
-  {assume "t \<noteq> t\<^sub>0"
-    then obtain r where rHyp: "r \<in> {t\<^sub>0<--<t}" 
-      and "(\<mu>(put\<^bsub>a\<^esub> s (X t))-\<nu>(put\<^bsub>a\<^esub> s (X t))) - (\<mu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))-\<nu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))) = 
-      (\<lambda>\<tau>. \<tau>*(\<mu>'(put\<^bsub>a\<^esub> s (X r))-\<nu>'(put\<^bsub>a\<^esub> s (X r)))) (t - t\<^sub>0)"
-      using mvt_simple_closed_segmentE obs2 by blast
-    hence mvt: "\<mu>(put\<^bsub>a\<^esub> s (X t))-\<nu>(put\<^bsub>a\<^esub> s (X t)) = 
-  (t - t\<^sub>0)*(\<mu>'(put\<^bsub>a\<^esub> s (X r))-\<nu>'(put\<^bsub>a\<^esub> s (X r))) + (\<mu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))-\<nu>(put\<^bsub>a\<^esub> s (X t\<^sub>0)))"
-      by force
-    have primed: "\<And>\<tau>. \<tau> \<in> U (get\<^bsub>a\<^esub> s) \<Longrightarrow> \<tau> > t\<^sub>0 \<Longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> 
-      \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<ge> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))" 
-      "\<And>\<tau>. \<tau> \<in> U (get\<^bsub>a\<^esub> s) \<Longrightarrow> \<tau> < t\<^sub>0 \<Longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))"
-      using Gg[OF xivp(1)] Gl[OF xivp(1)] by auto
-    have "t > t\<^sub>0 \<Longrightarrow> r > t\<^sub>0 \<and> G (put\<^bsub>a\<^esub> s (X r))" "\<not> t\<^sub>0 \<le> t \<Longrightarrow> r < t\<^sub>0" "r \<in> U (get\<^bsub>a\<^esub> s)"
-      using \<open>r \<in> {t\<^sub>0<--<t}\<close> obs1 Ghyp
-      unfolding open_segment_eq_real_ivl closed_segment_eq_real_ivl by auto
-    moreover have "r > t\<^sub>0 \<Longrightarrow> G (put\<^bsub>a\<^esub> s (X r)) \<Longrightarrow> (\<mu>'(put\<^bsub>a\<^esub> s (X r))- \<nu>'(put\<^bsub>a\<^esub> s (X r))) \<ge> 0" 
-      "r < t\<^sub>0 \<Longrightarrow> (\<mu>'(put\<^bsub>a\<^esub> s (X r))-\<nu>'(put\<^bsub>a\<^esub> s (X r))) \<le> 0"
-      using primed(1,2)[OF \<open>r \<in> U (get\<^bsub>a\<^esub> s)\<close>] by auto
-    ultimately have "(t - t\<^sub>0) * (\<mu>'(put\<^bsub>a\<^esub> s (X r))-\<nu>'(put\<^bsub>a\<^esub> s (X r))) \<ge> 0"
-      by (case_tac "t \<ge> t\<^sub>0", force, auto simp: split_mult_pos_le)
-    hence "\<nu> s \<le> \<mu> s \<Longrightarrow> 
-  (t - t\<^sub>0) * (\<mu>'(put\<^bsub>a\<^esub> s (X r))-\<nu>'(put\<^bsub>a\<^esub> s (X r))) + (\<mu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))-\<nu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))) \<ge> 0"
-      and "\<nu> s < \<mu> s \<Longrightarrow> 
-  (t - t\<^sub>0) * (\<mu>'(put\<^bsub>a\<^esub> s (X r))-\<nu>'(put\<^bsub>a\<^esub> s (X r))) + (\<mu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))-\<nu>(put\<^bsub>a\<^esub> s (X t\<^sub>0))) > 0"
-      using xivp(2) assms(1) t0Hyp(2) by auto
-    hence "\<nu> s \<le> \<mu> s \<Longrightarrow> \<nu> (put\<^bsub>a\<^esub> s (X t)) \<le> \<mu> (put\<^bsub>a\<^esub> s (X t))"
-      and "\<nu> s < \<mu> s \<Longrightarrow> \<nu> (put\<^bsub>a\<^esub> s (X t)) < \<mu> (put\<^bsub>a\<^esub> s (X t))"
-      using mvt by auto}
-  thus "\<nu> s \<le> \<mu> s \<Longrightarrow> \<nu> (put\<^bsub>a\<^esub> s (X t)) \<le> \<mu> (put\<^bsub>a\<^esub> s (X t))"
-    and "\<nu> s < \<mu> s \<Longrightarrow> \<nu> (put\<^bsub>a\<^esub> s (X t)) < \<mu> (put\<^bsub>a\<^esub> s (X t))"
-    using assms(1) t0Hyp(2) xivp(2) by (force, force)
-qed
+    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+      \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<longrightarrow> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
+    and Gl: "\<And>X s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U(X t\<^sub>0)) 
+      \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+      \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu> (put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>\<tau>. \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))) on U (X t\<^sub>0))"
+  shows "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  apply (clarsimp simp: diff_inv_on_iff[OF assms(1)])
+  apply (rule diff_inv_less_alt[OF Uhyp, where \<mu>'="\<lambda>c. \<mu>' (put\<^bsub>a\<^esub> _ c)" and \<nu>'="\<lambda>c. \<nu>' (put\<^bsub>a\<^esub> _ c)"])
+  using assms by auto
+
+lemma diff_inv_on_nleq_iff:
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  shows "diff_inv_on (\<not> \<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G \<longleftrightarrow> diff_inv_on (\<nu> > \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  unfolding approximation_preproc_push_neg(2) by presburger
+
+lemma diff_inv_on_neqI [diff_inv_on_intros]:
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  assumes "vwb_lens a"
+    and "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+    and "diff_inv_on (\<nu> > \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  shows "diff_inv_on (\<nu> \<noteq> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  using assms unfolding diff_inv_on_iff[OF assms(1)]
+  using diff_inv_neqI by force
 
 lemma 
   assumes "diff_inv_on (I\<^sub>1)\<^sub>e a f U S t\<^sub>0 G"
     and "diff_inv_on (I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-  shows diff_inv_on_conj_rule_expr: "diff_inv_on (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-    and diff_inv_on_disj_rule_expr: "diff_inv_on (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
+  shows diff_inv_on_conjI [diff_inv_on_intros]: "diff_inv_on (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
+    and diff_inv_on_disjI [diff_inv_on_intros]: "diff_inv_on (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
   using assms unfolding diff_inv_on_eq by auto
-
-named_theorems diff_inv_rule_expr "encapsulating rules for (non-localised) differential invariants"
-
-lemma diff_inv_eq_rule_expr [diff_inv_rule_expr]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and dX: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
-  \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
-  shows "diff_inv U S G f t\<^sub>0 (\<mu> = \<nu>)\<^sub>e"
-  using assms by (simp add: SEXP_def, rule diff_inv_eqI, simp_all)
-
-lemma diff_inv_leq_rule_expr [diff_inv_rule_expr]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
-    and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
-    and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
-  shows "diff_inv U S G f t\<^sub>0 (\<nu> \<le> \<mu>)\<^sub>e"
-  using assms
-  by (simp add: SEXP_def, rule diff_inv_leq_alt, simp_all)
-
-lemma diff_inv_less_rule_expr [diff_inv_rule_expr]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (X \<tau>) \<longrightarrow> \<mu>' (X \<tau>) \<ge> \<nu>' (X \<tau>))"
-    and Gl: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> (\<forall>\<tau>\<in>U (X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (X \<tau>) \<le> \<nu>' (X \<tau>))"
-    and dX: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> D (\<lambda>\<tau>. \<mu>(X \<tau>)-\<nu>(X \<tau>)) = (\<lambda>\<tau>. \<mu>'(X \<tau>)-\<nu>'(X \<tau>)) on U (X t\<^sub>0)"
-  shows "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
-  using assms
-  by (simp add: SEXP_def, rule diff_inv_less_alt, simp_all)
-
-lemma diff_inv_nleq_rule_expr:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  shows "diff_inv U S G f t\<^sub>0 (\<not> \<nu> \<le> \<mu>)\<^sub>e \<longleftrightarrow> diff_inv U S G f t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
-  by (simp add: SEXP_def, subst diff_inv_nleq_iff, simp_all)
-
-lemma diff_inv_neq_rule_expr [diff_inv_rule_expr]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
-    and "diff_inv U S G f t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
-  shows "diff_inv U S G f t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
-  using assms apply(simp add: SEXP_def)
-  by (rule diff_inv_neqI, simp_all)
-
-lemma diff_inv_neq_rule_expr_converse:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
-  assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)" "\<And>s t. s \<in> S \<Longrightarrow> t \<in> U s \<Longrightarrow> t\<^sub>0 \<le> t"
-    and conts: "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<nu>"
-      "\<And>X. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow> continuous_on (\<P> X (U (X t\<^sub>0))) \<mu>"
-    and dI:"diff_inv U S G f t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
-  shows "diff_inv U S G f t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
-  using assms apply(simp add: SEXP_def)
-  by (rule diff_inv_neqE, simp_all)
-
-lemma diff_inv_cnn_rule_expr:
-  assumes "diff_inv U S G f t\<^sub>0 (I\<^sub>1)\<^sub>e"
-    and "diff_inv U S G f t\<^sub>0 (I\<^sub>2)\<^sub>e"
-  shows diff_inv_conj_rule_expr [diff_inv_rule_expr]: "diff_inv U S G f t\<^sub>0 (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e"
-    and diff_inv_disj_rule_expr [diff_inv_rule_expr]: "diff_inv U S G f t\<^sub>0 (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e"
-  using assms unfolding diff_inv_eq by auto
 
 lemma diff_ghost_very_simple:
   assumes 

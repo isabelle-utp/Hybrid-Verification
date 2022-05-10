@@ -203,9 +203,9 @@ lemma
   diff_inv_leq0I[where \<mu>="\<lambda>s. \<mu> s - \<nu> s" and \<mu>'="\<lambda>s. \<mu>' s - \<nu>' s"] by auto
 
 lemma diff_inv_nleq_iff:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
+  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
   shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<not> \<nu> s \<le> \<mu> s) \<longleftrightarrow> diff_inv U S G f t\<^sub>0 (\<lambda>s. \<nu> s > \<mu> s)"
-  unfolding diff_inv_eq approximation_preproc_push_neg(2) by presburger
+  unfolding approximation_preproc_push_neg(2) by presburger
 
 lemma diff_inv_neqI [diff_inv_rules]:
   fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
