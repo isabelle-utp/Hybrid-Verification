@@ -232,28 +232,22 @@ lemma diff_ghost_very_simple:
   apply (erule impE)
   using assms(1) apply force
   apply (drule_tac x="\<lambda> t. (X t, exp (k * t) *\<^sub>R get\<^bsub>y\<^esub> s')" in bspec)
-   prefer 2
-  subgoal
+   prefer 2 subgoal
     using assms(1-4)
     apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
-    apply (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
-    done
+    by (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
   apply (simp add: ivp_sols_def)
-(*using assms(1-4)
-  apply (auto  intro!: poly_derivatives; simp add: lens_defs expr_defs)
-  subgoal for s X s' t
-  using poly_derivatives(17)[of "\<lambda>t. k * t"]
-  oops*)
-   apply (auto simp add: lens_defs has_vderiv_on_def)[1]
-     apply (rule derivative_intros)
-  using assms(1-4) apply (simp add: expr_defs)
-      apply (metis lens_indep.lens_put_irr2 lens_indep_comm)
-     apply (rule has_vector_derivative_eq_rhs)
-      apply (force intro: derivative_intros)
-     apply (simp)
-  using assms(1-4)
-     apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
-  done
+  apply (auto intro!: poly_derivatives)
+    apply (simp only: has_vderiv_on_def)
+    apply (force intro: derivative_intros)
+  thm derivative_intros
+   prefer 2 subgoal
+    using assms(1-4)
+    by (simp add: lens_defs lens_indep.lens_put_irr2)
+  using assms(1-4) 
+  apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
+  by (metis lens_indep_def)
+
 
 lemma
   assumes 
