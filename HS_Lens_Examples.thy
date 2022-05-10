@@ -80,14 +80,6 @@ lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^s
 
 \<comment> \<open>Verified with differential invariants as cartesian product \<close>
 
-lemma has_vderiv_on_proj [poly_derivatives]:
-  assumes "D X = X' on T " and "X' = (\<lambda>t. (X\<^sub>1' t, X\<^sub>2' t))"
-  shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X\<^sub>1' t) on T"
-    and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X\<^sub>2' t) on T"
-  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
-   apply(rule has_vector_derivative_fst', force)
-  by (rule has_vector_derivative_snd'', force)
-
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   apply(simp add: hoare_diff_inv_on)
   apply(rule diff_inv_on_eqI)
@@ -424,16 +416,6 @@ then it changes the status of the water pump accordingly. The level of water gro
 @{text "h' = k"} at a rate of @{text "k = c\<^sub>i-c\<^sub>o"} if the pump is on, and at a rate of 
 @{text "k = -c\<^sub>o"} if the pump is off. We prove that the controller keeps the level of
 water between @{text "H\<^sub>l"} and @{text "H\<^sub>u"}. \<close>
-
-lemma vderiv_pairI[poly_derivatives]:
-  assumes "D f1 = f1' on T" 
-    and "D f2 = f2' on T"
-    and "g = (\<lambda>t. (f1' t, f2' t))"
-  shows "D (\<lambda>t. (f1 t, f2 t)) = g on T"
-  apply(subst assms(3))
-  using assms(1,2) unfolding has_vderiv_on_def has_vector_derivative_def
-  apply (clarsimp simp: scaleR_vec_def)
-  by (rule has_derivative_Pair, auto)
 
 lemma tank_arith:
   assumes "0 \<le> (\<tau>::real)" and "0 < c\<^sub>o" and "c\<^sub>o < c\<^sub>i"

@@ -165,6 +165,44 @@ lemma vderiv_expI[poly_derivatives]:
   unfolding has_vderiv_on_def has_vector_derivative_def 
   by (auto intro!: derivative_eq_intros simp: assms)
 
+lemma has_vderiv_on_proj [poly_derivatives]:
+  assumes "D X = X' on T " and "X' = (\<lambda>t. (X\<^sub>1' t, X\<^sub>2' t))"
+  shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X\<^sub>1' t) on T"
+    and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X\<^sub>2' t) on T"
+  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
+   apply(rule has_vector_derivative_fst', force)
+  by (rule has_vector_derivative_snd'', force)
+
+lemma vderiv_pairI[poly_derivatives]:
+  assumes "D f1 = f1' on T" 
+    and "D f2 = f2' on T"
+    and "g = (\<lambda>t. (f1' t, f2' t))"
+  shows "D (\<lambda>t. (f1 t, f2 t)) = g on T"
+  apply(subst assms(3))
+  using assms(1,2) unfolding has_vderiv_on_def has_vector_derivative_def
+  apply (clarsimp simp: scaleR_vec_def)
+  by (rule has_derivative_Pair, auto)
+
+lemma has_derivative_exp_scaleRl[derivative_intros]:
+  fixes f::"real \<Rightarrow> real" (* by Fabian Immler and Johannes Hölzl *)
+  assumes "D f \<mapsto> f' at t within T"
+  shows "D (\<lambda>t. exp (f t *\<^sub>R A)) \<mapsto> (\<lambda>h. f' h *\<^sub>R (exp (f t *\<^sub>R A) * A)) at t within T"
+proof -
+  have "bounded_linear f'" 
+    using assms by auto
+  then obtain m where obs: "f' = (\<lambda>h. h * m)"
+    using real_bounded_linear by blast
+  thus ?thesis
+    using vector_diff_chain_within[OF _ exp_scaleR_has_vector_derivative_right] 
+      assms obs by (auto simp: has_vector_derivative_def comp_def)
+qed
+
+lemma vderiv_on_exp_scaleRlI[poly_derivatives]:
+  assumes "D f = f' on T" and "g' = (\<lambda>x. f' x *\<^sub>R exp (f x *\<^sub>R A) * A)"
+  shows "D (\<lambda>x. exp (f x *\<^sub>R A)) = g' on T"
+  using assms unfolding has_vderiv_on_def has_vector_derivative_def apply clarsimp
+  by (rule has_derivative_exp_scaleRl, auto simp: fun_eq_iff)
+
 \<comment> \<open>Examples for checking derivatives\<close>
 
 lemma "D (*) a = (\<lambda>t. a) on T"
