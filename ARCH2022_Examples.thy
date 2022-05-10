@@ -5,7 +5,7 @@ verification components.\<close>
 
 theory ARCH2022_Examples
   imports 
-    HS_Lens_Spartan
+    HS_Lie_Derivatives
     Real_Arith_Tactics
 
 begin
@@ -61,10 +61,29 @@ context two_vars
 begin
 
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
+
+(* Proof using differential induction. Can this be better automated? *)
+
+lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
+proof -
+  have 1: "\<^bold>{x \<ge> 1\<^bold>} {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
+    by dInduct
+  show ?thesis
+    apply (rule hl_fwd_assign)
+     apply (simp)
+    apply (subst_eval)
+    apply (rule hoare_conseq[OF 1])
+     apply (expr_simp)
+    apply simp
+    done
+qed
+
+(* Proof using the solution *)
+
+(* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
   apply (subst fbox_kcomp[symmetric])
-  apply (rule fbox_loopI_break)
-  by hoare_wp_auto+
+  oops
 
 end
 
