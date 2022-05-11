@@ -108,9 +108,10 @@ declare has_vderiv_on_const [poly_derivatives]
     and has_vderiv_on_add[THEN has_vderiv_on_eq_rhs, poly_derivatives]
     and has_vderiv_on_diff[THEN has_vderiv_on_eq_rhs, poly_derivatives]
     and has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs, poly_derivatives]
+    and has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs, poly_derivatives]
     and has_vderiv_on_ln[poly_derivatives]
 
-lemma has_vderiv_Pair [poly_derivatives]: 
+lemma has_vderiv_Pair: 
   "\<lbrakk> D f = f' on T; D g = g' on T \<rbrakk> \<Longrightarrow> D (\<lambda>x. (f x, g x)) = (\<lambda> x. (f' x, g' x)) on T"
   by (auto intro: has_vector_derivative_Pair simp add: has_vderiv_on_def)
 
@@ -165,7 +166,7 @@ lemma vderiv_expI[poly_derivatives]:
   unfolding has_vderiv_on_def has_vector_derivative_def 
   by (auto intro!: derivative_eq_intros simp: assms)
 
-lemma has_vderiv_on_proj [poly_derivatives]:
+lemma vderiv_on_proj [poly_derivatives]:
   assumes "D X = X' on T " and "X' = (\<lambda>t. (X\<^sub>1' t, X\<^sub>2' t))"
   shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X\<^sub>1' t) on T"
     and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X\<^sub>2' t) on T"
@@ -183,7 +184,17 @@ lemma vderiv_pairI[poly_derivatives]:
   apply (clarsimp simp: scaleR_vec_def)
   by (rule has_derivative_Pair, auto)
 
-lemma vderiv_on_exp_scaleRlI[poly_derivatives]:
+lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow>  D g = g' on T 
+  \<Longrightarrow> D (\<lambda>t. f t /\<^sub>R g t) = (\<lambda>t. (f' t *\<^sub>R g t - f t *\<^sub>R (g' t)) /\<^sub>R (g t)^2) on T"
+  unfolding  has_vderiv_on_def has_vector_derivative_def
+  by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
+
+lemmas has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs, poly_derivatives]
+thm has_vderiv_on_scaleR
+thm has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs] has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs]
+thm derivative_intros(33,39,45,46,50,60)
+
+lemma vderiv_on_exp_scaleRlI:
   assumes "D f = f' on T" and "g' = (\<lambda>x. f' x *\<^sub>R exp (f x *\<^sub>R A) * A)"
   shows "D (\<lambda>x. exp (f x *\<^sub>R A)) = g' on T"
   using assms unfolding has_vderiv_on_def has_vector_derivative_def apply clarsimp

@@ -221,6 +221,37 @@ lemma
 
 subsection \<open> Differential ghosts \<close>
 
+lemma
+  assumes 
+    "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> G" "k \<noteq> 0"
+    "diff_inv_on (I)\<^sub>e (a +\<^sub>L y) (\<lambda>t. \<sigma>(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y + \<guillemotleft>c\<guillemotright>)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
+  shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. \<sigma>) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
+  using assms(6)
+  apply (clarsimp simp add: expr_defs diff_inv_on_eq)
+  apply (erule_tac x="s \<triangleleft>\<^bsub>y\<^esub> s'" in allE)
+  apply (erule impE)
+  using assms(1) apply force
+ (* x t = (- c + (c + ks) * exp(kt)) / k *)
+  apply (drule_tac x="\<lambda> t. (X t, (- c + exp (k * t) *\<^sub>R get\<^bsub>y\<^esub> s')/\<^sub>R k)" in bspec)
+   prefer 2 subgoal
+    using assms(1-4)
+    apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
+    by (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
+  apply (clarsimp simp only: ivp_sols_def)
+  apply (intro conjI)
+  subgoal by (simp add: lens_defs lens_indep.lens_put_irr2)
+    prefer 2 subgoal for s X s' t
+  using assms(1-4)
+  apply (simp add: lens_defs lens_indep.lens_put_irr2)
+  apply (auto simp: field_simps)
+  sorry
+  apply (auto intro!: poly_derivatives)
+  using assms(1-4) 
+  apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
+  by (smt (verit, best) assms(5) divideR_right lens_indep.lens_put_irr2 lens_indep_comm 
+      real_vector_eq_affinity scaleR_right_diff_distrib scaleR_scaleR)
+
+
 lemma diff_ghost_very_simple:
   assumes 
     "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> G"
@@ -236,20 +267,14 @@ lemma diff_ghost_very_simple:
     using assms(1-4)
     apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
     by (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
-  apply (simp add: ivp_sols_def)
+  apply (clarsimp simp only: ivp_sols_def)
   apply (auto intro!: poly_derivatives)
-    apply (simp only: has_vderiv_on_def)
-    apply (auto intro: derivative_eq_intros(155) has_vector_derivative_exp)[1]
-  thm derivative_intros(20-154)
-    apply (force intro: derivative_intros(1-154))
-  thm derivative_intros
    prefer 2 subgoal
     using assms(1-4)
     by (simp add: lens_defs lens_indep.lens_put_irr2)
   using assms(1-4) 
   apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
   by (metis lens_indep_def)
-
 
 lemma
   assumes 
