@@ -239,7 +239,9 @@ lemma diff_ghost_very_simple:
   apply (simp add: ivp_sols_def)
   apply (auto intro!: poly_derivatives)
     apply (simp only: has_vderiv_on_def)
-    apply (force intro: derivative_intros)
+    apply (auto intro: derivative_eq_intros(155) has_vector_derivative_exp)[1]
+  thm derivative_intros(20-154)
+    apply (force intro: derivative_intros(1-154))
   thm derivative_intros
    prefer 2 subgoal
     using assms(1-4)
