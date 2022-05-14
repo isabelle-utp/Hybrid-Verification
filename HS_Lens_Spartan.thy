@@ -2,32 +2,27 @@
 
 section \<open> HS verification with lenses \<close>
 
-text \<open> We use shallow expressions to rephrase the properties for hybrid systems in a 
-cleaner presentation. \<close>
+text \<open> We use shallow expressions to rephrase hybrid systems properties. Each operator below 
+includes lemmas for verification condition generation. \<close>
 
 theory HS_Lens_Spartan
   imports "HS_Lens_ODEs"
 
 begin
 
-subsection \<open> Verification components \<close>
-
 type_synonym 'a pred = "'a \<Rightarrow> bool"
 type_synonym 's prog = "'s \<Rightarrow> 's set"
-
-named_theorems prog_defs
 
 no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
 
 notation Union ("\<mu>")
 
-subsection \<open>Verification of regular programs\<close>
 
-text \<open> Lemmas for verification condition generation \<close>
+subsection \<open> Forward box operator \<close>
 
-\<comment> \<open> Forward box operator \<close>
+named_theorems prog_defs
 
-named_theorems wp
+named_theorems wp "simplification rules for equational reasoning with weakest liberal preconditions"
 
 definition fbox :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred"
   where "fbox F P = (\<lambda>s. (\<forall>s'. s' \<in> F s \<longrightarrow> P s'))"
@@ -49,6 +44,9 @@ lemma fbox_invs:
     and "(I \<or> J)\<^sub>e \<le> |F] (I \<or> J)"
   using assms unfolding fbox_def SEXP_def by auto
 
+
+subsection \<open> Forward diamond operator \<close>
+
 definition fdia :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred"
   where "fdia F P = (\<lambda>s. (\<exists>s'. s' \<in> F s \<and> P s'))"
 
@@ -58,7 +56,8 @@ translations "_fdia F P" == "CONST fdia F (P)\<^sub>e"
 lemma fdia_iso: "P \<le> Q \<Longrightarrow> |F\<rangle> P \<le> |F\<rangle> Q"
   unfolding fdia_def by auto
 
-\<comment> \<open> Hoare triple \<close>
+
+subsection \<open> Hoare triple \<close>
 
 syntax
   "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("\<^bold>{_\<^bold>}/ _ /\<^bold>{_\<^bold>}")
@@ -92,20 +91,21 @@ lemma hoare_conseq:
   shows "\<^bold>{p\<^sub>1\<^bold>}S\<^bold>{q\<^sub>1\<^bold>}"
   using assms by (auto simp add: fbox_def expr_defs)
 
-\<comment> \<open> Skip \<close>
+
+subsection \<open> Skip \<close>
 
 definition [prog_defs]: "skip = (\<lambda>s. {s})"
 
 lemma fbox_skip [wp]: "|skip] P = P"
   unfolding fbox_def skip_def by simp
 
-lemma fdia_skip [wp]: "|skip\<rangle> P = P"
+lemma fdia_skip: "|skip\<rangle> P = P"
   unfolding fdia_def skip_def by simp
 
 lemma hoare_skip: "\<^bold>{P\<^bold>} skip \<^bold>{P\<^bold>}"
   by (auto simp: fbox_skip)
 
-\<comment> \<open> Abort \<close>
+subsection \<open> Abort \<close>
 
 definition [prog_defs]: "abort = (\<lambda>s. {})"
 
@@ -118,7 +118,7 @@ lemma fdia_abort: "|abort\<rangle> P = (False)\<^sub>e"
 lemma hoare_abort: "\<^bold>{P\<^bold>} abort \<^bold>{Q\<^bold>}"
   by (auto simp: fbox_abort)
 
-\<comment> \<open> Tests \<close>
+subsection \<open> Tests \<close>
 
 definition test :: "'a pred \<Rightarrow> 'a \<Rightarrow> 'a set"
   where [prog_defs]: "test P = (\<lambda>s. {x. x = s \<and> P x})"
@@ -138,10 +138,10 @@ lemma fdia_test: "|\<questiondown>P?\<rangle> Q = (P \<and> Q)\<^sub>e"
 lemma hoare_test: "\<^bold>{P\<^bold>} \<questiondown>T? \<^bold>{P \<and> T\<^bold>}"
   by (auto simp: fbox_test)
 
-\<comment> \<open> Assignments \<close>
+subsection \<open> Assignments \<close>
 
-definition assigns :: "'s subst \<Rightarrow> 's \<Rightarrow> 's set" ("\<langle>_\<rangle>") where 
-[prog_defs]: "\<langle>\<sigma>\<rangle> = (\<lambda> s. {\<sigma> s})"
+definition assigns :: "'s subst \<Rightarrow> 's \<Rightarrow> 's set" ("\<langle>_\<rangle>") 
+  where [prog_defs]: "\<langle>\<sigma>\<rangle> = (\<lambda> s. {\<sigma> s})"
 
 syntax
   "_assign" :: "svid \<Rightarrow> logic \<Rightarrow> logic" ("(2_ ::= _)" [65, 64] 64)
@@ -161,13 +161,14 @@ lemma fbox_assigns [wp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (Q
 lemma fdia_assign: "|x ::= e\<rangle> P = (P\<lbrakk>e/x\<rbrakk>)\<^sub>e"
   by (simp add: assigns_def expr_defs fdia_def)
 
-\<comment> \<open> Nondeterministic assignments \<close>
+subsection \<open> Nondeterministic assignments \<close>
 
 definition nondet_assign :: "('a \<Longrightarrow> 's) \<Rightarrow> 's prog" ("(2_ ::= ?)" [64] 65)
   where [prog_defs]: "(x ::= ?) = (\<lambda>s. {(put\<^bsub>x\<^esub> s k)|k. True})"
 
 lemma fbox_nondet_assign [wp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>k/x\<rbrakk>)\<^sub>e"
-  unfolding fbox_def nondet_assign_def vec_upd_eq by (auto simp add: fun_eq_iff expr_defs)
+  unfolding fbox_def nondet_assign_def vec_upd_eq 
+  by (auto simp add: fun_eq_iff expr_defs)
 
 lemma hoare_nondet_assign: "\<^bold>{\<forall>k. Q\<lbrakk>k/x\<rbrakk>\<^bold>} (x ::= ?) \<^bold>{Q\<^bold>}"
   by (simp add: fbox_nondet_assign)
@@ -176,10 +177,10 @@ lemma fdia_nondet_assign: "|x ::= ?\<rangle> P = (\<exists>k. P\<lbrakk>k/x\<rbr
   unfolding fdia_def nondet_assign_def vec_upd_eq 
   by (auto simp add: fun_eq_iff expr_defs)
 
-\<comment> \<open> Nondeterministic choice \<close>
+subsection \<open> Nondeterministic choice \<close>
 
-definition nondet_choice :: "'s prog \<Rightarrow> 's prog \<Rightarrow> 's prog" (infixr "\<sqinter>" 60) where
-[prog_defs]: "nondet_choice F G = (\<lambda> s. F s \<union> G s)"
+definition nondet_choice :: "'s prog \<Rightarrow> 's prog \<Rightarrow> 's prog" (infixr "\<sqinter>" 60) 
+  where [prog_defs]: "nondet_choice F G = (\<lambda> s. F s \<union> G s)"
 
 lemma fbox_choice [wp]: "|F \<sqinter> G] P = ( |F] P \<and> |G] P)\<^sub>e"
   unfolding fbox_def nondet_choice_def by auto
@@ -194,10 +195,10 @@ lemma hoare_choice:
 lemma fdia_choice: "|F \<sqinter> G\<rangle> P = (\<lambda>s. ( |F\<rangle> P) s \<or> ( |G\<rangle> P ) s)"
   unfolding fdia_def nondet_choice_def by auto
 
-\<comment> \<open> Sequential composition \<close>
+subsection \<open> Sequential composition \<close>
 
-definition kcomp :: "('a \<Rightarrow> 'b set) \<Rightarrow> ('b \<Rightarrow> 'c set) \<Rightarrow> ('a  \<Rightarrow> 'c set)" (infixl ";" 62) where
-  [prog_defs]: "F ; G = \<mu> \<circ> \<P> G \<circ> F"
+definition kcomp :: "('a \<Rightarrow> 'b set) \<Rightarrow> ('b \<Rightarrow> 'c set) \<Rightarrow> ('a  \<Rightarrow> 'c set)" (infixl ";" 62) 
+  where [prog_defs]: "F ; G = \<mu> \<circ> \<P> G \<circ> F"
 
 lemma kcomp_eq: "(f ; g) x = \<Union> {g y |y. y \<in> f x}"
   unfolding kcomp_def image_def by auto
@@ -222,7 +223,7 @@ lemma fdia_kcomp:
   shows"|G ; F\<rangle> P = |G\<rangle> H"
   unfolding fdia_def kcomp_def assms by auto
 
-lemma hl_fwd_assign:
+lemma hoare_fwd_assign:
   assumes "vwb_lens x" "\<And> x\<^sub>0. \<^bold>{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>\<^bold>} S \<^bold>{Q\<^bold>}"
   shows "\<^bold>{P\<^bold>} x ::= e ; S \<^bold>{Q\<^bold>}"
   using assms
@@ -231,7 +232,7 @@ lemma hl_fwd_assign:
   apply (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
   done
 
-\<comment> \<open> Conditional statement \<close>
+subsection \<open> Conditional statement \<close>
 
 definition ifthenelse :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set)" where
   [prog_defs]: "ifthenelse P X Y \<equiv> (\<lambda>s. if P s then X s else Y s)"
@@ -264,7 +265,7 @@ lemma fdia_if_then_else:
   shows"|IF T THEN X ELSE Y\<rangle> Q = ((T \<and> H1) \<or> (\<not> T \<and> H2))\<^sub>e"
   unfolding fdia_def ifthenelse_def assms by expr_auto
 
-\<comment> \<open> Finite iteration \<close>
+subsection \<open> Finite iteration \<close>
 
 definition kpower :: "('a \<Rightarrow> 'a set) \<Rightarrow> nat \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "kpower f n = (\<lambda>s. ((;) f ^^ n) skip s)"
@@ -337,7 +338,7 @@ qed
 lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} F\<^sup>* \<^bold>{Q\<^bold>}"
   by (rule fbox_kstarI) (auto simp: SEXP_def taut_def)
 
-\<comment> \<open> Loops with annotated invariants \<close>
+subsection \<open> Loops with annotated invariants \<close>
 
 definition loopi :: "('a \<Rightarrow> 'a set) \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "loopi F I \<equiv> (F\<^sup>*)"
@@ -367,7 +368,7 @@ lemma hoare_loopI_break:
   "\<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} (Y ; (LOOP X INV I)) \<^bold>{Q\<^bold>}"
   by (rule hoare_kcomp, force) (rule hoare_loopI, simp_all)
 
-\<comment> \<open> Framing \<close>
+subsection \<open> Framing \<close>
 
 definition frame :: "'s scene \<Rightarrow> 's prog \<Rightarrow> 's prog" where
 [prog_defs]: "frame a P = (\<lambda> s. {s'. s = cp\<^bsub>a\<^esub> s s' \<and> s' \<in> P s})"

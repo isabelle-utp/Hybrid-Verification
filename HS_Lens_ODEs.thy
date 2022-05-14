@@ -222,6 +222,8 @@ lemma
 
 subsection \<open> Differential ghosts \<close>
 
+term "(\<lambda>s. (P \\ $x) s) = (\<lambda>s. \<exists>s'. P (s \<triangleleft>\<^bsub>x\<^esub> s'))"
+
 lemma diff_ghost:
   fixes a::"'a::real_normed_vector \<Longrightarrow> 'c"
     and y::"'b::real_normed_vector \<Longrightarrow> 'c"

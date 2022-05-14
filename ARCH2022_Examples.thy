@@ -69,7 +69,7 @@ proof -
   have 1: "\<^bold>{x \<ge> 1\<^bold>} {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
     by dInduct
   show ?thesis
-    apply (rule hl_fwd_assign)
+    apply (rule hoare_fwd_assign)
      apply (simp)
     apply (subst_eval)
     apply (rule hoare_conseq[OF 1])
