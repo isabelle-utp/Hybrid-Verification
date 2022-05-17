@@ -804,6 +804,11 @@ lemma hoare_diff_inv_on:
   "\<^bold>{I\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{I\<^bold>} = diff_inv_on (I)\<^sub>e a (\<lambda>_. [a \<leadsto> f]) (U)\<^sub>e S t\<^sub>0 (G)\<^sub>e"
   using fbox_diff_inv_on[of I a f G U S t\<^sub>0] by (simp add: SEXP_def)
 
+lemma hoare_diff_inv_on_post_inv:
+  assumes "`P \<longrightarrow> Q`" "\<^bold>{Q\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
+  shows "\<^bold>{P\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
+  using assms(2) by (rule hoare_conseq; simp add: assms)
+
 lemma fbox_diff_inv_on2:
   "I \<le> fbox (g_orbital_on a f G U S t\<^sub>0) I = diff_inv_on I a f U S t\<^sub>0 G"
   by (auto simp: diff_inv_on_def ivp_sols_def fbox_def g_orbital_on_eq)

@@ -87,6 +87,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
 
 end
 
+(*
 lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> 
   |1 ::= (\<lambda>s. s$1 +1)] |x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then 2 else 0)) & G] 
   (\<lambda>s. s$1 \<ge> 1)" 
@@ -95,24 +96,48 @@ lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le>
      apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff)
    apply(clarsimp, rule_tac x=1 in exI)+
   by (auto intro!: poly_derivatives)
+*)
 
 
 subsubsection \<open> Overwrite with nondeterministic assignment \<close>
 
+context two_vars
+begin
+
+(* x>=0 -> [x:=x+1;][x:=*; ?x>=1;]x>=1 *)
+lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; x ::= ? ; \<questiondown>x\<ge>1? \<^bold>{x \<ge> 1\<^bold>}"
+  by hoare_wp_simp
+
+end
+
+(*
 (* x>=0 -> [x:=x+1;][x:=*; ?x>=1;]x>=1 *)
 lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> |1 ::= (\<lambda>s. s$1 +1)] |(1 ::= ?);\<questiondown>\<lambda>s. s$1 \<ge> 1?] (\<lambda>s. s$1 \<ge> 1)" 
   by (simp add: le_fun_def)
-
+*)
 
 subsubsection \<open> Tests and universal quantification \<close>
 
+context two_vars
+begin
+
+term "(z::real)\<^sub>e"
+
+lemma "(\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1)\<^sub>e = (y \<ge> 1)\<^sub>e"
+  by (expr_auto)
+
+
+end
+
 (* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
+
+(*
 lemma "(\<lambda>s::real^2. s$1 \<ge> 0) \<le> |1 ::= (\<lambda>s. s$1 +1)]
   |(\<lambda>s. (\<questiondown>\<lambda>s. s$1 \<ge> 2?;(1 ::= (\<lambda>s. s$1 - 1))) s \<union> 
     (\<questiondown>\<lambda>s. \<forall>i. s$i \<ge> 1 \<longrightarrow> s$2 \<ge> 1?;(1 ::= (\<lambda>s. s$2))) s)] 
   (\<lambda>s. s$1 \<ge> 1)" 
   by (auto simp: le_fun_def fbox_choice )
-
+*)
 
 subsubsection \<open> Overwrite assignment several times \<close>
 
@@ -208,6 +233,15 @@ lemma "(\<lambda>s::real^1. s$1 > 0) \<le>
 subsubsection \<open> Dynamics: Single integrator time \<close>
 
 (* x=0->[{x'=1}]x>=0 *)
+
+context two_vars
+begin
+
+lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
+  by (rule hoare_diff_inv_on_post_inv, simp, dInduct)
+
+end
+
 lemma "(\<lambda>s::real^1. s$1 = 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. 1)) & G] (\<lambda>s. s$1 \<ge> 0)"
   apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. t+s$1)"]; simp?)
   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
@@ -218,6 +252,21 @@ lemma "(\<lambda>s::real^1. s$1 = 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. 1)
 subsubsection \<open> Dynamics: Single integrator \<close>
 
 (* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
+
+context two_vars
+begin
+
+lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
+proof -
+  have "\<^bold>{y \<ge> 0 \<and> x \<ge> 0\<^bold>} {x` = y} \<^bold>{y \<ge> 0 \<and> x \<ge> 0\<^bold>}"
+    by (dInduct_mega)
+  thus ?thesis
+    by (rule hoare_conseq; simp)
+qed
+    
+end
+
+(*
 lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 0) \<le> 
   |x\<acute>=(\<lambda>s. (\<chi> i. if i = 1 then s$2 else 0)) & G] (\<lambda>s. s$1 \<ge> 0)"
   apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and 
@@ -226,7 +275,7 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \
     apply(simp add: dist_norm norm_vec_def L2_set_def)
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
   unfolding UNIV_2 by (auto intro!: poly_derivatives simp: forall_2 vec_eq_iff)
-
+*)
 
 subsubsection \<open> Dynamics: Double integrator \<close>
 
