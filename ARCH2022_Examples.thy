@@ -82,6 +82,11 @@ qed
 
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
+  apply (subst fbox_g_ode_flow[where T=UNIV])
+     defer
+     apply simp
+    apply auto[1]
+  apply hoare_wp_auto
   apply (subst fbox_kcomp[symmetric])
   oops
 
@@ -128,6 +133,7 @@ begin
 
 definition "local_one \<equiv> 1::'a"
 
+(* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x. x \<ge> local_one \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
   using lens_x indep
   by hoare_wp_auto
@@ -137,6 +143,7 @@ end
 context two_vars
 begin
 
+(* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x. x \<ge> 1 \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
   apply hoare_wp_auto
   apply (erule_tac x=1 in allE)
@@ -150,15 +157,6 @@ lemma "(\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1)\<^sub>e = (y \<
 
 end
 
-(* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
-
-(*
-lemma "(\<lambda>s::real^2. s$1 \<ge> 0) \<le> |1 ::= (\<lambda>s. s$1 +1)]
-  |(\<lambda>s. (\<questiondown>\<lambda>s. s$1 \<ge> 2?;(1 ::= (\<lambda>s. s$1 - 1))) s \<union> 
-    (\<questiondown>\<lambda>s. \<forall>i. s$i \<ge> 1 \<longrightarrow> s$2 \<ge> 1?;(1 ::= (\<lambda>s. s$2))) s)] 
-  (\<lambda>s. s$1 \<ge> 1)" 
-  by (auto simp: le_fun_def fbox_choice )
-*)
 
 subsubsection \<open> Overwrite assignment several times \<close>
 

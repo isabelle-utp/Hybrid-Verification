@@ -701,6 +701,8 @@ lemma fbox_g_ode_frame_flow:
   apply (subst local_flow.fbox_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def, rule_format]])
   using assms(2) by expr_simp+
 
+lemmas fbox_g_ode_flow = fbox_g_ode_frame_flow
+
 lemma fbox_g_ode_on_flow:
   assumes "local_flow_on (subst_upd [\<leadsto>] A f) A T S \<phi>" and "vwb_lens A"
     and "\<And>s. 0 \<in> U s \<and> is_interval (U s) \<and> U s \<subseteq> T"
