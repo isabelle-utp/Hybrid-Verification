@@ -118,14 +118,35 @@ lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> |1 ::= (\<lambda>s. s$1 +1)] |(1 
 
 subsubsection \<open> Tests and universal quantification \<close>
 
+
+locale struct_var =
+  fixes x :: "real \<Longrightarrow> 'a::{preorder,one}"
+    and y :: "real \<Longrightarrow> 'a::{preorder,one}"
+  assumes lens_x: "vwb_lens x"
+    and indep: "x \<bowtie> y"
+begin
+
+definition "local_one \<equiv> 1::'a"
+
+lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x. x \<ge> local_one \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
+  using lens_x indep
+  by hoare_wp_auto
+
+end
+
 context two_vars
 begin
+
+lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x. x \<ge> 1 \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
+  apply hoare_wp_auto
+  apply (erule_tac x=1 in allE)
+  thm order.refl
+  oops
 
 term "(z::real)\<^sub>e"
 
 lemma "(\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1)\<^sub>e = (y \<ge> 1)\<^sub>e"
   by (expr_auto)
-
 
 end
 
