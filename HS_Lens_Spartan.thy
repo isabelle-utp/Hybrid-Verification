@@ -227,10 +227,8 @@ lemma hoare_fwd_assign:
   assumes "vwb_lens x" "\<And> x\<^sub>0. \<^bold>{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>\<^bold>} S \<^bold>{Q\<^bold>}"
   shows "\<^bold>{P\<^bold>} x ::= e ; S \<^bold>{Q\<^bold>}"
   using assms
-  apply (auto simp add: kcomp_def assigns_def fbox_def le_fun_def)
-  apply (expr_simp)
-  apply (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
-  done
+  unfolding kcomp_def assigns_def fbox_def le_fun_def
+  by (expr_simp) (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
 
 subsection \<open> Conditional statement \<close>
 
@@ -264,6 +262,7 @@ lemma fdia_if_then_else:
   assumes "H2 = |Y\<rangle> Q"
   shows"|IF T THEN X ELSE Y\<rangle> Q = ((T \<and> H1) \<or> (\<not> T \<and> H2))\<^sub>e"
   unfolding fdia_def ifthenelse_def assms by expr_auto
+
 
 subsection \<open> Finite iteration \<close>
 
@@ -368,10 +367,11 @@ lemma hoare_loopI_break:
   "\<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} (Y ; (LOOP X INV I)) \<^bold>{Q\<^bold>}"
   by (rule hoare_kcomp, force) (rule hoare_loopI, simp_all)
 
+
 subsection \<open> Framing \<close>
 
-definition frame :: "'s scene \<Rightarrow> 's prog \<Rightarrow> 's prog" where
-[prog_defs]: "frame a P = (\<lambda> s. {s'. s = cp\<^bsub>a\<^esub> s s' \<and> s' \<in> P s})"
+definition frame :: "'s scene \<Rightarrow> 's prog \<Rightarrow> 's prog"
+  where [prog_defs]: "frame a P = (\<lambda> s. {s'. s = cp\<^bsub>a\<^esub> s s' \<and> s' \<in> P s})"
 
 syntax "_frame" :: "salpha \<Rightarrow> logic \<Rightarrow> logic" ("_:[_]" [65] 65)
 translations "_frame a P" == "CONST frame a P"
@@ -413,7 +413,8 @@ lemma nmods_seq [closure]:
   assumes "P nmods a" "Q nmods a"
   shows "(P ; Q) nmods a"
   using assms 
-  by (auto simp add: not_modifies_def prog_defs scene_equiv_def, metis scene_override_overshadow_right)
+  by (auto simp add: not_modifies_def prog_defs scene_equiv_def)
+    (metis scene_override_overshadow_right)
 
 lemma nmods_if [closure]:
   assumes "P nmods a" "Q nmods a"
@@ -432,7 +433,8 @@ lemma nmods_test [closure]:
 lemma lens_not_member_put:
   assumes "vwb_lens x" "idem_scene a" "x \<notin>\<^sub>S a"
   shows "put\<^bsub>x\<^esub> s v \<oplus>\<^sub>S s on a = put\<^bsub>x\<^esub> s v"
-  by (metis assms(1) assms(2) assms(3) idem_scene_uminus lens_member_put scene_override_commute scene_override_overshadow_right)
+  by (metis assms idem_scene_uminus lens_member_put 
+      scene_override_commute scene_override_overshadow_right)
   
 lemma nmods_assign [closure]:
   assumes "vwb_lens x" "idem_scene a" "x \<notin>\<^sub>S a"
@@ -458,7 +460,7 @@ lemma nmods_g_orbital_on_discrete_lens [closure]:
 lemma nmods_via_fbox:
   "\<lbrakk> vwb_lens x; \<And> v. |P] ($x = \<guillemotleft>v\<guillemotright>) = ($x = \<guillemotleft>v\<guillemotright>)\<^sub>e \<rbrakk> \<Longrightarrow> P nmods $x"
   by (expr_simp add: fbox_def not_modifies_def, auto)
-     (metis UNIV_I lens_override_def lens_scene_override mwb_lens.weak_get_put vwb_lens_iff_mwb_UNIV_src)
+     (metis UNIV_I lens_override_def mwb_lens.weak_get_put vwb_lens_iff_mwb_UNIV_src)
 
 text \<open> Important principle: If @{term P} does not modify @{term a}, and predicate @{term b} does
   not refers only variables outside of @{term a} then @{term b} is an invariant of @{term P}. \<close>
@@ -475,43 +477,11 @@ lemma nmods_invariant:
   using assms
   by (auto simp add: prog_defs fbox_def expr_defs scene_override_commute not_modifies_def scene_equiv_def, metis)
 
-subsection \<open> Verification of hybrid programs \<close>
 
-text \<open> Verification by providing evolution \<close>
+subsection \<open> Analytic dynamics \<close>
 
 definition g_evol :: "(('a::ord) \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'b pred \<Rightarrow> ('b \<Rightarrow> 'a set) \<Rightarrow> ('b \<Rightarrow> 'b set)" ("EVOL")
   where "g_evol \<phi> G U = (\<lambda>s. g_orbit (\<lambda>t. \<phi> t s) G (U s))"
-
-definition g_evol_on :: "('c::real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'a \<Rightarrow> 'a set" where
-  "g_evol_on a \<phi> G U \<equiv> (\<lambda> s. put\<^bsub>a\<^esub> s ` (g_evol (loc_subst a \<phi> s) (\<lambda> v. G (put\<^bsub>a\<^esub> s v)) U (get\<^bsub>a\<^esub> s)))"
-
-lemma g_evol_on_alt_def:
-  "vwb_lens a \<Longrightarrow> g_evol_on a \<phi> G U s = {s \<oplus>\<^sub>L \<phi> t s on a |t. t \<in> U (get\<^bsub>a\<^esub> s) \<and> (\<forall>\<tau>. \<tau> \<in> down (U (get\<^bsub>a\<^esub> s)) t \<longrightarrow> G (s \<oplus>\<^sub>L \<phi> \<tau> s on a))}"
-  by (auto simp add: g_evol_on_def g_evol_def g_orbit_eq lens_defs)
-
-abbreviation g_evol_eq :: "('c::real_normed_vector \<Longrightarrow> 'b) \<Rightarrow> (real \<Rightarrow> ('c, 'b) expr) \<Rightarrow> 'b pred \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> ('b \<Rightarrow> 'b set)" where
-"g_evol_eq a f G U \<equiv> g_evol_on a (\<lambda> \<tau>. subst_upd [\<leadsto>] a (f \<tau>)) G U"
-
-no_notation disj  (infixr "|" 30)
-
-syntax
-  "_time_var" :: id
-  "_EVOL" :: "svid \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("{EVOL _ = _ | _ on _}")
-  "_EVOL_ge" :: "svid \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("{EVOL _ = _ | _}")
-  "_EVOL_simp" :: "svid \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("{EVOL _ = _}")
-
-parse_translation 
-  \<open>[(@{syntax_const "_time_var"}, fn ctx => fn term => Syntax.free "\<tau>")]\<close>
-
-translations
-  "_EVOL a f G U" => "CONST g_evol_eq a (\<lambda> _time_var. (f)\<^sub>e) (G)\<^sub>e (U)\<^sub>e"
-  "_EVOL a f G U" <= "CONST g_evol_eq a (\<lambda> b. (f)\<^sub>e) (G)\<^sub>e (U)\<^sub>e"
-  "_EVOL_ge a f G" == "_EVOL a f G {0..}"
-  "_EVOL_simp a f" == "_EVOL_ge a f (CONST True)"
-
-term "{EVOL x = \<guillemotleft>\<tau>\<guillemotright> * 5 + $x}"
-
-term "{EVOL (x, y) = ($x * cos \<guillemotleft>\<tau>\<guillemotright> + $y * sin \<guillemotleft>\<tau>\<guillemotright>, - $x * sin \<guillemotleft>\<tau>\<guillemotright> + $y * cos \<guillemotleft>\<tau>\<guillemotright>) | true on UNIV}"
 
 lemma fbox_g_evol: 
   fixes \<phi> :: "('a::preorder) \<Rightarrow> 'b \<Rightarrow> 'b"
@@ -528,22 +498,116 @@ lemma fbox_g_evol':
   shows "|EVOL \<phi> G U] Q = (\<forall>t\<in>U. ((\<forall>\<tau>\<in>down U \<guillemotleft>t\<guillemotright>. \<phi> \<tau> \<dagger> G) \<longrightarrow> \<phi> t \<dagger> Q))\<^sub>e"
   by (simp add: fbox_g_evol, simp add: expr_defs)
 
-lemma fbox_g_evol_on:
-  "vwb_lens a \<Longrightarrow> 
-   fbox (g_evol_on a \<phi> G U) Q = (\<lambda>s. \<forall>t\<in>U (get\<^bsub>a\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>a\<^esub> s)) t. G (s \<oplus>\<^sub>L \<phi> \<tau> s on a)) \<longrightarrow> Q (s \<oplus>\<^sub>L \<phi> t s on a))"
-  by (auto simp add: g_evol_on_alt_def fbox_def fun_eq_iff)
+definition g_evol_on :: "('c::real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) 
+  \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'a \<Rightarrow> 'a set" 
+  where "g_evol_on a \<phi> G U s \<equiv> 
+  put\<^bsub>a\<^esub> s ` (g_evol (loc_subst a \<phi> s) (\<lambda> v. G (put\<^bsub>a\<^esub> s v)) U (get\<^bsub>a\<^esub> s))"
 
-lemma fbox_g_evol_on'' [wp]:
+lemma g_evol_on_eq:
+  "vwb_lens a \<Longrightarrow> g_evol_on a \<phi> G U s = 
+  {(s \<triangleleft>\<^bsub>a\<^esub> \<phi> t s) |t. t \<in> U (get\<^bsub>a\<^esub> s) \<and> (\<forall>\<tau>. \<tau> \<in> down (U (get\<^bsub>a\<^esub> s)) t \<longrightarrow> G (s \<triangleleft>\<^bsub>a\<^esub> \<phi> \<tau> s))}"
+  by (auto simp add: g_evol_on_def g_evol_def g_orbit_eq lens_defs)
+
+abbreviation g_evol_eqs :: "('c::real_normed_vector \<Longrightarrow> 'b) \<Rightarrow> (real \<Rightarrow> ('c, 'b) expr) \<Rightarrow> 'b pred 
+  \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> ('b \<Rightarrow> 'b set)" 
+  where "g_evol_eqs a \<phi> G U \<equiv> g_evol_on a (\<lambda>\<tau>. subst_upd [\<leadsto>] a (\<phi> \<tau>)) G U"
+
+no_notation disj (infixr "|" 30)
+
+syntax
+  "_time_var" :: id
+  "_EVOL" :: "svid \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("{EVOL _ = _ | _ on _}")
+  "_EVOL_ge" :: "svid \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("{EVOL _ = _ | _}")
+  "_EVOL_simp" :: "svid \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("{EVOL _ = _}")
+
+parse_translation 
+  \<open>[(@{syntax_const "_time_var"}, fn ctx => fn term => Syntax.free "\<tau>")]\<close>
+
+translations
+  "_EVOL a f G U" => "CONST g_evol_eqs a (\<lambda> _time_var. (f)\<^sub>e) (G)\<^sub>e (U)\<^sub>e"
+  "_EVOL a f G U" <= "CONST g_evol_eqs a (\<lambda> b. (f)\<^sub>e) (G)\<^sub>e (U)\<^sub>e"
+  "_EVOL_ge a f G" == "_EVOL a f G {0..}"
+  "_EVOL_simp a f" == "_EVOL_ge a f (CONST True)"
+
+term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x}"
+term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x | $x \<ge> 0 \<and> \<guillemotleft>\<tau>\<guillemotright> \<le> \<guillemotleft>max\<guillemotright>}"
+term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x | $x \<ge> 0 \<and> \<guillemotleft>\<tau>\<guillemotright> \<le> \<guillemotleft>max\<guillemotright> on {0--\<guillemotleft>t\<guillemotright>}}"
+term "{EVOL (x, y) = ($x * cos \<guillemotleft>\<tau>\<guillemotright> + $y * sin \<guillemotleft>\<tau>\<guillemotright>, - $x * sin \<guillemotleft>\<tau>\<guillemotright> + $y * cos \<guillemotleft>\<tau>\<guillemotright>) | true on UNIV}"
+
+
+lemma fbox_g_evol_on [wp]:
   assumes "vwb_lens a"
-  shows "fbox (g_evol_on a \<phi> G U) Q = (\<forall>t\<in>\<guillemotleft>U\<guillemotright> ($a). (\<forall> \<tau>\<in>down (\<guillemotleft>U\<guillemotright> ($a)) \<guillemotleft>t\<guillemotright> . G\<lbrakk>\<langle>\<phi> \<tau>\<rangle>\<^sub>s a/a\<rbrakk>) \<longrightarrow> Q\<lbrakk>\<langle>\<phi> t\<rangle>\<^sub>s a/a\<rbrakk>)\<^sub>e"
-  by (simp add: fbox_g_evol_on assms, expr_auto)
+  shows "|g_evol_on a \<phi> G U] Q 
+  = (\<forall>t\<in>\<guillemotleft>U\<guillemotright> ($a). (\<forall> \<tau>\<in>down (\<guillemotleft>U\<guillemotright> ($a)) \<guillemotleft>t\<guillemotright> . G\<lbrakk>\<langle>\<phi> \<tau>\<rangle>\<^sub>s a/a\<rbrakk>) \<longrightarrow> Q\<lbrakk>\<langle>\<phi> t\<rangle>\<^sub>s a/a\<rbrakk>)\<^sub>e"
+  unfolding fbox_def fun_eq_iff g_evol_on_eq[OF assms]
+  by expr_auto
+
+lemma "vwb_lens a \<Longrightarrow> |g_evol_on a \<phi> G U] Q = 
+  (\<lambda>s. \<forall>t\<in>U (get\<^bsub>a\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>a\<^esub> s)) t. G (s \<triangleleft>\<^bsub>a\<^esub> \<phi> \<tau> s)) \<longrightarrow> Q (s \<triangleleft>\<^bsub>a\<^esub> \<phi> t s))"
+  by (auto simp add: g_evol_on_eq fbox_def fun_eq_iff)
+
+
+subsection \<open> ODE-dynamics \<close>
 
 text \<open> Verification by providing solutions \<close>
 
-abbreviation g_ode_frame :: "('c::banach \<Longrightarrow> 'a) \<Rightarrow> 'a subst \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'a set" 
-  where "g_ode_frame a \<sigma> G U S t\<^sub>0 \<equiv> g_orbital_on a (\<lambda> t. \<sigma>) G U S t\<^sub>0"
+notation g_orbital ("(1x\<acute>=_ & _ on _ _ @ _)")
 
-abbreviation g_ode_on :: "('c::banach \<Longrightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'c) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'a set"
+lemma fbox_g_orbital: "|x\<acute>=f & G on U S @ t\<^sub>0] Q = 
+  (\<lambda>s. \<forall>X\<in>Sols U S f t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
+  unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
+
+lemma fbox_g_orbital_on: "|g_orbital_on a f G U S t\<^sub>0] Q =
+  (\<lambda>s. \<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s).
+        \<forall>t\<in>U (get\<^bsub>a\<^esub> s). (\<forall>x. x \<in> U (get\<^bsub>a\<^esub> s) \<and> x \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X x))) \<longrightarrow> Q (put\<^bsub>a\<^esub> s (X t)))"
+  by (auto simp add: g_orbital_on_def fbox_def g_orbital_eq fun_eq_iff)
+
+term "Q \<circ> (put\<^bsub>a\<^esub> s)"
+term "Q \<lbrakk>k/x\<rbrakk>"
+term "(Q)\<^sub>e"
+term "Q \\ a"
+term "\<phi> \<tau> \<dagger> G"
+
+lemma "|g_orbital_on a f G U S t\<^sub>0] Q = 
+  (\<lambda>s. ( |x\<acute>=(loc_subst a f s) & (\<lambda>c. G (put\<^bsub>a\<^esub> s c)) on U S @ t\<^sub>0] Q) (get\<^bsub>a\<^esub> s))"
+  unfolding fbox_g_orbital fbox_g_orbital_on
+
+context local_flow
+begin
+
+lemma fbox_g_ode_subset:
+  assumes "\<And>s. s \<in> S \<Longrightarrow> 0 \<in> U s \<and> is_interval (U s) \<and> U s \<subseteq> T"
+  shows "|x\<acute>= (\<lambda>t. f) & G on U S @ 0] Q = 
+  (\<lambda> s. s \<in> S \<longrightarrow> (\<forall>t\<in>(U s). (\<forall>\<tau>\<in>down (U s) t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
+  apply(unfold fbox_g_orbital fun_eq_iff)
+  apply(clarify, rule iffI; clarify)
+   apply(force simp: in_ivp_sols assms)
+  apply(frule ivp_solsD(2), frule ivp_solsD(3), frule ivp_solsD(4))
+  apply(subgoal_tac "\<forall>\<tau>\<in>down (U x) t. X \<tau> = \<phi> \<tau> x")
+   apply(clarsimp, fastforce, rule ballI)
+  apply(rule ivp_unique_solution[OF _ _ _ _ _ in_ivp_sols])
+  using assms by auto
+                         
+lemma fbox_g_ode: "|x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. T) S @ 0] Q = 
+  (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>T. (\<forall>\<tau>\<in>down T t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
+  by (subst fbox_g_ode_subset, simp_all add: init_time interval_time)
+
+lemma fbox_g_ode_ivl: "t \<ge> 0 \<Longrightarrow> t \<in> T \<Longrightarrow> |x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. {0..t}) S @ 0] Q = 
+  (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>{0..t}. (\<forall>\<tau>\<in>{0..t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
+  apply(subst fbox_g_ode_subset, simp_all add: subintervalI init_time real_Icc_closed_segment)
+  by (auto simp: closed_segment_eq_real_ivl)
+
+lemma fbox_orbit: "|\<gamma>\<^sup>\<phi>] Q = (\<lambda>s. s \<in> S \<longrightarrow> (\<forall> t \<in> T. Q (\<phi> t s)))"
+  unfolding orbit_def fbox_g_ode by simp
+
+end
+
+abbreviation g_ode_frame :: "('c::banach \<Longrightarrow> 'a) \<Rightarrow> 'a subst \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) 
+  \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'a set" 
+  where "g_ode_frame a \<sigma> G U S t\<^sub>0 \<equiv> g_orbital_on a (\<lambda>t. \<sigma>) G U S t\<^sub>0"
+
+abbreviation g_ode_on :: "('c::banach \<Longrightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'c) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) 
+  \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'a set"
   where "g_ode_on a f G U S t\<^sub>0 \<equiv> g_ode_frame a (subst_upd [\<leadsto>] a f) G U S t\<^sub>0"
 
 abbreviation g_dl_ode_frame :: "('c::banach \<Longrightarrow> 'a) \<Rightarrow> 'a subst \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a set"
@@ -599,28 +663,27 @@ translations
   "_ode_ng \<sigma>" == "_ode \<sigma> (CONST True)"
 
 term "{x` = 1}"
-
 term "{x` = 1, y` = $x | True}"
-
 term "{(x, y)` = (1, 2*$x)}"
-term "(x, y):{x` = 1, y` = 2*$x}"
+term "(x, y, z):{x` = 1, y` = 2*$x}"
 term "(x,y):{(x, y)` = (1, 2*$x), z` = $y}"
 
 lemma fbox_g_ode_on: "|{x` = f | G on U S @ t\<^sub>0}] Q = 
-  (\<lambda>s. \<forall>X \<in> Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s). 
+  (\<lambda>s. \<forall>X \<in> Sols (U)\<^sub>e S (loc_subst x (\<lambda>t. [x \<leadsto> f]) s) t\<^sub>0 (get\<^bsub>x\<^esub> s). 
   \<forall>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>x\<^esub> s)) t. G (put\<^bsub>x\<^esub> s (X \<tau>))) \<longrightarrow> Q (put\<^bsub>x\<^esub> s (X t)))"
   unfolding fbox_def g_orbital_on_eq by (auto simp: fun_eq_iff SEXP_def)
 
-notation g_orbital ("(1x\<acute>=_ & _ on _ _ @ _)")
+term "loc_subst (a::'c \<Longrightarrow> 's) (\<lambda>t. f::'s \<Rightarrow> 's)"
+term "local_flow f T S \<phi>"
+term "g_orbital_on a (\<lambda>\<tau>. f) G (U s) S t\<^sub>0 s"
 
-lemma fbox_g_orbital: "|x\<acute>=f & G on U S @ t\<^sub>0] Q = 
-  (\<lambda>s. \<forall>X\<in>Sols U S f t\<^sub>0 s. \<forall>t\<in>U s. (\<forall>\<tau>\<in>down (U s) t. G (X \<tau>)) \<longrightarrow> Q (X t))"
-  unfolding fbox_def g_orbital_eq by (auto simp: fun_eq_iff)
-
-lemma fbox_g_orbital_on: "|g_orbital_on a f G U S t\<^sub>0] Q =
-  (\<lambda>s. \<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s).
-        \<forall>t\<in>U (get\<^bsub>a\<^esub> s). (\<forall>x. x \<in> U (get\<^bsub>a\<^esub> s) \<and> x \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X x))) \<longrightarrow> Q (put\<^bsub>a\<^esub> s (X t)))"
-  by (auto simp add: g_orbital_on_def fbox_def g_orbital_eq fun_eq_iff)
+lemma
+  fixes a::"'c::{heine_borel,banach} \<Longrightarrow> 's"
+    and f::"'s \<Rightarrow> 's"
+  assumes "\<And>s. local_flow (loc_subst a (\<lambda>t. f) s 0) T S (loc_subst a \<phi> s)"
+  shows "|g_orbital_on a (\<lambda>t. f) G U S t\<^sub>0] Q = (\<lambda>s. (\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..t}. G (s \<triangleleft>\<^bsub>a\<^esub> \<phi> \<tau> s)) \<longrightarrow> Q (s \<triangleleft>\<^bsub>a\<^esub> \<phi> t s)))"
+  apply (subst fbox_g_orbital_on)
+  oops
 
 lemma fbox_g_ode_on_subset:
   assumes "\<And> s. local_flow (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) T UNIV (loc_subst a \<phi> s)" "vwb_lens a"
@@ -665,11 +728,9 @@ lemma fbox_g_ode_on_subset':
   assumes "\<And> s. local_flow (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) T UNIV (loc_subst a \<phi> s)" "vwb_lens a" "{t. 0 \<le> t} \<subseteq> T"
   shows "|g_dl_ode_frame a \<sigma> G] Q = |g_evol_on a \<phi> G ({0..})\<^sub>e] Q"
   using assms
-  apply (simp add: g_evol_on_def fbox_g_evol)
+  apply (simp add: g_evol_on_def fbox_g_evol_on)
   apply (subst fbox_g_ode_on_subset[OF assms(1)], simp_all add:assms expr_defs fun_eq_iff)
-  apply (auto simp add: fbox_def g_evol_def g_orbit_eq assms image_Collect lens_defs)
-  apply (metis atLeastAtMost_iff)
-  done
+  by (auto simp add: fbox_def g_evol_def g_orbit_eq assms image_Collect lens_defs)
 
 text \<open> A postcondition of a localised ODE is a postcondition of its unique localised solution. \<close>
 
@@ -688,19 +749,6 @@ lemma fbox_g_ode_on_subset'':
 context local_flow
 begin
 
-lemma fbox_g_ode_subset:
-  assumes "\<And>s. s \<in> S \<Longrightarrow> 0 \<in> U s \<and> is_interval (U s) \<and> U s \<subseteq> T"
-  shows "|x\<acute>= (\<lambda>t. f) & G on U S @ 0] Q = 
-  (\<lambda> s. s \<in> S \<longrightarrow> (\<forall>t\<in>(U s). (\<forall>\<tau>\<in>down (U s) t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
-  apply(unfold fbox_g_orbital fun_eq_iff)
-  apply(clarify, rule iffI; clarify)
-   apply(force simp: in_ivp_sols assms)
-  apply(frule ivp_solsD(2), frule ivp_solsD(3), frule ivp_solsD(4))
-  apply(subgoal_tac "\<forall>\<tau>\<in>down (U x) t. X \<tau> = \<phi> \<tau> x")
-   apply(clarsimp, fastforce, rule ballI)
-  apply(rule ivp_unique_solution[OF _ _ _ _ _ in_ivp_sols])
-  using assms by auto
-
 lemma 
   assumes "s \<in> S" and "0 \<in> U (get\<^bsub>x\<^esub> s)" and "U (get\<^bsub>x\<^esub> s) \<subseteq> T"
   shows "(\<lambda>t. put\<^bsub>x\<^esub> s (\<phi> \<tau> s)) \<in> Sols (\<lambda>s. U (get\<^bsub>x\<^esub> s)) S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) 0 s"
@@ -717,18 +765,6 @@ lemma fbox_g_ode_on_subset:
   apply(clarify, rule iffI)
    apply(clarsimp simp: in_ivp_sols assms)
   oops (* delete? already proven? *)
-                         
-lemma fbox_g_ode: "|x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. T) S @ 0] Q = 
-  (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>T. (\<forall>\<tau>\<in>down T t. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
-  by (subst fbox_g_ode_subset, simp_all add: init_time interval_time)
-
-lemma fbox_g_ode_ivl: "t \<ge> 0 \<Longrightarrow> t \<in> T \<Longrightarrow> |x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. {0..t}) S @ 0] Q = 
-  (\<lambda>s. s \<in> S \<longrightarrow> (\<forall>t\<in>{0..t}. (\<forall>\<tau>\<in>{0..t}. G (\<phi> \<tau> s)) \<longrightarrow> Q (\<phi> t s)))"
-  apply(subst fbox_g_ode_subset, simp_all add: subintervalI init_time real_Icc_closed_segment)
-  by (auto simp: closed_segment_eq_real_ivl)
-
-lemma fbox_orbit: "|\<gamma>\<^sup>\<phi>] Q = (\<lambda>s. s \<in> S \<longrightarrow> (\<forall> t \<in> T. Q (\<phi> t s)))"
-  unfolding orbit_def fbox_g_ode by simp
 
 end
 
