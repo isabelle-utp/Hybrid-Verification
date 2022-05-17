@@ -142,6 +142,19 @@ lemma "(\<lambda>s::real^2. s$1 \<ge> 0) \<le> |1 ::= (\<lambda>s. s$1 +1)]
 subsubsection \<open> Overwrite assignment several times \<close>
 
 (* x>=0 & y>=1 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1) ++ y:=x+1;][{y'=2}][x:=y;]x>=1 *)
+
+context two_vars
+begin
+
+term "x ::= x + 1"
+
+lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; (LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y \<^bold>{x \<ge> 1\<^bold>}"
+  oops
+
+end
+
+
+(*
 lemma "(\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 1) \<le> 
   |1 ::= (\<lambda>s. s$1 +1)] 
   |(\<lambda>s. (LOOP (1 ::= (\<lambda>s. s$1 +1)) INV (\<lambda>s. s$1 \<ge> 1)) s \<union> (2 ::= (\<lambda>s. s$1 + 1)) s)]
@@ -157,7 +170,7 @@ lemma "(\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 1) \<le>
      apply(subst fbox_assign[where Q="\<lambda>s. 1 \<le> s$1 \<and> 1 \<le> s$2"], simp)
   apply(subst le_fbox_choice_iff, rule conjI)
   by (subst fbox_loopI, auto)
-
+*)
 
 subsubsection \<open> Potentially overwrite dynamics \<close>
 

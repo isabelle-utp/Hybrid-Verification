@@ -342,7 +342,7 @@ subsection \<open> Loops with annotated invariants \<close>
 definition loopi :: "('a \<Rightarrow> 'a set) \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "loopi F I \<equiv> (F\<^sup>*)"
 
-syntax "_loopi" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("LOOP _ INV _ " [0, 63] 64)
+syntax "_loopi" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("LOOP _ INV _" [0, 63] 64)
 translations "_loopi F I" == "CONST loopi F (I)\<^sub>e"
 
 lemma change_loopI: "LOOP X INV G = LOOP X INV I"
