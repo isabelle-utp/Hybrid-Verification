@@ -171,14 +171,6 @@ lemma safety_property_1:
   apply (smt g_pos zero_le_mult_iff zero_le_power2)
   done
 
-lemma has_vderiv_on_pair [poly_derivatives]:
-  assumes "D X = X' on T " and "X' = (\<lambda>t. (X\<^sub>1' t, X\<^sub>2' t))"
-  shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X\<^sub>1' t) on T"
-    and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X\<^sub>2' t) on T"
-  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
-   apply(rule has_vector_derivative_fst', force)
-  by (rule has_vector_derivative_snd'', force)
-
 lemma safety_property_1_in_one_go:
   "\<^bold>{0 \<le> h \<and> v\<^sup>2 \<le> 2*g*(H - h)\<^bold>}BBall\<^bold>{0 \<le> h \<and> h \<le> H\<^bold>}"
   apply (simp add: BBall_def, rule_tac I=Inv in hoare_kstarI)

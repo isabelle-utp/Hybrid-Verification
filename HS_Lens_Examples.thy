@@ -81,7 +81,7 @@ lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^s
 \<comment> \<open>Verified with differential invariants as cartesian product \<close>
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
-  apply(simp add: hoare_diff_inv_on)
+  apply(simp add: dInduct_hoare_diff_inv_on)
   apply(rule diff_inv_on_eqI)
   by clarsimp+ (expr_auto, auto intro!: poly_derivatives simp: case_prod_beta)
 
@@ -100,7 +100,8 @@ abbreviation fpend :: "real^2 \<Rightarrow> real^2" ("f")
   where "fpend \<equiv> [x \<leadsto> y, y \<leadsto> -x]"
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
-  by (simp, expr_auto) (auto intro!: diff_inv_rules poly_derivatives)
+  by (simp add: hoare_diff_inv, expr_auto) 
+    (auto intro!: diff_inv_rules poly_derivatives)
 
 \<comment> \<open>Verified with the flow in @{text "\<real>\<^sup>2"} \<close>
 
@@ -475,7 +476,7 @@ lemma
 lemma "\<^bold>{flw \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
          dyn'
        \<^bold>{flw \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
-  using ci by (dInduct_mega')
+  using ci by dInduct_mega'
 
 lemma "\<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
          {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/(c\<^sub>i - c\<^sub>o)}
@@ -484,8 +485,8 @@ lemma "\<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and
 
 lemma tank_correct:
   "\<^bold>{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
-        LOOP ctrl ; dyn INV (0 \<le> t \<and> h = ((flw * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
-       \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+      LOOP ctrl ; dyn INV (0 \<le> t \<and> h = ((flw * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
+   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
   using ci co by dProve
 
 end
