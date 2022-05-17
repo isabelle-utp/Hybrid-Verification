@@ -345,7 +345,7 @@ subsection \<open> Loops with annotated invariants \<close>
 definition loopi :: "('a \<Rightarrow> 'a set) \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "loopi F I \<equiv> (F\<^sup>*)"
 
-syntax "_loopi" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("LOOP _ INV _ " [0, 63] 64)
+syntax "_loopi" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("LOOP _ INV _" [0, 63] 64)
 translations "_loopi F I" == "CONST loopi F (I)\<^sub>e"
 
 lemma change_loopI: "LOOP X INV G = LOOP X INV I"
@@ -809,7 +809,7 @@ lemma hoare_diff_inv_on:
   using fbox_diff_inv_on[of I a f G U S]
   by (simp add: SEXP_def)
 
-lemma dInduct_fbox_diff_inv_on: 
+lemma dInduct_fbox_diff_inv_on:
   "I \<le> fbox (g_orbital_on a f G U S t\<^sub>0) I = diff_inv_on I a f U S t\<^sub>0 G"
   using fbox_diff_inv_on[unfolded clarify_fbox, of I a]
   by simp
@@ -865,6 +865,12 @@ lemma fbox_g_odei: "P \<le> I \<Longrightarrow> I \<le> |x\<acute>= f & G on U S
 lemma hoare_g_odei: " \<^bold>{I\<^bold>} (x\<acute>= f & G on U S @ t\<^sub>0) \<^bold>{I\<^bold>}  \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> G \<longrightarrow> Q` \<Longrightarrow> 
  \<^bold>{P\<^bold>} (x\<acute>= f & G on U S @ t\<^sub>0 DINV I) \<^bold>{Q\<^bold>}"
   by (rule fbox_g_odei, simp_all add: SEXP_def taut_def le_fun_def)
+
+lemma hoare_diff_inv_on_post_inv:
+  assumes "`P \<longrightarrow> Q`" "\<^bold>{Q\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
+  shows "\<^bold>{P\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
+  using assms(2) by (rule hoare_conseq; simp add: assms)
+
 
 
 subsection \<open> Derivation of the rules of dL \<close>
