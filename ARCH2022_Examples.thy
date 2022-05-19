@@ -48,8 +48,7 @@ begin
 (* x>=0 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1)]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |LOOP x ::= x + 1 INV (x \<ge> 1)] (x \<ge> 1)"
   apply (subst fbox_kcomp[symmetric])
-  apply (rule fbox_loopI_break)
-  by hoare_wp_auto+
+  by (rule fbox_loopI_break) hoare_wp_auto+
 
 end
 
@@ -63,7 +62,6 @@ begin
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 
 (* Proof using differential induction. Can this be better automated? *)
-
 lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
 proof -
   have 1: "\<^bold>{x \<ge> 1\<^bold>} {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
@@ -79,29 +77,12 @@ proof -
 qed
 
 (* Proof using the solution *)
-
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
-  apply (subst fbox_g_ode_flow[where T=UNIV])
-     defer
-     apply simp
-    apply auto[1]
-  apply hoare_wp_auto
-  apply (subst fbox_kcomp[symmetric])
-  oops
+  apply (subst fbox_g_ode_flow[where T=UNIV and \<phi>="\<lambda>t. [x \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + x]"]; simp add: wp)
+  by (local_flow 1) expr_simp
 
 end
-
-(*
-lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> 
-  |1 ::= (\<lambda>s. s$1 +1)] |x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then 2 else 0)) & G] 
-  (\<lambda>s. s$1 \<ge> 1)" 
-  apply(subst local_flow.fbox_g_ode_subset[where 
-        \<phi>="\<lambda>t s. (\<chi> i. if i=1 then 2*t+s$1 else s$i)" and T=UNIV])
-     apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff)
-   apply(clarsimp, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
-*)
 
 
 subsubsection \<open> Overwrite with nondeterministic assignment \<close>
@@ -115,30 +96,9 @@ lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; x ::= ? ; \<questiondown>x\<ge>
 
 end
 
-(*
-(* x>=0 -> [x:=x+1;][x:=*; ?x>=1;]x>=1 *)
-lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le> |1 ::= (\<lambda>s. s$1 +1)] |(1 ::= ?);\<questiondown>\<lambda>s. s$1 \<ge> 1?] (\<lambda>s. s$1 \<ge> 1)" 
-  by (simp add: le_fun_def)
-*)
 
 subsubsection \<open> Tests and universal quantification \<close>
 
-
-locale struct_var =
-  fixes x :: "real \<Longrightarrow> 'a::{preorder,one}"
-    and y :: "real \<Longrightarrow> 'a::{preorder,one}"
-  assumes lens_x: "vwb_lens x"
-    and indep: "x \<bowtie> y"
-begin
-
-definition "local_one \<equiv> 1::'a"
-
-(* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
-lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x. x \<ge> local_one \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
-  using lens_x indep
-  by hoare_wp_auto
-
-end
 
 context two_vars
 begin
@@ -146,11 +106,6 @@ begin
 (* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
   by hoare_wp_auto
-
-term "(z::real)\<^sub>e"
-
-lemma "(\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1)\<^sub>e = (y \<ge> 1)\<^sub>e"
-  by (expr_auto)
 
 end
 
@@ -162,31 +117,17 @@ subsubsection \<open> Overwrite assignment several times \<close>
 context two_vars
 begin
 
-term "x ::= x + 1"
-
-lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; (LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y \<^bold>{x \<ge> 1\<^bold>}"
-  oops
+lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1] |{y` = 2}] |x ::= y] (x \<ge> 1)"
+  apply (subst fbox_g_ode_flow[where T=UNIV and \<phi>="\<lambda>t. [y \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + y]"]; simp)
+   apply (local_flow 1)[1]
+  apply (subst change_loopI[where I="(1 \<le> x \<and> 1 \<le> y)\<^sub>e"])
+  apply (subst fbox_kcomp[symmetric], rule hoare_kcomp)
+   apply (subst fbox_assign[where Q="(1 \<le> x \<and> 1 \<le> y)\<^sub>e"], expr_simp)
+  apply(subst le_fbox_choice_iff, rule conjI)
+  by (subst fbox_loopI, auto simp: wp)
+    expr_simp+
 
 end
-
-
-(*
-lemma "(\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 1) \<le> 
-  |1 ::= (\<lambda>s. s$1 +1)] 
-  |(\<lambda>s. (LOOP (1 ::= (\<lambda>s. s$1 +1)) INV (\<lambda>s. s$1 \<ge> 1)) s \<union> (2 ::= (\<lambda>s. s$1 + 1)) s)]
-  |x\<acute>=(\<lambda>s. (\<chi> i. if i=2 then 2 else 0)) & G] |1 ::= (\<lambda>s. s$2)]
-  (\<lambda>s. s$1 \<ge> 1)"
-  apply(subst local_flow.fbox_g_ode_subset[where 
-        \<phi>="\<lambda>t s. (\<chi> i. if i=2 then 2*t+s$2 else s$i)" and T=UNIV])
-   apply(unfold_locales; simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff le_fun_def)
-     apply (clarsimp, rule_tac x=1 in exI, force)
-   apply(force intro!: poly_derivatives vec_eq_iff, simp)
-  apply(subst change_loopI[where I="\<lambda>s. 1 \<le> s$1 \<and> 1 \<le> s$2"])
-  apply(subst fbox_kcomp[symmetric], rule hoare_kcomp)
-     apply(subst fbox_assign[where Q="\<lambda>s. 1 \<le> s$1 \<and> 1 \<le> s$2"], simp)
-  apply(subst le_fbox_choice_iff, rule conjI)
-  by (subst fbox_loopI, auto)
-*)
 
 subsubsection \<open> Potentially overwrite dynamics \<close>
 
