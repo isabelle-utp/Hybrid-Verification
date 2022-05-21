@@ -461,7 +461,7 @@ lemmas lie_deriv_rules = lie_deriv_eq_rule lie_deriv_le_rule lie_deriv_less_rule
 
 thm lie_deriv_rules
 
-method dInduct = (subst dInduct_hoare_diff_inv_on dInduct_fbox_diff_inv_on; 
+method dInduct = (subst dInduct_hoare_diff_inv_on fbox_diff_inv_on; 
     rule_tac lie_deriv_rules; simp add: lie_deriv closure usubst unrest_ssubst unrest usubst_eval)
 method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
 method dWeaken = (rule_tac diff_weak_on_rule; expr_simp; auto simp add: field_simps)

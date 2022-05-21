@@ -47,6 +47,7 @@ lemma fbox_invs:
     and "(I \<or> J)\<^sub>e \<le> |F] (I \<or> J)"
   using assms unfolding fbox_def SEXP_def by auto
 
+lemmas fbox_invs_raw = fbox_invs[unfolded expr_defs]
 
 subsection \<open> Forward diamond operator \<close>
 
@@ -701,7 +702,7 @@ lemma fbox_g_ode_frame_flow:
   apply (subst local_flow.fbox_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def, rule_format]])
   using assms(2) by expr_simp+
 
-lemmas fbox_g_ode_flow = fbox_g_ode_frame_flow
+lemmas fbox_solve = fbox_g_ode_frame_flow[where T=UNIV]
 
 lemma fbox_g_ode_on_flow:
   assumes "local_flow_on (subst_upd [\<leadsto>] A f) A T S \<phi>" and "vwb_lens A"
@@ -756,14 +757,11 @@ lemma fbox_g_dl_ode_frame_g_evol:
 
 lemmas fbox_g_dL_easiest = fbox_g_dl_ode_frame_g_evol[of _ _ UNIV, simplified]
 
-
-
 text \<open> A postcondition of a localised ODE is a postcondition of its unique localised solution. \<close>
 
 definition local_lipschitz_on :: "('c::metric_space \<Longrightarrow> 's) \<Rightarrow> 'a::metric_space set 
   \<Rightarrow> 'c set \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> bool" 
   where "local_lipschitz_on A T S f = (\<forall> s. local_lipschitz T S (\<lambda>t c. get\<^bsub>A\<^esub> (f (put\<^bsub>A\<^esub> s c))))"
-
 
 
 subsection \<open> Differential invariants \<close>
@@ -803,21 +801,20 @@ lemma hoare_diff_inv:
   using fbox_diff_inv[of I f G U S t\<^sub>0] by (simp add: SEXP_def)
 
 lemma fbox_diff_inv_on:
-  "(I \<le> |g_orbital_on a f G U S t\<^sub>0] I) = diff_inv_on I a f U S t\<^sub>0 G"
+  "I \<le> fbox (g_orbital_on a f G U S t\<^sub>0) I = diff_inv_on I a f U S t\<^sub>0 G"
   by (auto simp: diff_inv_on_def ivp_sols_def fbox_def g_orbital_on_eq SEXP_def)
+
+lemma fbox_diff_inv_on':
+  "(I \<le> |g_orbital_on a f G U S t\<^sub>0] I) = diff_inv_on I a f U S t\<^sub>0 G"
+  by (simp add: fbox_diff_inv_on expr_defs)
 
 lemma hoare_diff_inv_on:
   "\<^bold>{I\<^bold>} (g_orbital_on a f G U S t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv_on I a f U S t\<^sub>0 G"
   using fbox_diff_inv_on[of I a f G U S]
   by (simp add: SEXP_def)
 
-lemma dInduct_fbox_diff_inv_on:
-  "I \<le> fbox (g_orbital_on a f G U S t\<^sub>0) I = diff_inv_on I a f U S t\<^sub>0 G"
-  using fbox_diff_inv_on[unfolded clarify_fbox, of I a]
-  by simp
-
 lemma "(I \<le> |{a` = f | G on U S @ t\<^sub>0}] I) = diff_inv_on I a (\<lambda> _. [a \<leadsto> f]) (U)\<^sub>e S t\<^sub>0 (G)\<^sub>e"
-  by (simp add: fbox_diff_inv_on)
+  by (simp add: fbox_diff_inv_on expr_defs)
 
 lemma dInduct_hoare_diff_inv_on:
   "\<^bold>{I\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{I\<^bold>} = diff_inv_on (I)\<^sub>e a (\<lambda>_. [a \<leadsto> f]) (U)\<^sub>e S t\<^sub>0 (G)\<^sub>e"
@@ -833,7 +830,7 @@ lemma diff_inv_on_guard_ignore:
   assumes "I \<le> |g_orbital_on a f (\<lambda>s. True) U S t\<^sub>0] I"
   shows "I \<le> |g_orbital_on a f G U S t\<^sub>0] I"
   using assms 
-  by (auto simp: fbox_diff_inv_on diff_inv_on_eq)
+  by (auto simp: fbox_diff_inv_on diff_inv_on_eq expr_defs)
 
 context local_flow
 begin
@@ -1068,13 +1065,39 @@ subsection \<open> Proof Methods \<close>
 
 text \<open> A simple tactic for Hoare logic that uses weakest liberal precondition calculations \<close>
 
-method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst var_alpha_combine wp usubst usubst_eval refine_iff_implies fbox_g_dL_easiest[OF local_flow])
+method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst 
+    var_alpha_combine wp usubst usubst_eval 
+    refine_iff_implies fbox_g_dL_easiest[OF local_flow])
+
 method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
+
+method diff_inv_on_single_eq_intro = 
+  (rule diff_inv_on_eqI
+  | rule diff_inv_on_raw_eqI
+  ) \<comment> \<open> applies @{term diff_inv_on}-rule \<close>
+
+method diff_inv_on_eq = (
+    (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?, 
+    (diff_inv_on_single_eq_intro; expr_auto),
+    (force simp: power2_eq_square intro!: poly_derivatives)?)
+
+method diff_inv_on_single_ineq_intro for dnu dmu::"'a \<Rightarrow> real" = 
+  (rule diff_inv_on_leqI[where \<mu>'=dmu and \<nu>'=dnu]
+  | rule diff_inv_on_lessI[where \<mu>'=dmu and \<nu>'=dnu]
+  | rule diff_inv_on_raw_leqI[where \<mu>'=dmu and \<nu>'=dnu]
+  | rule diff_inv_on_raw_lessI[where \<mu>'=dmu and \<nu>'=dnu]
+  ) \<comment> \<open> applies @{term diff_inv_on}-rule \<close>
+
+method diff_inv_on_ineq for dnu dmu::"'a \<Rightarrow> real" = (
+    (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?, 
+    diff_inv_on_single_ineq_intro dnu dmu;
+    (force intro!: poly_derivatives)?)
 
 method vderiv = ((expr_simp)?; force intro!: poly_derivatives simp: vec_eq_iff field_simps)
 
 method lipschitz for L :: real = 
-  (unfold local_lipschitz_on_def local_lipschitz_def lipschitz_on_def dist_norm, clarify, rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
+  (unfold local_lipschitz_on_def local_lipschitz_def lipschitz_on_def dist_norm, clarify, 
+    rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
 
 method lens_c1_lipschitz for df uses typeI =
  ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: typeI intro!: derivative_intros, 

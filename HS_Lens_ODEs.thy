@@ -6,7 +6,10 @@ text \<open> We use shallow expressions to rephrase the properties for hybrid sy
 cleaner presentation. \<close>
 
 theory HS_Lens_ODEs
-  imports "HS_ODEs" "Hybrid-Library.Cont_Lens" "Shallow-Expressions.Shallow_Expressions"
+  imports 
+    "HS_ODEs" 
+    "Hybrid-Library.Cont_Lens" 
+    "Shallow-Expressions.Shallow_Expressions"
 begin
 
 no_notation id_lens ("1\<^sub>L")
@@ -106,7 +109,7 @@ lemma diff_inv_on_eqI [diff_inv_on_intros]:
   by auto
 
 lemma diff_inv_on_leqI [diff_inv_on_intros]:
-  fixes \<mu> ::"'a::real_normed_vector \<Rightarrow> real"
+  fixes \<mu> ::"_ \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
@@ -121,7 +124,7 @@ lemma diff_inv_on_leqI [diff_inv_on_intros]:
   using assms by auto
 
 lemma diff_inv_on_lessI [diff_inv_on_intros]:
-  fixes \<mu> ::"'a::real_normed_vector \<Rightarrow> real"
+  fixes \<mu> ::"_ \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
@@ -136,12 +139,12 @@ lemma diff_inv_on_lessI [diff_inv_on_intros]:
   using assms by auto
 
 lemma diff_inv_on_nleq_iff:
-  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  fixes \<mu>::"_ \<Rightarrow> real"
   shows "diff_inv_on (\<not> \<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G \<longleftrightarrow> diff_inv_on (\<nu> > \<mu>)\<^sub>e a f U S t\<^sub>0 G"
   unfolding approximation_preproc_push_neg(2) by presburger
 
 lemma diff_inv_on_neqI [diff_inv_on_intros]:
-  fixes \<mu>::"'a::real_normed_vector \<Rightarrow> real"
+  fixes \<mu>::"_ \<Rightarrow> real"
   assumes "vwb_lens a"
     and "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
     and "diff_inv_on (\<nu> > \<mu>)\<^sub>e a f U S t\<^sub>0 G"
@@ -156,18 +159,25 @@ lemma
     and diff_inv_on_disjI [diff_inv_on_intros]: "diff_inv_on (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
   using assms unfolding diff_inv_on_eq by auto
 
+lemmas diff_inv_on_raw_eqI = diff_inv_on_eqI[unfolded expr_defs]
+lemmas diff_inv_on_raw_leqI = diff_inv_on_leqI[unfolded expr_defs]
+lemmas diff_inv_on_raw_lessI = diff_inv_on_lessI[unfolded expr_defs]
+
 
 subsubsection \<open> Non-framed-but-lensified differential invariant rules \<close>
 
 named_theorems diff_inv_laws "encapsulating rules for (non-localised) differential invariants"
 
 lemma diff_inv_eq_law [diff_inv_laws]:
-  fixes \<mu>::"'a::banach \<Rightarrow> real"
+  fixes \<mu>::"_ \<Rightarrow> real"
   assumes Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and dX: "\<And>X t. (D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U(X t\<^sub>0)) \<Longrightarrow> 
   \<forall>\<tau>\<in>(down (U(X t\<^sub>0)) t). G (X \<tau>) \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>) - \<nu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U(X t\<^sub>0)"
   shows "diff_inv U S G f t\<^sub>0 (\<mu> = \<nu>)\<^sub>e"
   using assms by (simp add: SEXP_def, rule diff_inv_eqI, simp_all)
+
+thm diff_inv_eq_law diff_inv_eqI[unfolded ] diff_inv_eq_law[unfolded expr_defs]
+thm diff_inv_eqI[THEN ssubst[OF SEXP_def[of "\<lambda>s. \<mu> s = \<nu> s"], where P="\<lambda>q. diff_inv U S G f t\<^sub>0 q"]]
 
 lemma diff_inv_leq_law [diff_inv_laws]:
   fixes \<mu>::"'a::banach \<Rightarrow> real"

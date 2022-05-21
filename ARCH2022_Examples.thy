@@ -59,9 +59,8 @@ subsubsection \<open> Overwrite assignment in ODE \<close>
 context two_vars
 begin
 
-(* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
-
 (* Proof using differential induction. Can this be better automated? *)
+(* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
 proof -
   have 1: "\<^bold>{x \<ge> 1\<^bold>} {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
@@ -79,8 +78,15 @@ qed
 (* Proof using the solution *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
-  apply (subst fbox_g_ode_flow[where T=UNIV and \<phi>="\<lambda>t. [x \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + x]"]; simp add: wp)
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + x]"]; simp add: wp)
   by (local_flow 1) expr_simp
+
+(* usind differential invariants *)
+(* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
+lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
+  unfolding fbox_kcomp[symmetric]
+  apply (rule_tac R="($x \<ge> 1)\<^sup>e" in hoare_kcomp)
+  by hoare_wp_simp (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2")
 
 end
 
@@ -112,13 +118,12 @@ end
 
 subsubsection \<open> Overwrite assignment several times \<close>
 
-(* x>=0 & y>=1 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1) ++ y:=x+1;][{y'=2}][x:=y;]x>=1 *)
-
 context two_vars
 begin
 
+(* x>=0 & y>=1 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1) ++ y:=x+1;][{y'=2}][x:=y;]x>=1 *)
 lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1] |{y` = 2}] |x ::= y] (x \<ge> 1)"
-  apply (subst fbox_g_ode_flow[where T=UNIV and \<phi>="\<lambda>t. [y \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + y]"]; simp)
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [y \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + y]"]; simp)
    apply (local_flow 1)[1]
   apply (subst change_loopI[where I="(1 \<le> x \<and> 1 \<le> y)\<^sub>e"])
   apply (subst fbox_kcomp[symmetric], rule hoare_kcomp)
@@ -131,92 +136,107 @@ end
 
 subsubsection \<open> Potentially overwrite dynamics \<close>
 
+context two_vars
+begin
+
 (* x>0 & y>0 -> [{x'=5}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
-lemma "(\<lambda>s::real^2. s$1 > 0 \<and> s$2 > 0) \<le> 
-   |x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then 5 else 0)) & G] 
-  |(\<lambda>s. (LOOP (1 ::= (\<lambda>s. s$1 + 3)) INV (\<lambda>s. 0 < s$1)) s \<union> (2 ::= (\<lambda>s. s$1)) s)] 
-  (\<lambda>s. s$1 > 0 \<and> s$2 > 0)"
-  apply(subst fbox_kcomp[symmetric])+
-  apply(rule hoare_kcomp)+
-   apply(subst local_flow.fbox_g_ode_subset[where \<phi>="\<lambda>t s. (\<chi> i. if i=1 then 5*t+s$1 else s$i)"
-        and T=UNIV and Q="\<lambda>s. s$1 > 0 \<and> s$2 > 0"]; simp?)
-   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-    apply(clarsimp, rule_tac x=1 in exI)+
-    apply (force, force intro!: poly_derivatives, force simp: le_fun_def)
-  apply(subst le_fbox_choice_iff, rule conjI)
-   apply(subst change_loopI[where I="\<lambda>s. s$1 > 0 \<and> s$2 > 0"])
-  by (rule fbox_loopI, simp_all add: le_fun_def)
+lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x] (x \<ge> 0 \<and> y \<ge> 0)"
+  apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
+  apply(subst fbox_kcomp[symmetric])
+  apply(rule_tac R="(x > 0 \<and> y > 0)\<^sup>e" in hoare_kcomp)
+  apply (simp add: expr_defs, rule fbox_invs_raw)
+  apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 5")
+   apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
+  apply (rule hoare_choice)
+  by hoare_wp_auto+
+
+end
 
 
 subsubsection \<open> Potentially overwrite exponential decay \<close>
 
-abbreviation po_exp_dec_f :: "real^2 \<Rightarrow> real^2" ("f")
-  where "f s \<equiv> (\<chi> i. if i=1 then -s$1 else 0)"
+context two_vars
+begin
 
-abbreviation po_exp_dec_flow :: "real \<Rightarrow> real^2 \<Rightarrow> real^2" ("\<phi>")
-  where "\<phi> t s \<equiv> (\<chi> i. if i=1 then s$1 * exp (- t) else s$i)"
-
-lemma local_flow_exp_flow: "local_flow f UNIV UNIV \<phi>"
-  apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def)
-     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  apply(unfold UNIV_2, simp)
-  apply (metis power2_commute real_sqrt_ge_abs1)
-  by (auto intro!: poly_derivatives simp: forall_2 vec_eq_iff)
-
+(* proof with solutions *)
 (* x>0 & y>0 -> [{x'=-x}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
-lemma "(\<lambda>s::real^2. s$1 > 0 \<and> s$2 > 0) \<le> |x\<acute>= f & G]
-  |(\<lambda>s. (LOOP (1 ::= (\<lambda>s. s$1 + 3)) INV (\<lambda>s. 0 < s$1)) s \<union> (2 ::= (\<lambda>s. s$1)) s)] 
-  (\<lambda>s. s$1 > 0 \<and> s$2 > 0)"
- apply(subst fbox_kcomp[symmetric], rule hoare_kcomp)
-   apply(subst local_flow.fbox_g_ode_subset[OF 
-        local_flow_exp_flow, where Q="\<lambda>s. s$1 > 0 \<and> s$2 > 0"]; simp add: le_fun_def)
-  apply(subst le_fbox_choice_iff, rule conjI)
-   apply(subst change_loopI[where I="\<lambda>s. s$1 > 0 \<and> s$2 > 0"])
-  by (rule fbox_loopI, auto)
+lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0) \<sqinter> y::=x] (x > 0 \<and> y > 0)"
+  apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
+  apply (subst fbox_kcomp[symmetric])
+  apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
+   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> x * exp (- \<guillemotleft>t\<guillemotright>)]"]; clarsimp?)
+    apply (local_flow 1)[1]
+   apply expr_auto[1]
+  apply (rule hoare_choice)
+  by hoare_wp_auto+
 
-no_notation po_exp_dec_f ("f")
-        and po_exp_dec_flow ("\<phi>")
+end
+
+dataspace three_vars =
+  variables 
+    x :: real 
+    y :: real 
+    z :: real
+
+context three_vars
+begin
+
+lemma exp_ghost_arith: "0 < (a::real) \<longleftrightarrow> (\<exists>b. a * b\<^sup>2 = 1)"
+  by (intro iffI exI[where x="1/(sqrt a)"]; clarsimp simp: field_simps)
+    (metis less_numeral_extra(1) mult_less_0_iff not_one_less_zero zero_less_mult_iff)
+
+(* proof with solutions *)
+(* x>0 & y>0 -> [{x'=-x}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
+lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0) \<sqinter> y::=x] (x > 0 \<and> y > 0)"
+  apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
+  apply (subst fbox_kcomp[symmetric])
+  apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
+   apply (dGhost "z" "(x*z\<^sup>2 = 1 \<and> y > 0)\<^sub>e" "1/2")
+    apply (expr_auto add: exp_ghost_arith)
+   apply (rule fbox_invs(1))
+    apply (diff_inv_on_eq)
+   apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
+  apply (rule hoare_choice)
+  by hoare_wp_auto+
+
+end
 
 
 subsubsection \<open> Dynamics: Cascaded \<close>
 
-(* x>0 -> [{x'=5};{x'=2};{x'=x}]x>0 *)
-lemma "(\<lambda>s::real^1. s$1 > 0) \<le> 
-  |(x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then 5 else 0)) & G);
-      (x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then 2 else 0)) & G);
-      (x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then s$1 else 0)) & G)] 
-  (\<lambda>s. s$1 > 0)"
-  apply(simp, subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. 5*t+s$1)"]; simp?)
-   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-    apply(force, force intro!: poly_derivatives)
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. 2*t+s$1)"]; simp?)
-   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-    apply(force, force intro!: poly_derivatives)
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. s$1 * exp t)"]; simp?)
-   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (force, auto intro!: poly_derivatives)
+context two_vars
+begin
 
+(* x>0 -> [{x'=5};{x'=2};{x'=x}]x>0 *)
+lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
+  apply (simp add: wp)
+   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> 5 * \<guillemotleft>t\<guillemotright> + x]"]; clarsimp?)
+   apply (local_flow 1)[1]
+   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + x]"]; clarsimp?)
+   apply (local_flow 1)[1]
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> x * exp \<guillemotleft>t\<guillemotright>]"]; clarsimp?)
+   apply (local_flow 1)[1]
+  by expr_auto
+
+end
 
 subsubsection \<open> Dynamics: Single integrator time \<close>
 
-(* x=0->[{x'=1}]x>=0 *)
 
 context two_vars
 begin
 
+(* x=0->[{x'=1}]x>=0 *)
 lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
   by (rule hoare_diff_inv_on_post_inv, simp, dInduct)
 
-end
+(* x=0->[{x'=1}]x>=0 *)
+lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
+   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> \<guillemotleft>t\<guillemotright> + x]"]; clarsimp?)
+   apply (local_flow 1)[1]
+  by expr_auto
 
-lemma "(\<lambda>s::real^1. s$1 = 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. 1)) & G] (\<lambda>s. s$1 \<ge> 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. t+s$1)"]; simp?)
-  apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+end
 
 
 subsubsection \<open> Dynamics: Single integrator \<close>
