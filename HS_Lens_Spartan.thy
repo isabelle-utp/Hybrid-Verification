@@ -1111,6 +1111,21 @@ method local_flow_auto =
 
 method dDiscr = (rule_tac nmods_invariant[OF nmods_g_orbital_on_discrete']; unrest)
 
+method diff_inv_on_weaken_ineq for I::"'a \<Rightarrow> bool" 
+  and dLeq dGeg::"'a \<Rightarrow> real" = (
+    (rule fbox_inv[where I=I]),
+    (expr_simp add: le_fun_def),
+    (diff_inv_on_ineq dLeq dGeg),
+    vderiv,
+    (expr_simp add: le_fun_def)
+    )
+
+method diff_cut_ineq for I::"'a \<Rightarrow> bool" 
+  and dLeq dGeg::"'a \<Rightarrow> real" = (
+    (rule diff_cut_on_rule[where C=I]),
+    (diff_inv_on_weaken_ineq I dLeq dGeg)
+    )
+
 method dGhost for y :: "real \<Longrightarrow> 's" and G :: "'s \<Rightarrow> bool" and k :: real 
   = (rule diff_ghost_rule_very_simple[where y="y" and G="G" and k="k"]
     ,simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)

@@ -162,6 +162,8 @@ lemma
 lemmas diff_inv_on_raw_eqI = diff_inv_on_eqI[unfolded expr_defs]
 lemmas diff_inv_on_raw_leqI = diff_inv_on_leqI[unfolded expr_defs]
 lemmas diff_inv_on_raw_lessI = diff_inv_on_lessI[unfolded expr_defs]
+lemmas diff_inv_on_raw_conjI = diff_inv_on_conjI[unfolded expr_defs]
+lemmas diff_inv_on_raw_disjjI = diff_inv_on_disjI[unfolded expr_defs]
 
 
 subsubsection \<open> Non-framed-but-lensified differential invariant rules \<close>

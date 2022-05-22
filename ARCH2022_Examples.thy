@@ -16,7 +16,6 @@ subsection \<open> Basic \<close>
 
 subsubsection \<open> Basic assignment \<close> 
 
-
 dataspace two_vars =
   variables x :: real y :: real 
 
@@ -29,6 +28,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] (x \<ge> 1)"
 
 end
 
+
 subsubsection \<open> Overwrite assignment on some branches \<close>
 
 context two_vars
@@ -39,6 +39,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |x ::= x + 1 \<sqinter> y ::= x +
   by hoare_wp_simp
 
 end
+
 
 subsubsection \<open> Overwrite assignment in loop \<close>
 
@@ -105,7 +106,6 @@ end
 
 subsubsection \<open> Tests and universal quantification \<close>
 
-
 context two_vars
 begin
 
@@ -133,6 +133,7 @@ lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 
     expr_simp+
 
 end
+
 
 subsubsection \<open> Potentially overwrite dynamics \<close>
 
@@ -178,12 +179,12 @@ dataspace three_vars =
     y :: real 
     z :: real
 
-context three_vars
-begin
-
 lemma exp_ghost_arith: "0 < (a::real) \<longleftrightarrow> (\<exists>b. a * b\<^sup>2 = 1)"
   by (intro iffI exI[where x="1/(sqrt a)"]; clarsimp simp: field_simps)
     (metis less_numeral_extra(1) mult_less_0_iff not_one_less_zero zero_less_mult_iff)
+
+context three_vars
+begin
 
 (* proof with solutions *)
 (* x>0 & y>0 -> [{x'=-x}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
@@ -220,32 +221,37 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
 
 end
 
-subsubsection \<open> Dynamics: Single integrator time \<close>
 
+subsubsection \<open> Dynamics: Single integrator time \<close>
 
 context two_vars
 begin
 
+(* proof with invariants *)
 (* x=0->[{x'=1}]x>=0 *)
 lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
   by (rule hoare_diff_inv_on_post_inv, simp, dInduct)
 
+(* proof with solutions *)
 (* x=0->[{x'=1}]x>=0 *)
 lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
-   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> \<guillemotleft>t\<guillemotright> + x]"]; clarsimp?)
-   apply (local_flow 1)[1]
-  by expr_auto
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> \<guillemotleft>t\<guillemotright> + x]"]; clarsimp?)
+  by (local_flow 1) expr_auto
 
 end
 
 
 subsubsection \<open> Dynamics: Single integrator \<close>
 
-(* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
-
 context two_vars
 begin
 
+(* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
+lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> y * \<guillemotleft>t\<guillemotright> + x]"]; clarsimp?)
+  by (local_flow 1) expr_auto
+
+(* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
 lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
 proof -
   have "\<^bold>{y \<ge> 0 \<and> x \<ge> 0\<^bold>} {x` = y} \<^bold>{y \<ge> 0 \<and> x \<ge> 0\<^bold>}"
@@ -256,198 +262,261 @@ qed
     
 end
 
-(*
-lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 0) \<le> 
-  |x\<acute>=(\<lambda>s. (\<chi> i. if i = 1 then s$2 else 0)) & G] (\<lambda>s. s$1 \<ge> 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and 
-        \<phi>="\<lambda>t s. (\<chi> i. if i = 1 then s$2*t+s$1 else s$i)"]; simp?)
-  apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-    apply(simp add: dist_norm norm_vec_def L2_set_def)
-   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  unfolding UNIV_2 by (auto intro!: poly_derivatives simp: forall_2 vec_eq_iff)
-*)
 
 subsubsection \<open> Dynamics: Double integrator \<close>
 
+context three_vars
+begin
+
 (* x>=0 & y>=0 & z>=0 -> [{x'=y,y'=z}]x>=0 *)
-lemma "(\<lambda>s::real^3. s$1 \<ge> 0 \<and> s$2 \<ge> 0 \<and> s$3 \<ge> 0) \<le> 
-  |x\<acute>=(\<lambda>s. (\<chi> i. if i = 1 then s$2 else (if i = 2 then s$3 else 0))) & G] 
-  (\<lambda>s. s$1 \<ge> 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and 
-        \<phi>="\<lambda>t s. (\<chi> i. if i = 1 then s$3*t\<^sup>2/2 + s$2*t +s$1 
-            else (if i = 2 then s$3*t+s$2 else s$i))"]; simp?)
-  apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  unfolding UNIV_3 by (auto intro!: poly_derivatives simp: forall_3 vec_eq_iff)
+lemma "(x \<ge> 0 \<and> y \<ge>0 \<and> z \<ge> 0)\<^sub>e \<le> |{x` = y, y` = z}] (x \<ge> 0)"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> z * \<guillemotleft>t\<guillemotright>\<^sup>2 / 2 + y * \<guillemotleft>t\<guillemotright> + x, y \<leadsto> z * \<guillemotleft>t\<guillemotright> + y]"]; clarsimp?)
+  apply (unfold local_flow_on_def, clarsimp, unfold_locales; expr_simp)
+  subgoal by (lipschitz 1) (metis norm_snd_le real_norm_def)
+  by (auto intro!: poly_derivatives) expr_simp
+
+end
 
 
-subsubsection \<open> Dynamics: Triple integrator \<close>
+subsubsection \<open> Dynamics: Triple integrator \<close> (**)
 
-abbreviation triple_int_f :: "real^4 \<Rightarrow> real^4" ("f")
-  where "f s \<equiv> (\<chi> i. if i = 1 then s$2 else 
-    (if i = 2 then s$3 else (if i = 3 then s$4 else (s$4)\<^sup>2)))"
+dataspace four_vars =
+  variables 
+    x :: real 
+    y :: real 
+    z :: real
+    w :: real
+
+context four_vars
+begin
 
 (* x>=0 & y>=0 & z>=0 & j>=0 -> [{x'=y,y'=z,z'=j,j'=j\<^sup>2}]x>=0 *)
-lemma "(\<lambda>s::real^4. s$1 \<ge> 0 \<and> s$2 \<ge> 0 \<and> s$3 \<ge> 0 \<and> s$4 \<ge> 0) \<le> |x\<acute>= f & G] (\<lambda>s. s$1 \<ge> 0)"
-  apply(rule_tac C="\<lambda>s. s$4 \<ge> 0" in diff_cut_rule)
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$4 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)\<^sup>2" in diff_inv_leq_rule; simp?)
-   apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
-  apply(rule_tac C="\<lambda>s. s$3 \<ge> 0" in diff_cut_rule, simp_all)
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$3 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)" in diff_inv_rules(2); simp?) 
-   apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
-  apply(rule_tac C="\<lambda>s. s$2 \<ge> 0" in diff_cut_rule, simp_all)
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$2 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$3)" in diff_inv_rules(2); simp?)
-   apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
-  apply(rule_tac C="\<lambda>s. s$1 \<ge> 0" in diff_cut_rule, simp_all)
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_inv_rules(2); simp?)
-    apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
-  by (rule diff_weak_rule, simp add: le_fun_def)
+lemma "(x \<ge> 0 \<and> y \<ge> 0 \<and> z \<ge> 0 \<and> w \<ge> 0)\<^sub>e \<le> |{x` = y, y` = z, z` = w, w` = w\<^sup>2}] (x \<ge>0)"
+  apply (diff_cut_ineq "(0 \<le> w)\<^sup>e" "(0)\<^sup>e" "(w\<^sup>2)\<^sup>e")
+  apply (diff_cut_ineq "(0 \<le> z)\<^sup>e" "(0)\<^sup>e" "(w)\<^sup>e")
+  apply (diff_cut_ineq "(0 \<le> y)\<^sup>e" "(0)\<^sup>e" "(z)\<^sup>e")
+  by (diff_inv_on_weaken_ineq "(0 \<le> x)\<^sup>e" "(0)\<^sup>e" "(y)\<^sup>e")
 
-no_notation triple_int_f ("f")
+end
 
 
 subsubsection \<open> Dynamics: Exponential decay (1) \<close>
 
+context two_vars
+begin
+
+(* proof with solutions *)
 (* x>0 -> [{x'=-x}]x>0 *)
-lemma "(\<lambda>s::real^1. s$1 > 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. - s$1)) & G] (\<lambda>s. s$1 > 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. s$1 * exp (- t))"]; simp?)
-  apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> x * exp (- \<guillemotleft>t\<guillemotright>)]"]; clarsimp?)
+  by (local_flow 1) expr_auto
+ 
+(* proof with ghosts *)
+(* x>0 -> [{x'=-x}]x>0 *)
+lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
+   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
+  by (expr_auto add: exp_ghost_arith)
+    (diff_inv_on_eq)
+
+end
 
 
-subsubsection \<open> Dynamics: Exponential decay (2) \<close>
+subsubsection \<open> Dynamics: Exponential decay (2) \<close>  (**)
 
+context two_vars
+begin
+
+(* proof with solutions *)
 (* x>0 -> [{x'=-x+1}]x>0 *)
-lemma "(\<lambda>s::real^1. s$1 > 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. - s$1 + 1)) & G] (\<lambda>s. s$1 > 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV 
-        and \<phi>="\<lambda>t s. (\<chi> i. 1 - exp (- t) + s$1 * exp (- t))"]; clarsimp?)
-   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives simp: field_simps) (smt exp_gt_zero mult_pos_pos one_less_exp_iff)
+lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> 1 - exp (- \<guillemotleft>t\<guillemotright>) + x * exp (- \<guillemotleft>t\<guillemotright>)]"]; clarsimp?)
+  by (local_flow 1, expr_auto) 
+    (metis add_pos_nonneg diff_gt_0_iff_gt exp_eq_one_iff 
+      exp_ge_zero exp_less_one_iff less_eq_real_def mult.commute mult_1 
+      neg_equal_zero real_0_less_add_iff right_minus_eq zero_le_mult_iff)
 
 
-subsubsection \<open> Dynamics: Exponential decay (3) \<close>
+(* proof with ghosts *)
+(* x>0 -> [{x'=-x+1}]x>0 *)
+lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
+   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2") (* find adequate ghost *)
+    apply (expr_auto add: exp_ghost_arith)
+  apply (diff_inv_on_eq)
+  oops
+
+end
+
+
+subsubsection \<open> Dynamics: Exponential decay (3) \<close> (**)
+
+context two_vars
+begin
 
 (* x>0 & y>0->[{x'=-y*x}]x>0 *)
-lemma "y > 0 \<Longrightarrow> (\<lambda>s::real^1. s$1 > 0) \<le> 
-  |x\<acute>=(\<lambda>s. (\<chi> i. - y * s$1)) & G] (\<lambda>s. s$1 > 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV 
-        and \<phi>="\<lambda>t s. (\<chi> i. s$1 * (exp (-t * y)))"]; clarsimp?)
-  apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-   apply(clarsimp, rule_tac x=1 in exI)
-   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x="y" in exI)
-   apply (metis abs_mult abs_of_pos dist_commute dist_real_def less_eq_real_def 
-      vector_space_over_itself.scale_right_diff_distrib)
-  by (auto intro!: poly_derivatives simp: field_simps)
+lemma "`y > 0` \<Longrightarrow> (x > 0)\<^sub>e \<le> |{x` = - y * x}] (x > 0)"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> x * exp (- \<guillemotleft>t\<guillemotright> * y)]"]; clarsimp?)
+   apply (unfold local_flow_on_def, clarsimp, unfold_locales; expr_simp)
+  subgoal for s apply (lipschitz "get\<^bsub>y\<^esub> s")
+    using less_eq_real_def apply presburger
+    by (metis abs_1 abs_mult_pos dist_commute dist_scaleR 
+        less_eq_real_def mult.commute mult_1 real_norm_def 
+        real_scaleR_def)
+  by (auto intro!: poly_derivatives) expr_simp
+
+end
 
 
-subsubsection \<open> Dynamics: Exponential growth (1) \<close>
+subsubsection \<open> Dynamics: Exponential growth (1) \<close> (**)
+
+context two_vars
+begin
 
 (* x>=0 -> [{x'=x}]x>=0 *)
-lemma "(\<lambda>s::real^1. s$1 \<ge> 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. s$1)) & G] (\<lambda>s. s$1 \<ge> 0)"
-  apply(subst local_flow.fbox_g_ode_subset[where T=UNIV 
-        and \<phi>="\<lambda>t s. (\<chi> i. s$1 * exp t)"]; clarsimp?)
-  apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
-   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+lemma "(x \<ge> 0)\<^sub>e \<le> |{x` = x}] (x \<ge> 0)"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> x * exp \<guillemotleft>t\<guillemotright>]"]; clarsimp?)
+  by (local_flow 1) expr_auto 
+
+(* proof with ghosts *)
+(* x>=0 -> [{x'=x}]x>=0 *)
+lemma "(x \<ge> 0)\<^sub>e \<le> |{x` = x}] (x \<ge> 0)"
+   apply (dGhost "y" "(x*y\<^sup>2 = 1 \<or> x=0)\<^sub>e" "1/2") (* find adequate ghost *)
+   apply (expr_auto add: exp_ghost_arith)
+  oops
+
+end
 
 
 subsubsection \<open> Dynamics: Exponential growth (2) \<close>
 
+context two_vars
+begin
+
 (* x>=0 & y>=0 -> [{x'=y, y'=y\<^sup>2}]x>=0 *)
-lemma "(\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 0) \<le> 
-  |x\<acute>=(\<lambda>s. (\<chi> i. if i=1 then s$2 else (s$2)\<^sup>2)) & G] (\<lambda>s. s$1 \<ge> 0)"
-  apply(rule_tac C="\<lambda>s. s$2 \<ge> 0" in diff_cut_rule)
-   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$2 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)^2" in diff_inv_rules(2); (simp add: forall_2)?)
-  apply(simp add: le_fun_def, rule_tac C="\<lambda>s. s$1 \<ge> 0" in diff_cut_rule, simp_all)
-   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_inv_rules(2); (simp add: forall_2)?)
-  by (simp add: le_fun_def, rule diff_weak_rule, simp add: le_fun_def)
+lemma "(x \<ge> 0 \<and> y \<ge> 0)\<^sub>e \<le> |{x` = y, y` = y\<^sup>2}] (x \<ge> 0)"
+  by (diff_cut_ineq "(0 \<le> y)\<^sup>e" "(0)\<^sup>e" "(y\<^sup>2)\<^sup>e")
+    (diff_inv_on_weaken_ineq "(0 \<le> x)\<^sup>e" "(0)\<^sup>e" "(y)\<^sup>e")
+
+end
 
 
 subsubsection \<open> Dynamics: Exponential growth (4) \<close> (* sic *)
 
+context two_vars
+begin
+
 (* x>0 -> [{x'=x^x}]x>0 *)
-lemma "(\<lambda>s::real^1. s$1 > 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. (s$1)\<^sup>2)) & G] (\<lambda>s. s$1 > 0)"
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 > 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-  by (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2" in diff_inv_rules(3), simp_all add: le_fun_def)
+lemma "(x > 0)\<^sub>e \<le> |{x` = x powr x}] (x > 0)"
+  by (diff_inv_on_ineq "(0)\<^sup>e" "(x powr x)\<^sup>e")
+
+end
 
 
 subsubsection \<open> Dynamics: Exponential growth (5) \<close>
 
+context two_vars
+begin
+
 (* x>=1 -> [{x'=x\<^sup>2+2*x^4}]x^3>=x\<^sup>2 *)
-lemma "(\<lambda>s::real^1. s$1 \<ge> 1) \<le> 
-  |x\<acute>=(\<lambda>s. (\<chi> i. (s$1)\<^sup>2 + 2 * (s$1)^4)) & G] (\<lambda>s. s$1^3 \<ge> (s$1)\<^sup>2)"
-  apply(rule_tac C="\<lambda>s. s$1 \<ge> 1" in diff_cut_rule; simp?)
-   apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2 + 2 * s$1 ^ 4" in diff_inv_rules(2); simp?)
-  apply(force intro!: poly_derivatives)
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1^3 \<ge>  (s$1)\<^sup>2 "])
-apply(rule fbox_g_odei, simp add: le_fun_def, simp_all add: power_increasing)
-  apply (rule_tac \<nu>'="\<lambda>s. 2 * s$1 * ((s$1)\<^sup>2 + 2 * (s$1)^ 4)"
-              and \<mu>'="\<lambda>s. 3 * (s$1)\<^sup>2 * ((s$1)\<^sup>2 + 2 * (s$1)^4)" in diff_inv_rules(2); clarsimp?)
-  apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))
-  apply(subgoal_tac "X \<tau> $ 1 \<ge> 1")
-   apply(subgoal_tac "2 + 4 * (X \<tau>)$1 ^ 2 \<le> 3 * (X \<tau>)$1 + 6 * (X \<tau>)$1 ^ 3")
-    apply (smt One_nat_def numerals(1) one_le_power power.simps(2) power_0 power_add_numeral 
-      power_less_power_Suc power_one_right semiring_norm(2) semiring_norm(4) semiring_norm(5))
-   apply (smt numeral_One one_le_power power_add_numeral power_commutes power_le_one 
-      power_less_power_Suc power_one_right semiring_norm(5))
-  by simp
+lemma "(x \<ge> 1)\<^sub>e \<le> |{x` = x\<^sup>2 + 2 * x^4}] (x^3 \<ge> x\<^sup>2)"
+  apply (rule diff_cut_on_rule[where C="(1 \<le> x)\<^sup>e"])
+   apply (diff_inv_on_ineq "(0)\<^sup>e" "(x\<^sup>2 + 2 * x^4)\<^sup>e")
+  apply (rule diff_cut_on_rule[where C="(x\<^sup>2 \<le> x^3)\<^sup>e"])
+   apply (rule fbox_inv[where I="(x\<^sup>2 \<le> x^3)\<^sup>e"])
+     apply (expr_simp add: le_fun_def numeral_Bit1 field_simps)
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
+  apply (diff_inv_on_single_ineq_intro "(2 * x * (x\<^sup>2 + 2 * x^4))\<^sup>e" "(3 * x\<^sup>2 * (x\<^sup>2 + 2 * x^4))\<^sup>e"; clarsimp)
+     apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))[1]
+  subgoal for X \<tau>
+    apply (move_left "2::real", move_left "3::real", move_left "4::real", move_left "6::real")
+    by mon_pow_simp (smt (z3) mult_le_cancel_left numerals(1) pos2 
+        power_commutes power_numeral_even power_numeral_odd 
+        power_one_right self_le_power)
+     apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))[1]
+  by expr_auto (rule diff_weak_on_rule, expr_auto)
+
+end
 
 
 subsubsection \<open> Dynamics: Rotational dynamics (1) \<close>
 
+context two_vars
+begin
+
 (* x\<^sup>2+y\<^sup>2=1 -> [{x'=-y, y'=x}]x\<^sup>2+y\<^sup>2=1 *)
-lemma "(\<lambda>s::real^2. (s$1)\<^sup>2 + (s$2)\<^sup>2 = 1) \<le> |x\<acute>= (\<lambda>s.(\<chi> i. if i = 1 then - s$2 else s$1)) & G]
-  (\<lambda>s. (s$1)\<^sup>2 + (s$2)\<^sup>2 = 1)"
-  by (auto intro!: poly_derivatives diff_inv_rules)
+lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 + y\<^sup>2 = 1)"
+  by (diff_inv_on_eq)
+
+end
 
 
-subsubsection \<open> Dynamics: Rotational dynamics (2) \<close> (* proved as a linear system *)
+subsubsection \<open> Dynamics: Rotational dynamics (2) \<close> (* prove as a linear system *)
+
+context three_vars
+begin
 
 (* x\<^sup>2+y\<^sup>2=1 & e=x -> [{x'=-y, y'=e, e'=-y}](x\<^sup>2+y\<^sup>2=1 & e=x) *)
+lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z, z` = -y}] (x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)"
+  apply (rule diff_cut_on_rule[where C="(z = x)\<^sup>e"])
+   apply (rule fbox_inv[where I="(z = x)\<^sup>e"])
+     apply (expr_simp add: le_fun_def)
+    apply (diff_inv_on_eq)
+   apply (expr_simp add: le_fun_def)
+  apply (rule diff_cut_on_rule[where C="(z\<^sup>2 + y\<^sup>2 = 1)\<^sup>e"])
+   apply (rule fbox_inv[where I="(z\<^sup>2 + y\<^sup>2 = 1)\<^sup>e"])
+     apply (expr_simp add: le_fun_def)
+    apply (diff_inv_on_eq)
+  by (expr_simp add: le_fun_def)
+    (rule diff_weak_on_rule, expr_auto)
 
+end
 
 subsubsection \<open> Dynamics: Rotational dynamics (3) \<close>
 
+dataspace rotational_dynamics3 =
+  constants
+    w :: real
+    p :: real
+  variables 
+    x1 :: real 
+    x2 :: real 
+    d1 :: real
+    d2 :: real
+
+context rotational_dynamics3
+begin
+
 (* d1\<^sup>2+d2\<^sup>2=w\<^sup>2*p\<^sup>2 & d1=-w*x2 & d2=w*x1 -> 
-  [{x1'=d1, x2'=d2, d1'=-w*d2, d2'=w*d1}](d1\<^sup>2+d2\<^sup>2=w\<^sup>2*p\<^sup>2 & d1=-w*x2 & d2=w*x1)*)
-lemma "(\<lambda>s::real^4. (s$3)\<^sup>2 + (s$4)\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> s$3 = - w * s$2 \<and> s$4 = w * s$1) \<le> 
-  |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then s$3 else (if i=2 then s$4 else (if i = 3 then - w * s$4 else w * s$3)))) & G]
-  (\<lambda>s. (s$3)\<^sup>2 + (s$4)\<^sup>2 = w\<^sup>2*p\<^sup>2 \<and> s$3 = - w * s$2 \<and> s$4= w * s$1)"
-  by (auto intro!: diff_inv_rules poly_derivatives)
+  [{x1'=d1, x2'=d2, d1'=-w*d2, d2'=w*d1}]
+  (d1\<^sup>2+d2\<^sup>2=w\<^sup>2*p\<^sup>2 & d1=-w*x2 & d2=w*x1)*)
+lemma "(d1\<^sup>2 + d2\<^sup>2 = \<guillemotleft>w\<guillemotright>\<^sup>2 * \<guillemotleft>p\<guillemotright>\<^sup>2 \<and> d1 = - \<guillemotleft>w\<guillemotright> * x2 \<and> d2 = \<guillemotleft>w\<guillemotright> * x1)\<^sub>e \<le>
+  |{x1` = d1, x2` = d2, d1` = - \<guillemotleft>w\<guillemotright> * d2, d2` = \<guillemotleft>w\<guillemotright> * d1}] 
+  (d1\<^sup>2 + d2\<^sup>2 = \<guillemotleft>w\<guillemotright>\<^sup>2 * \<guillemotleft>p\<guillemotright>\<^sup>2 \<and> d1 = - \<guillemotleft>w\<guillemotright> * x2 \<and> d2 = \<guillemotleft>w\<guillemotright> * x1)"
+  by (rule fbox_invs; (rule fbox_invs)?) diff_inv_on_eq+
+
+end
 
 
 subsubsection \<open> Dynamics: Spiral to equilibrium \<close>
 
+context four_vars
+begin
+
 (* w>=0 & x=0 & y=3 -> [{x'=y, y'=-w\<^sup>2*x-2*w*y}]w\<^sup>2*x\<^sup>2+y\<^sup>2<=9 *)
-lemma "(\<lambda>s::real^3. (s$3) \<ge> 0 \<and> s$1=0 \<and> s$2=3) \<le> 
-  |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then s$2 else (if i=2 then - (s$3)\<^sup>2*(s$1) - 2*(s$3)*(s$2) else 0))) & G] 
-  (\<lambda>s. (s$3)\<^sup>2*(s$1)\<^sup>2 + (s$2)\<^sup>2 \<le> 9)"
-  apply(rule_tac C="\<lambda>s. s$3 \<ge> 0" in diff_cut_rule; simp?)
-   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$3 \<ge> 0"])
-   apply(rule fbox_g_odei, simp add: le_fun_def, simp)
-    apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 0" in diff_inv_rules(2))
-       apply(simp_all add: forall_3, simp add: le_fun_def)
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. (s$3)\<^sup>2*(s$1)\<^sup>2 + (s$2)\<^sup>2 \<le> 9"])
-  apply(rule fbox_g_odei, simp add: le_fun_def, simp_all add: power_increasing)
-   apply(rule_tac \<nu>'="\<lambda>s. 2 * (s$3)\<^sup>2 * (s$1) * (s$2) + 2 * (s$2) * (- (s$3)\<^sup>2*(s$1) - 2*(s$3)*(s$2))"
-      and \<mu>'="\<lambda>s. 0" in diff_inv_rules(2))
-  by (auto intro!: poly_derivatives simp: forall_3 field_simps) 
-    (simp add: mult.assoc[symmetric])
+lemma "(w \<ge> 0 \<and> x = 0 \<and> y = 3)\<^sub>e \<le> |{x` = y, y` = - w\<^sup>2 * x - 2 * w * y}] (w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> 9)"
+  apply (rule diff_cut_on_rule[where C="(0 \<le> w)\<^sup>e"])
+   apply (rule fbox_inv[where I="(0 \<le> w)\<^sup>e"])
+     apply (expr_simp add: le_fun_def)
+    apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
+   apply (expr_simp add: le_fun_def)
+   apply (rule fbox_inv[where I="(w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> 9)\<^sup>e"])
+    apply (expr_simp add: le_fun_def)
+   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+   apply (diff_inv_on_single_ineq_intro "(2 * w\<^sup>2 * x * y + 2 * y * (- w\<^sup>2 * x - 2 * w * y))\<^sup>e" "(0)\<^sup>e"; expr_simp)
+    apply (force simp: field_simps)[1]
+   apply (force intro!: poly_derivatives)
+  by (expr_simp add: le_fun_def)
+
+end
 
 
 subsubsection \<open> Dynamics: Open cases \<close>
