@@ -166,13 +166,27 @@ lemma vderiv_expI[poly_derivatives]:
   unfolding has_vderiv_on_def has_vector_derivative_def 
   by (auto intro!: derivative_eq_intros simp: assms)
 
-lemma vderiv_on_proj [poly_derivatives]:
+lemma vderiv_on_proj:
   assumes "D X = X' on T " and "X' = (\<lambda>t. (X\<^sub>1' t, X\<^sub>2' t))"
   shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X\<^sub>1' t) on T"
     and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X\<^sub>2' t) on T"
   using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
    apply(rule has_vector_derivative_fst', force)
   by (rule has_vector_derivative_snd'', force)
+
+lemma vderiv_on_fst [poly_derivatives]:
+  assumes "D X = X' on T " and "g = (\<lambda>t. fst (X' t))"
+  shows "D (\<lambda>t. fst (X t)) = g on T"
+  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
+  subgoal for x by (rule_tac has_vector_derivative_fst'[of _ _ "(snd \<circ> X') x"], force)
+  done
+
+lemma vderiv_on_snd [poly_derivatives]:
+  assumes "D X = X' on T " and "g = (\<lambda>t. snd (X' t))"
+  shows "D (\<lambda>t. snd (X t)) = g on T"
+  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
+  subgoal for x by (rule_tac has_vector_derivative_snd''[of _ "(fst \<circ> X') x"], force)
+  done
 
 lemma vderiv_pairI[poly_derivatives]:
   assumes "D f1 = f1' on T" 

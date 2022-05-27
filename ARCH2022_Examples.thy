@@ -341,7 +341,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
    apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2") (* find adequate ghost *)
     apply (expr_auto add: exp_ghost_arith)
-  apply (diff_inv_on_eq)
+  (* apply (diff_inv_on_eq) *)
   oops
 
 end
@@ -624,31 +624,68 @@ proof-
     by fastforce
 qed
 
+lemma 
+  fixes a::"'a::banach \<Longrightarrow> 'c"
+  assumes sublens: "x \<subseteq>\<^sub>L a"
+    and dhyp: "f' = (\<lambda>t. h (f t))" "\<forall>x\<ge>c::real. g x \<ge> 0"
+  shows "(\<lambda>s. c < g (get\<^bsub>x\<^esub> s)) \<le> fbox (g_ode_frame a f G (\<lambda>s. {t\<^sub>0..}) S t\<^sub>0) (\<lambda>s. c < g (get\<^bsub>x\<^esub> s))"
+proof (clarsimp simp: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
+  fix s X t
+  assume "c < g (get\<^bsub>x\<^esub> s)" and "t\<^sub>0 \<le> t" and "X \<in> {t\<^sub>0..} \<rightarrow> S" 
+    and "(X has_vderiv_on (\<lambda>x. get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (X x))))) {t\<^sub>0..}"
+    and "X t\<^sub>0 = get\<^bsub>a\<^esub> s" and "\<forall>\<tau>. t\<^sub>0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
+  have Q
+    using current_vderiv_ge_always_ge[of c "\<lambda>t. g (get\<^bsub>x\<^esub> (put\<^bsub>a\<^esub> s (X t)))" t\<^sub>0 ]
+    sorry
+  term "\<lambda>t. get\<^bsub>x\<^esub> (put\<^bsub>a\<^esub> s (X t))"
+  term "\<lambda>t. get\<^bsub>x\<^esub> (f (put\<^bsub>a\<^esub> s (X t)))"
+  show "c < g (get\<^bsub>x\<^esub> (put\<^bsub>a\<^esub> s (X t)))"
+    sorry
+qed
+
+lemma Collect_ge_ivl: "Collect ((\<le>) 0) = {(0::real)..}"
+  by auto
+
+context two_vars
+begin
+
 (* x^3>5 & y>2 -> [{x'=x^3+x^4, y'=5*y+y^2}](x^3>5 & y>2) *)
-lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1^3>5 \<and> s$2>2) \<le> 
-  |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then s$1^3 + s$1^4 else 5 * s$2 + s$2^2)) & G on (\<lambda>s. {0..}) UNIV @ 0]
-  (\<lambda>s. s$1^3>5 \<and> s$2>2)"
-  apply(simp, rule diff_inv_rules, simp_all add: diff_inv_eq ivp_sols_def forall_2; clarsimp)
-   apply(frule_tac x="\<lambda>t. X t $ 1 ^ 3" and g="\<lambda>t. 3 * t^2 + 3 * (root 3 t)^5" in current_vderiv_ge_always_ge)
-      apply(rule poly_derivatives, simp, assumption, simp)
-  apply (rule ext)
-     apply (auto simp: field_simps odd_real_root_power_cancel)[1]
-  apply (smt (verit, ccfv_SIG) numeral_One power3_eq_cube power4_eq_xxxx power_add_numeral power_commutes power_one_right semiring_norm(5) semiring_norm(8))
-  apply (force simp: add_nonneg_pos, force)
-  apply(frule_tac x="\<lambda>t. X t $ 2" in current_vderiv_ge_always_ge)
-  by (force, force, force simp: add_nonneg_pos, simp)
+lemma "(x^3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x^3 + x^4, y` = 5*y + y\<^sup>2}] (x^3 > 5 \<and> y > 2)"
+  apply (rule fbox_invs; (rule fbox_invs)?)
+  apply (expr_simp)
+  apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
+   apply (expr_simp add: Collect_ge_ivl)
+  subgoal for s X t
+    apply(rule current_vderiv_ge_always_ge[of 5 "\<lambda>t. (fst (X t)) ^ 3" 0 
+        "\<lambda>t. 3 * (fst (X t)) ^ 2 * (fst (X t) ^ 3 + fst (X t) ^ 4)", where g="\<lambda>t. 3 * t^2 + 3 * (root 3 t)^5", rule_format])
+    by (auto intro!: poly_derivatives simp: odd_real_root_power_cancel split: if_splits) 
+      (distribute, mon_pow_simp, force)
+  apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
+   apply (expr_simp add: Collect_ge_ivl)
+  by (rule current_vderiv_ge_always_ge[rule_format, of 2 "\<lambda>t. (snd (_ t))", where g="\<lambda>t. 5 * t + t\<^sup>2"])
+    (auto intro!: poly_derivatives simp: odd_real_root_power_cancel split: if_splits)
+
+end
+
 
 
 subsubsection \<open> Dynamics: Closed cases \<close>
 
+context three_vars
+begin
+
 (* x>=1 & y=10 & z=-2 -> [{x'=y, y'=z+y^2-y & y>=0}](x>=1 & y>=0) *)
-lemma "z = - 2 \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 1 \<and> s$2 = 10) \<le> 
-  |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then s$2 else z + (s$2)^2 - s$2)) & (\<lambda>s. s$2 \<ge> 0)]
-  (\<lambda>s. s$1 \<ge> 1 \<and> s$2 \<ge> 0)"
-  apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 1 \<and> s$2 \<ge> 0"])
-  apply(rule fbox_g_odei, simp_all, simp add: le_fun_def, rule diff_inv_rules)
-   apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2" in diff_inv_rules(2))
-  by (simp_all add: diff_inv_eq, force intro!: poly_derivatives)
+lemma "(x \<ge> 1 \<and> y = 10 \<and> z = - 2)\<^sub>e \<le> |{x` = y, y` = z + y\<^sup>2 - y | y \<ge> 0}] (x \<ge> 1 \<and> y \<ge> 0)"
+  apply (rule fbox_diff_invI[where I="(x \<ge> 1 \<and> y \<ge> 0)\<^sup>e"]; force?)
+    apply (rule fbox_invs(1))
+     apply expr_simp
+    apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
+    apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(y)\<^sup>e"; expr_simp)
+  apply (metis indeps(1) lens_plus_def plus_vwb_lens vwbs(1) vwbs(2))
+  by (force intro!: poly_derivatives)
+    (expr_simp add: hoare_diff_inv_on fbox_diff_inv_on diff_inv_on_eq)
+
+end
 
 
 subsubsection \<open> Dynamics: Conserved quantity \<close>
@@ -656,31 +693,30 @@ subsubsection \<open> Dynamics: Conserved quantity \<close>
 lemma dyn_cons_qty_arith: "(36::real) * (x1\<^sup>2 * (x1 * x2 ^ 3)) - 
   (- (24 * (x1\<^sup>2 * x2) * x1 ^ 3 * (x2)\<^sup>2) - 12 * (x1\<^sup>2 * x2) * x1 * x2 ^ 4) - 
   36 * (x1\<^sup>2 * (x2 * x1)) * (x2)\<^sup>2 - 12 * (x1\<^sup>2 * (x1 * x2 ^ 5)) = 24 * (x1 ^ 5 * x2 ^ 3)" 
-  (is "?t1 - (- ?t2 - ?t3) - ?t4 - ?t5 = ?t6")
-proof-
-  have eq1: "?t1 = ?t4"
-    by (simp add: power3_eq_cube power2_eq_square)
-  have eq2: "- (- ?t2 - ?t3) = (?t6 + ?t3)"
-    by (auto simp: field_simps semiring_normalization_rules(27) power_numeral_odd)
-  have eq3: "?t3 = ?t5"
-    by (auto simp: field_simps semiring_normalization_rules(27))
-  show "?t1 - (- ?t2 - ?t3) - ?t4 - ?t5 = ?t6"
-    unfolding eq1 eq2 eq3 
-    by (simp add: field_simps semiring_normalization_rules(27) power_numeral_odd)
-qed
+  by (mon_simp_vars x1 x2)
+
+dataspace conserved_quantity =
+  constants c::real
+  variables x1::real x2::real
+
+context conserved_quantity
+begin
 
 (* x1^4*x2^2+x1^2*x2^4-3*x1^2*x2^2+1 <= c ->
     [{x1'=2*x1^4*x2+4*x1^2*x2^3-6*x1^2*x2, x2'=-4*x1^3*x2^2-2*x1*x2^4+6*x1*x2^2}] 
    x1^4*x2^2+x1^2*x2^4-3*x1^2*x2^2+1 <= c *)
-lemma "(\<lambda>s::real^2. (s$1)^4*(s$2)^2+(s$1)^2*(s$2)^4-3*(s$1)^2*(s$2)^2 + 1 \<le> c) \<le> 
-  |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then 2*(s$1)^4*(s$2)+4*(s$1)^2*(s$2)^3-6*(s$1)^2*(s$2) 
-    else -4*(s$1)^3*(s$2)^2-2*(s$1)*(s$2)^4+6*(s$1)*(s$2)^2)) & G] 
-  (\<lambda>s. (s$1)^4*(s$2)^2+(s$1)^2*(s$2)^4-3*(s$1)^2*(s$2)^2 + 1 \<le> c)"
-  apply(simp, rule_tac \<mu>'="\<lambda>s. 0" and \<nu>'="\<lambda>s. 0" in diff_inv_rules(2); clarsimp simp: forall_2)
-  apply(intro poly_derivatives; (assumption)?, (rule poly_derivatives)?)
-  apply force+
-  apply(clarsimp simp: algebra_simps(17,18,19,20) semiring_normalization_rules(27,28))
-  by (auto simp: dyn_cons_qty_arith)
+lemma "(x1^4*x2\<^sup>2 + x1\<^sup>2*x2^4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> \<guillemotleft>c\<guillemotright>)\<^sub>e \<le>
+  |{x1` = 2*x1^4*x2 + 4*x1^2*x2^3 - 6*x1\<^sup>2*x2, x2` = -4*x1^3*x2\<^sup>2 - 2*x1*x2^4 + 6*x1*x2\<^sup>2}]
+  (x1^4*x2\<^sup>2 + x1\<^sup>2*x2^4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> \<guillemotleft>c\<guillemotright>)"
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
+  apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(0)\<^sup>e"; expr_simp)
+  apply (intro poly_derivatives; (assumption)?, (rule poly_derivatives)?)
+                      apply force+
+  subgoal for X t
+    by distribute (mon_simp_vars "fst (X t)" "snd (X t)")
+  done
+
+end
 
 
 subsubsection \<open> Dynamics: Darboux equality \<close>
@@ -728,46 +764,62 @@ lemma picard_lindeloef_first_order_linear: "t\<^sub>0 \<in> T \<Longrightarrow> 
    apply(intro continuous_intros, assumption)
   by (rule local_lipschitz_first_order_linear)
 
+dataspace darboux =
+  constants A::real B::real
+  variables x::real y::real z::real
+
+context darboux
+begin
+
 (* x+z=0 -> [{x'=(A*x^2+B()*x), z' = A*z*x+B()*z}] 0=-x-z *)
-lemma "(\<lambda>s::real^2. s$1 + s$2 = 0) \<le> 
-  |x\<acute>= (\<lambda>t s. (\<chi> i. if i=1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2))) & G on (\<lambda>s. UNIV) UNIV @ 0]
-  (\<lambda>s. 0 = - s$1 - s$2)"
-proof-
-  have key: "diff_inv (\<lambda>s. s $ 1 + s $ 2 = 0)
-     (\<lambda>t s. \<chi> i. if i = 1 then A*(s$1)^2+B*(s$1) else A*(s$2)*(s$1)+B*(s$2)) (\<lambda>s. UNIV) UNIV 0 G"
-  proof(clarsimp simp: diff_inv_eq ivp_sols_def forall_2)
-    fix X::"real\<Rightarrow>real^2" and t::real
-    let "?c" = "(\<lambda>t.  X t $ 1 + X t $ 2)"
-    assume init: "?c 0 = 0"
-      and D1: "D (\<lambda>t. X t $ 1) = (\<lambda>t. A * (X t $ 1)\<^sup>2 + B * X t $ 1) on UNIV"
-      and D2: "D (\<lambda>t. X t $ 2) = (\<lambda>t. A * X t $ 2 * X t $ 1 + B * X t $ 2) on UNIV"
-    hence "D ?c = (\<lambda>t. ?c t * (A * (X t $ 1) + B)) on UNIV"
-      by (auto intro!: poly_derivatives simp: field_simps)
-    hence "D ?c = (\<lambda>t. (A * X t $ 1 + B) * (X t $ 1 + X t $ 2)) on {0--t}"
-      using has_vderiv_on_subset[OF _ subset_UNIV[of "{0--t}"]] by (simp add: mult.commute)
-    moreover have "continuous_on UNIV (\<lambda>t. A * (X t $ 1) + B)"
-      apply(rule vderiv_on_continuous_on)
-      using D1 by (auto intro!: poly_derivatives simp: field_simps)
-    moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t $ 1 + B) * 0) on {0--t}"
-      by (auto intro!: poly_derivatives)
-    moreover note picard_lindeloef.ivp_unique_solution[OF 
-      picard_lindeloef_first_order_linear[OF UNIV_I open_UNIV is_interval_univ calculation(2)] 
-      UNIV_I is_interval_closed_segment_1 subset_UNIV _ 
-      ivp_solsI[of ?c]
-      ivp_solsI[of "\<lambda>t. 0"], of t "\<lambda>s. 0" 0 "\<lambda>s. t" 0]
-    ultimately show "X t $ 1 + X t $ 2 = 0"
-      using init by auto
-  qed
-  show ?thesis
-    apply(subgoal_tac "(\<lambda>s. 0 = - s$1 - s$2) = (\<lambda>s. s$1 + s$2 = 0)", erule ssubst)
-    using key by auto
-qed
+lemma "(x + z = 0)\<^sub>e \<le> |{x` = \<guillemotleft>A\<guillemotright>*x\<^sup>2 + \<guillemotleft>B\<guillemotright>*x, z` = \<guillemotleft>A\<guillemotright>*z*x+\<guillemotleft>B\<guillemotright>*z | G on UNIV UNIV @ 0}] (0= -x - z)"
+  apply (subgoal_tac "(0= -x - z)\<^sup>e = (x + z = 0)\<^sup>e"; force?)
+  apply (erule ssubst)
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on fbox_diff_inv_on')
+  apply (expr_simp add: diff_inv_on_eq ivp_sols_def, clarsimp)
+  subgoal for s X t
+    apply (rule picard_lindeloef.ivp_unique_solution[of "(\<lambda>t r. r * (A * (fst (X t)) + B))" UNIV UNIV 0 "get\<^bsub>x\<^esub> s + get\<^bsub>z\<^esub> s" "\<lambda>s. UNIV" t 
+          _ "\<lambda>t. 0"]; (clarsimp simp: ivp_sols_def)?)
+      prefer 2 apply (intro poly_derivatives, force, force, force, force)
+      apply (distribute, mon_pow_simp)
+     prefer 2 apply (force intro!: poly_derivatives)
+    apply (unfold_locales; clarsimp?)
+     apply (force intro!: continuous_intros vderiv_on_continuous_on poly_derivatives)
+    apply distribute
+    apply (rule_tac f'="\<lambda>(t, r). Blinfun (\<lambda>r. r * (A * fst (X t)) + r * B) " in c1_implies_local_lipschitz; clarsimp?)
+    apply (rule has_derivative_Blinfun)
+     apply (auto intro!: derivative_eq_intros continuous_intros vderiv_on_continuous_on split: prod.splits)[1]
+    apply (rule continuous_on_blinfun_componentwise)
+    apply (simp add: prod.case_eq_if)
+    apply (subst bounded_linear_Blinfun_apply)
+    subgoal for i w
+      apply (rule_tac f="(\<lambda>r. r * (A * fst (X (fst w))) + r * B)" in has_derivative_bounded_linear)
+      by (auto intro!: derivative_eq_intros)
+    apply (auto intro!: continuous_intros)[1]
+    apply (rule continuous_on_compose[of UNIV fst X, unfolded comp_def])
+    by (auto intro!: continuous_intros vderiv_on_continuous_on)
+  done
+
+end
 
 
 subsubsection \<open> Dynamics: Fractional Darboux equality \<close> (*N 30 *)
 
+context darboux
+begin
+
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
-(* requires picard-lindeloef for closed intervals *)
+lemma "(x + z = 0)\<^sub>e \<le> |{x` = (\<guillemotleft>A\<guillemotright>*y + \<guillemotleft>B\<guillemotright>*x)/z\<^sup>2, z` = (\<guillemotleft>A\<guillemotright>*x+\<guillemotleft>B\<guillemotright>)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0) on UNIV UNIV @ 0}] (x + z = 0)"
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on fbox_diff_inv_on')
+  apply (expr_simp add: diff_inv_on_eq ivp_sols_def, clarsimp)
+  subgoal for s X t
+    apply (rule picard_lindeloef.ivp_unique_solution[of "(\<lambda>t r. r * (A * (fst (X t)) + B))" UNIV UNIV 0 "get\<^bsub>x\<^esub> s + get\<^bsub>z\<^esub> s" "\<lambda>s. UNIV" t 
+          _ "\<lambda>t. 0"]; (clarsimp simp: ivp_sols_def)?)
+    oops
+(* see if it can be solved as above, otherwise check if diff-ghosts works, otherwise 
+  requires picard-lindeloef for closed intervals *)
+
+end
 
 subsubsection \<open> Dynamics: Darboux inequality \<close> (*N 31 *)
 
@@ -809,6 +861,16 @@ proof-
   ultimately show ?thesis
     by (metis (full_types) add_diff_eq add_divide_distrib order_trans)
 qed
+
+context three_vars
+begin
+
+(* x+z>=0 -> [{x'=x^2, z' = z*x+y & y = x^2}] x+z>=0 *)
+lemma "(x + z \<ge> 0)\<^sub>e \<le> |{x` = x\<^sup>2, z` = z*x + y | y = x\<^sup>2}] (x + z \<ge> 0)"
+  apply (subst fbox_solve[where \<phi>=""])
+  oops
+
+end
 
 (* x+z>=0 -> [{x'=x^2, z' = z*x+y & y = x^2}] x+z>=0 *)
 (* x' + z' \<ge> 0 \<longleftrightarrow> x^2 + z*x + x^2 \<ge> 0*)
@@ -896,41 +958,58 @@ subsubsection \<open> Dynamics: Parametric switching between two different dampe
 
 subsubsection \<open> Dynamics: Nonlinear 1 \<close>
 
+dataspace dyn_nonlinear = 
+  constants a :: real
+  variables x1::real x2::real
+
+context dyn_nonlinear
+begin
 (* x^3 >= -1 -> [{x'=(x-3)^4+a & a>=0}] x^3>=-1 *)
-lemma "(\<lambda>s::real^1. s$1^3 \<ge> -1) \<le> 
-  |x\<acute>= (\<lambda>s. \<chi> i. (s$1 - 3)^4 + a) & (\<lambda>s. a \<ge> 0)]
-  (\<lambda>s. s$1^3 \<ge> -1)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * ((s$1 - 3)^4 + a)" in diff_inv_rules(2))
-  by (auto intro!: poly_derivatives)
+lemma "(x1^3 \<ge> -1)\<^sub>e \<le> |{x1` = (x1-3)^4 + \<guillemotleft>a\<guillemotright> | (\<guillemotleft>a\<guillemotright>\<ge>0)}] (x1^3 \<ge> -1)"
+  by (diff_inv_on_ineq "(0)\<^sup>e" "(3*x1\<^sup>2*((x1-3)^4 + \<guillemotleft>a\<guillemotright>))\<^sup>e")
+
+end
 
 
 subsubsection \<open> Dynamics: Nonlinear 2 \<close>
 
+context dyn_nonlinear
+begin
+
 (* x1+x2^2/2=a -> [{x1'=x1*x2,x2'=-x1}]x1+x2^2/2=a *)
-lemma "(\<lambda>s::real^2. s$1 + (s$2^2)/2 = a) \<le> 
-  |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$1 * s$2 else - s$1) & G]
-  (\<lambda>s. s$1 + (s$2^2)/2 = a)"
-  by (auto intro!: diff_inv_rules poly_derivatives)
+lemma "(x1 + x2\<^sup>2/2 = \<guillemotleft>a\<guillemotright>)\<^sub>e \<le> |{x1` = x1 * x2, x2` = -x1}] (x1 + x2\<^sup>2/2 = \<guillemotleft>a\<guillemotright>)"
+  by (diff_inv_on_eq)
+
+end
+
 
 
 subsubsection \<open> Dynamics: Nonlinear 4 \<close>
 
+context dyn_nonlinear
+begin
+
 (* x1^2/2-x2^2/2>=a -> [{x1'=x2+x1*x2^2, x2'=-x1+x1^2*x2 & x1>=0 & x2>=0}]x1^2/2-x2^2/2>=a *)
-lemma "(\<lambda>s::real^2. (s$1)^2/2 - (s$2^2)/2 \<ge> a) \<le> 
-  |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 + s$1 * (s$2^2) else - s$1 + s$1^2 * s$2) & (\<lambda>s. s$1 \<ge> 0 \<and> s$2 \<ge> 0)]
-  (\<lambda>s. (s$1)^2/2 - (s$2^2)/2 \<ge> a)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$1*(s$2 + s$1 * (s$2^2)) - s$2 * (- s$1 + s$1^2 * s$2)" in diff_inv_rules(2))
-  by (auto intro!: poly_derivatives simp: field_simps)
+lemma "(x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> \<guillemotleft>a\<guillemotright>)\<^sub>e \<le> |{x1` = x2 + x1*x2\<^sup>2, x2` = -x1 + x1\<^sup>2 * x2| (x1 \<ge> 0 \<and> x2 \<ge> 0)}] (x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> \<guillemotleft>a\<guillemotright>)"
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
+  apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(x1 * (x2 + x1*x2\<^sup>2) - x2 * (-x1 + x1\<^sup>2 * x2))\<^sup>e"; expr_simp)
+  by (auto simp: field_simps fun_eq_iff intro!: poly_derivatives split: if_splits)
+
+end
 
 
 subsubsection \<open> Dynamics: Nonlinear 5 \<close>
 
+context dyn_nonlinear
+begin
+
 (* -x1*x2>=a -> [{x1'=x1-x2+x1*x2, x2'=-x2-x2^2}]-x1*x2>=a *)
-lemma "(\<lambda>s::real^2. -(s$1) *(s$2) \<ge> a) \<le> 
-  |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$1 - s$2 + s$1 * s$2 else - s$2 - s$2^2) & G]
-  (\<lambda>s. -(s$1)*(s$2) \<ge> a)"
-  apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (- s$1 + s$2 - s$1 * s$2) * s$2 - s$1 * (- s$2 - s$2^2)" in diff_inv_rules(2))
-  by (auto intro!: poly_derivatives simp: field_simps)
+lemma "(-x1*x2 \<ge> \<guillemotleft>a\<guillemotright>)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^sup>2}] (-x1*x2 \<ge> \<guillemotleft>a\<guillemotright>)"
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
+  by (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "((- x1 + x2 - x1*x2)*x2 - x1 * (-x2 - x2\<^sup>2))\<^sup>e"; expr_simp)
+    (auto simp: field_simps fun_eq_iff intro!: poly_derivatives split: if_splits)
+
+end
 
 
 subsubsection \<open> Dynamics: Riccati \<close>

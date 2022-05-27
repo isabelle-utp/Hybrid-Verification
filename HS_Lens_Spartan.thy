@@ -766,7 +766,7 @@ definition local_lipschitz_on :: "('c::metric_space \<Longrightarrow> 's) \<Righ
 
 subsection \<open> Differential invariants \<close>
 
-definition g_ode_inv :: "(real \<Rightarrow> ('a::banach)\<Rightarrow>'a) \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> real set) \<Rightarrow> 'a set \<Rightarrow> 
+definition g_ode_inv :: "(real \<Rightarrow> 'a::real_normed_vector \<Rightarrow>'a) \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> real set) \<Rightarrow> 'a set \<Rightarrow> 
   real \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> 'a set)" ("(1x\<acute>=_ & _ on _ _ @ _ DINV _ )") 
   where "(x\<acute>= f & G on U S @ t\<^sub>0 DINV I) = (x\<acute>= f & G on U S @ t\<^sub>0)"
 
@@ -776,9 +776,9 @@ lemma fbox_g_orbital_guard:
   unfolding fbox_g_orbital using assms by auto
 
 lemma fbox_g_orbital_on_guard: 
-  assumes "H = (\<lambda>s. G s \<and> Q s)"
+  assumes "H = (G \<and> Q)\<^sub>e"
   shows "|g_orbital_on a f G U S t\<^sub>0] Q = |g_orbital_on a f G U S t\<^sub>0] H "
-  unfolding fbox_g_orbital_on 
+  unfolding fbox_g_orbital_on
   using assms by auto
 
 lemma fbox_inv:
@@ -864,6 +864,15 @@ lemma fbox_g_odei: "P \<le> I \<Longrightarrow> I \<le> |x\<acute>= f & G on U S
 lemma hoare_g_odei: " \<^bold>{I\<^bold>} (x\<acute>= f & G on U S @ t\<^sub>0) \<^bold>{I\<^bold>}  \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> G \<longrightarrow> Q` \<Longrightarrow> 
  \<^bold>{P\<^bold>} (x\<acute>= f & G on U S @ t\<^sub>0 DINV I) \<^bold>{Q\<^bold>}"
   by (rule fbox_g_odei, simp_all add: SEXP_def taut_def le_fun_def)
+
+lemma fbox_diff_invI: "(I)\<^sub>e \<le> |g_orbital_on a f G U S t\<^sub>0] I \<Longrightarrow> P \<le> (I)\<^sub>e \<Longrightarrow> (I \<and> G)\<^sub>e \<le> Q
+  \<Longrightarrow> P \<le> |g_orbital_on a f G U S t\<^sub>0] Q"
+  apply(rule_tac b="|g_orbital_on a f G U S t\<^sub>0] I" in order.trans)
+   apply (rule_tac I=I in fbox_inv; expr_simp)
+  by (subst fbox_g_orbital_on_guard, force)
+    (rule fbox_iso, force)
+
+lemmas fbox_diff_inv_rawI = fbox_diff_invI[unfolded clarify_fbox expr_defs]
 
 lemma hoare_diff_inv_on_post_inv:
   assumes "`P \<longrightarrow> Q`" "\<^bold>{Q\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
