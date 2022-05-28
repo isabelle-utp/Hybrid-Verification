@@ -1129,7 +1129,7 @@ method diff_inv_on_weaken_ineq for I::"'a \<Rightarrow> bool"
     (expr_simp add: le_fun_def)
     )
 
-method diff_cut_ineq for I::"'a \<Rightarrow> bool" 
+method diff_cut_ineq for I::"'a \<Rightarrow> bool" (* create tactic move to guard where nmods... *)
   and dLeq dGeg::"'a \<Rightarrow> real" = (
     (rule diff_cut_on_rule[where C=I]),
     (diff_inv_on_weaken_ineq I dLeq dGeg)
