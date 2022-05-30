@@ -199,6 +199,17 @@ lemma hoare_choice:
 lemma fdia_choice: "|F \<sqinter> G\<rangle> P = (\<lambda>s. ( |F\<rangle> P) s \<or> ( |G\<rangle> P ) s)"
   unfolding fdia_def nondet_choice_def by auto
 
+definition Nondet_choice :: "('i \<Rightarrow> 's prog) \<Rightarrow> 'i set \<Rightarrow> 's prog"
+  where "Nondet_choice F I = (\<lambda> s. \<Union> i\<in>I. F i s)"
+
+syntax
+  "_Nondet_choice" :: "idt \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("\<Sqinter> _ \<in> _./ _" [0, 0, 10] 10)
+
+translations "_Nondet_choice i I P" == "CONST Nondet_choice (\<lambda> i. P) I"
+
+lemma fbox_Choice [wp]: "|\<Sqinter> i\<in>I. F(i)] P = (\<forall> i\<in>\<guillemotleft>I\<guillemotright>. |F(i)] P)\<^sub>e"
+  by (auto simp add: fbox_def Nondet_choice_def fun_eq_iff)
+
 subsection \<open> Sequential composition \<close>
 
 definition kcomp :: "('a \<Rightarrow> 'b set) \<Rightarrow> ('b \<Rightarrow> 'c set) \<Rightarrow> ('a  \<Rightarrow> 'c set)" (infixl ";" 62) 
@@ -284,8 +295,14 @@ lemma kpower_simp: "kpower f (Suc n) s = (f ; kpower f n) s"
    apply(force simp: subset_antisym)
   unfolding kpower_def kcomp_eq by simp
 
+lemma kpower_simp': "kpower f (Suc n) = (f ; kpower f n)"
+  by (simp add: ext kpower_simp)
+
 definition kleene_star :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> 'a set)" ("(_\<^sup>*)" [1000] 999)
   where [prog_defs]: "(f\<^sup>*) s = \<Union> {kpower f n s |n. n \<in> UNIV}"
+
+lemma kleene_star_alt_def: "f\<^sup>* = (\<Sqinter> i\<in>UNIV. kpower f i)"
+  by (auto simp add: fun_eq_iff kleene_star_def Nondet_choice_def)
 
 lemma kpower_inv: 
   fixes F :: "'a \<Rightarrow> 'a set"
@@ -354,6 +371,9 @@ lemma change_loopI: "LOOP X INV G = LOOP X INV I"
 
 lemma fbox_loopI: "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> |F] I \<Longrightarrow> P \<le> |LOOP F INV I] Q"
   unfolding loopi_def using fbox_kstarI[of "P"] by (auto simp: SEXP_def)
+
+lemma fbox_loopI': "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> fbox F I \<Longrightarrow> P \<le> fbox (loopi F I) Q"
+  by (metis clarify_fbox fbox_kstarI loopi_def)
 
 lemma hoare_loopI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} LOOP F INV I \<^bold>{Q\<^bold>}"
   by (rule fbox_loopI) (auto simp: SEXP_def taut_def)
@@ -429,6 +449,35 @@ lemma nmods_choice [closure]:
   assumes "P nmods a" "Q nmods a"
   shows "P \<sqinter> Q nmods a"  
   using assms by (auto simp add: not_modifies_def prog_defs)
+
+lemma nmods_Choice [closure]:
+  assumes "\<And> i. i \<in> I \<Longrightarrow> P(i) nmods a"
+  shows "(\<Sqinter> i\<in>I. P(i)) nmods a"
+  using assms
+  by (auto simp add: Nondet_choice_def not_modifies_def)
+
+lemma nmods_kpower [closure]:
+  assumes "idem_scene a" "P nmods a"
+  shows "(kpower P n) nmods a"
+proof (induct n)
+  case 0
+  then show ?case 
+    by (simp add: kpower_def assms(1) nmods_skip)
+next
+  case (Suc n)
+  then show ?case
+    by (simp add: kpower_simp' nmods_seq assms)
+qed
+
+lemma nmods_star [closure]:
+  assumes "idem_scene a" "P nmods a"
+  shows "P\<^sup>* nmods a"
+  by (simp add: assms kleene_star_alt_def nmods_Choice nmods_kpower)
+
+lemma nmods_loop [closure]:
+  assumes "idem_scene a" "P nmods a"
+  shows "LOOP P INV B nmods a"
+  by (simp add: assms loopi_def nmods_star)
 
 lemma nmods_test [closure]:
   "idem_scene a \<Longrightarrow> \<questiondown>b? nmods a"
