@@ -119,17 +119,6 @@ end
 
 subsubsection \<open> Overwrite assignment several times \<close>
 
-term "(\<longrightarrow>)"
-
-syntax "_sequent" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infixr "\<turnstile>" 22)
-translations "\<Gamma> \<turnstile> P" == "(\<Gamma>)\<^sub>e \<le> (P)\<^sub>e"
-
-lemma sConjI: "\<lbrakk> \<Gamma> \<turnstile> P; \<Gamma> \<turnstile> Q \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> P \<and> Q"
-  by (expr_auto)
-
-lemma fbox_loopI': "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> [fbox F I]\<^sub>e \<Longrightarrow> P \<le> [fbox (loopi F I) Q]\<^sub>e"
-  sorry
-
 context two_vars
 begin
 
@@ -157,7 +146,9 @@ lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x 
    apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
     apply (rule hoare_choice)
     apply (rule nmods_frame_law[where a="{y}\<^sub>v"])
-     apply (rule hoare_loopI)
+  oops
+(*       
+       apply (rule hoare_loopI)
        apply (hoare_wp_auto)
       apply (expr_auto)
      apply (expr_auto)
@@ -165,6 +156,7 @@ lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x 
    apply (dInduct_mega)
   apply (hoare_wp_auto)
   done
+*)
 
 end
 
