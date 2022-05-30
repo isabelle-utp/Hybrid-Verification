@@ -133,22 +133,20 @@ lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 
   by (subst fbox_loopI, auto simp: wp)
     expr_simp+
 
-term "x ::= x + 1"
-
-ML \<open> @{term "|LOOP x ::= $x + 1 INV (1 \<le> $x)] |{y` = 2}] (1 \<le> $y)"}\<close>
-
-term "{y}\<^sub>v"
-
 lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y) \<^bold>{x \<ge> 1\<^bold>}"
   apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
-       apply (hoare_wp_auto)
+   apply (hoare_wp_auto)
   apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
    apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
     apply (rule hoare_choice)
-    apply (rule nmods_frame_law[where a="{y}\<^sub>v"])
-  oops
-(*       
-       apply (rule hoare_loopI)
+     \<comment> \<open> Use the fact that y is outside the frame of the loop to preserve its invariants \<close>
+     apply (rule nmods_frame_law[where a="{y}\<^sub>v"])
+       apply (rule nmods_loop)
+        apply (simp)
+       apply (rule nmods_assign)
+         apply (simp_all add: unrest)
+      apply unrest
+     apply (rule hoare_loopI)
        apply (hoare_wp_auto)
       apply (expr_auto)
      apply (expr_auto)
@@ -156,10 +154,8 @@ lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x 
    apply (dInduct_mega)
   apply (hoare_wp_auto)
   done
-*)
 
 end
-
 
 subsubsection \<open> Potentially overwrite dynamics \<close>
 
@@ -167,6 +163,25 @@ context two_vars
 begin
 
 (* x>0 & y>0 -> [{x'=5}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
+
+lemma "\<^bold>{x > 0 \<and> y > 0\<^bold>} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) \<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>}"
+proof -
+  have "\<^bold>{x > 0 \<and> y > 0\<^bold>} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) \<^bold>{x > 0 \<and> y > 0\<^bold>}"
+    apply (rule hoare_kcomp_inv)
+   apply (dInduct_mega)
+    apply (rule hoare_choice)
+     apply (rule nmods_frame_law[where a="{y}\<^sub>v"])
+    apply (simp add: closure, unrest)
+     apply (rule hoare_loopI)
+       apply (hoare_wp_auto)
+      apply expr_auto
+     apply expr_auto
+    apply (hoare_wp_auto)
+    done
+  thus ?thesis
+    by (rule hoare_conseq; expr_auto)
+qed
+
 lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x] (x \<ge> 0 \<and> y \<ge> 0)"
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
   apply(subst fbox_kcomp[symmetric])
