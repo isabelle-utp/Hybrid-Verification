@@ -1611,7 +1611,8 @@ lemma "(v \<ge> 0 \<and> c > 0 \<and> Kp = 2 \<and> Kd = 3 \<and> (5/4)*(x-xr)\<
     apply (expr_simp add: le_fun_def)
   prefer 2 apply (expr_simp add: le_fun_def)
    apply (expr_simp add: hoare_diff_inv_on fbox_diff_inv_on)
-   apply (diff_inv_on_single_ineq_intro "(10 *(x-xr) * v/4 + v\<^sup>2/2 + (x-xr)*(-Kp * (x-xr) - Kd * v)/2 + (v/2) * (-Kp * (x-xr) - Kd * v))\<^sup>e" "(0)\<^sup>e"; 
+  apply (diff_inv_on_single_ineq_intro "(10 *(x-xr) * v/4 + v\<^sup>2/2 + (x-xr)*(-Kp * (x-xr) - Kd * v)/2 
+  + (v/2) * (-Kp * (x-xr) - Kd * v))\<^sup>e" "(0)\<^sup>e"; 
       expr_simp add: le_fun_def STTexample9a_arith)
   apply (metis indeps(1) lens_plus_def plus_vwb_lens vwbs(1) vwbs(2))
   by (intro poly_derivatives; (rule poly_derivatives)?; force?)
@@ -1622,7 +1623,23 @@ end
 
 subsubsection \<open> STTT Tutorial: Example 9b \<close> (*N 50 *)
 
- (* require differentiable \<Longrightarrow> lipschitz *)
+dataspace STTT2 =
+  constants S::real Kp::real Kd::real
+  variables x::real v::real xm::real xr::real
+
+context STTT2
+begin
+
+(* x' = v, v' = -Kp*(x-xr) - Kd*v with Kp = 2 & Kd = 3*)
+lemma "local_flow_on [x \<leadsto> v, v \<leadsto> - 2 * (x - xr) - 3 * v] (x +\<^sub>L v) UNIV UNIV 
+  (\<lambda>t. [x \<leadsto> exp (-2*t) * (xr - 2 * xr * exp t + xr * exp (2 * t) - v + v * exp t - x + 2 * x * exp t), 
+  v \<leadsto> exp (-2*t) * (-2 * xr + 2 * xr * exp t + 2 * v - v * exp t + 2 * x - 2 * x * exp t)])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+  apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ 
+        "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (snd c, - 2 * fst c - 3 * snd c)))"]; expr_simp)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives split: if_splits)
+    (auto simp: fun_eq_iff field_simps exp_minus_inverse)
 
 (* v >= 0 & xm <= x & x <= S & xr = (xm + S)/2 & Kp = 2 & Kd = 3
            & 5/4*(x-xr)^2 + (x-xr)*v/2 + v^2/4 < ((S - xm)/2)^2
@@ -1639,6 +1656,11 @@ subsubsection \<open> STTT Tutorial: Example 9b \<close> (*N 50 *)
         }
       }*@invariant(v >= 0 & xm <= x & xr = (xm + S)/2 & 5/4*(x-xr)^2 + (x-xr)*v/2 + v^2/4 < ((S - xm)/2)^2)
     ] x <= S *)
+lemma "(v \<ge> 0 \<and> c > 0 \<and> Kp = 2 \<and> Kd = 3 \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)\<^sub>e \<le>
+  |{x` = v, v` = -Kp * (x-xr) - Kd * v}] 
+  ((5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)"
+
+
 value "2 \<noteq> 2"
 
 
