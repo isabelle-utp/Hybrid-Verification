@@ -1028,6 +1028,18 @@ end
 
 subsubsection \<open> Dynamics: Parametric switching between two different damped oscillators \<close> (*N 33 *)
 
+
+dataspace dyn_param_switch =
+  variables 
+    x :: real 
+    y :: real 
+    w :: real
+    c :: real
+    d :: real
+
+context dyn_param_switch
+begin
+
 (*     w>=0 & d>=0
   & -2<=a&a<=2
   & b^2>=1/3
@@ -1040,9 +1052,34 @@ subsubsection \<open> Dynamics: Parametric switching between two different dampe
     ++ { ?true; } }
    }*@invariant(w^2*x^2+y^2<=c&d>=0&w>=0)
   ] w^2*x^2+y^2 <= c *)
+lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3 \<and> w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sub>e \<le>
+  |LOOP 
+    {x` = y, y` = -w\<^sup>2*x-2*d*w*y}; 
+    ((\<questiondown>x=y*a?; w ::=2*w; d::=d/2; c ::= c * ((2*w)\<^sup>2+1\<^sup>2) / (w\<^sup>2+1\<^sup>2))
+    \<sqinter> (\<questiondown>x=y*b?; w ::=w/2; d::=2*d; c ::= c * (w\<^sup>2+1\<^sup>2) / ((2*w\<^sup>2)+1\<^sup>2)) 
+    \<sqinter> \<questiondown>True?) 
+  INV (w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c \<and> d \<ge>0 \<and> w\<ge>0)
+  ] (w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)"
+  apply (rule hoare_loopI)
+    apply (simp add: wp hoare_conj_posc, intro conjI)
+        apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w)\<^sup>e"])
+         apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w)\<^sup>e"])
+           apply (expr_simp add: le_fun_def)
+          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+  apply (rule diff_inv_on_raw_conjI)
+  apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
+         apply (diff_cut_ineq "(0 \<le> d)\<^sup>e" "(0)\<^sup>e" "(0)\<^sup>e")
+  apply (rule C="" in diff_cut_rule
+  using hoare_posc_distrib_conj[of "(w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> c \<and> 0 \<le> d \<and> 0 \<le> w)\<^sup>e" _ ]
+  apply (subst hoare_posc_distrib_conj)
+  apply (intro conjI)
+    prefer 3 apply expr_simp
+   prefer 2 apply expr_simp
 
 (* verified with the help of a CAS *)
 value "2 \<noteq> 2"
+
+end
 
 
 subsubsection \<open> Dynamics: Nonlinear 1 \<close>

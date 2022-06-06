@@ -80,10 +80,15 @@ lemma hoare_invs:
 
 text \<open> Need to generalise these laws \<close>
 
+lemma hoare_conj_posc: 
+  "(\<^bold>{@P\<^bold>} X \<^bold>{@Q1 \<and> @Q2\<^bold>}) = (\<^bold>{@P\<^bold>} X \<^bold>{@Q1\<^bold>} \<and> \<^bold>{@P\<^bold>} X \<^bold>{@Q2\<^bold>})"
+  by (auto simp: fbox_def)
+
 lemma hoare_conj: 
   assumes "\<^bold>{p\<^bold>}Q\<^bold>{r\<^bold>}" "\<^bold>{p\<^bold>}Q\<^bold>{s\<^bold>}" 
   shows "\<^bold>{p\<^bold>}Q\<^bold>{r \<and> s\<^bold>}"
-  using assms by (simp add: fbox_def le_fun_def)
+  using assms
+  by (simp add: hoare_conj_posc)
 
 lemma hoare_weaken_pre:
   "\<^bold>{p\<^bold>}Q\<^bold>{r\<^bold>} \<Longrightarrow> \<^bold>{p \<and> q\<^bold>}Q\<^bold>{r\<^bold>}"
