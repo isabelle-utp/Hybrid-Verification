@@ -14,6 +14,8 @@ begin
 subsection \<open> Basic \<close>
 
 lit_vars \<comment> \<open> disable constants \<close>
+no_notation disj (infixr "|" 30)
+
 
 subsubsection \<open> Basic assignment \<close> 
 
@@ -1623,15 +1625,73 @@ end
 
 subsubsection \<open> STTT Tutorial: Example 9b \<close> (*N 50 *)
 
-dataspace STTT2 =
+lemma 
+  assumes "0 \<le> (v::real)" and "xm \<le> x" and "xr * 2 = xm + S" 
+    and "5 * (x - xr)\<^sup>2 / 4 + (x - xr) * v / 2 + v\<^sup>2 / 4 < ((S - xm) / 2)\<^sup>2" 
+  shows "x \<le> S"
+proof-
+  have "5 * (x - xr)\<^sup>2 + 2 * v * x - 2 * xr * v + v\<^sup>2 < (S - xm)\<^sup>2"
+    using assms(4)
+    by (simp add: field_simps)
+  moreover have "xr = (xm + S)/2"
+    using assms by auto
+  ultimately have "16 * v * x + 8 * v\<^sup>2 + 10 * (x * 2 - (S + xm))\<^sup>2 - (v * (xm * 8) + 8 * (S - xm)\<^sup>2) 
+    < S * (v * 8)"
+    by (simp add: field_split_simps)
+  hence "16 * v * x + 8 * v\<^sup>2 + 40 * x\<^sup>2 + 2 * xm\<^sup>2 - v * (xm * 8) - 40 * (x * xm)
+    < - 2 * S\<^sup>2 - 36 * S * xm + 40 * x * S + 8 * S * v"
+    apply (bin_unfold)
+    by distribute (mon_simp_vars xm S)
+  hence "- 8 * v * x - 4 * v\<^sup>2 - 20 * x\<^sup>2 - xm\<^sup>2 + 4 * v * xm + 20 * x * xm
+    > S\<^sup>2 + 18 * S * xm - 20 * S * x - 4 * S * v"
+    by (auto simp: field_simps)
+
+(*  - 8vx - 4v\<^sup>2 - 20x\<^sup>2 - c\<^sup>2 + 4vc + 20xc > S\<^sup>2 + 18Sc - 20Sx - 4Sv
+\<Longrightarrow> - 20x\<^sup>2 - 8vx + 20xc - 4v\<^sup>2 - c\<^sup>2 + 4vc > S\<^sup>2 + 2S(9c - 10x - 4v)
+\<Longrightarrow> - 20x\<^sup>2 - 4x(2v - 5c) - (2v - c)\<^sup>2 > S\<^sup>2 - 20Sx + 18Sc - 4Sv
+\<Longrightarrow>   80x\<^sup>2 - 4x(2v - 5c) > 18Sc - 4Sv
+\<Longrightarrow>   80x\<^sup>2 - 4x(2v - 5c) > 2S(9c - 2v)
+\<Longrightarrow>   40x\<^sup>2 - 2x(2v - 5c) > S(4c - (2v - 5c))
+ ??????
+*)
+  oops
+
+dataspace STTT_9b =
   constants S::real Kp::real Kd::real
   variables x::real v::real xm::real xr::real
 
-context STTT2
+context STTT_9b
 begin
 
+lemma "Kd \<noteq> 0 \<Longrightarrow> Kp \<noteq> 0 \<Longrightarrow> Kd\<^sup>2 \<noteq> Kp * 4 
+  \<Longrightarrow> local_flow_on [x \<leadsto> v, v \<leadsto> - Kp * (x - xr) - Kd * v] (x +\<^sub>L v) UNIV UNIV 
+  (\<lambda>t. [x \<leadsto> exp(-(t*(Kd - ((Kd\<^sup>2 - 4*Kp) powr (1/2))))/2)
+    *(Kd/Kp - (Kd/2 - ((Kd\<^sup>2 - 4*Kp) powr (1/2))/2)/Kp)
+    *((Kd * v + 2*Kp*x - 2*Kp*xr - v *((Kd\<^sup>2 - 4*Kp) powr (1/2)))/(2*((Kd\<^sup>2 - 4*Kp) powr (1/2))) 
+      + (Kp*xr*exp(-(t*((Kd\<^sup>2 - 4*Kp) powr (1/2)))/2)*exp((Kd*t)/2))/((Kd\<^sup>2 - 4*Kp) powr (1/2))) 
+  - exp(-(t*(Kd + ((Kd\<^sup>2 - 4*Kp) powr (1/2))))/2)*(Kd/Kp - (Kd/2 + ((Kd\<^sup>2 - 4*Kp) powr (1/2))/2)/Kp)
+    * ((Kd* v + 2*Kp*x - 2*Kp*xr + v *((Kd\<^sup>2 - 4*Kp) powr (1/2)))/(2*((Kd\<^sup>2 - 4*Kp) powr (1/2))) 
+      + (Kp*xr*exp((t*((Kd\<^sup>2 - 4*Kp) powr (1/2)))/2)*exp((Kd*t)/2))/((Kd\<^sup>2 - 4*Kp) powr (1/2))), 
+  v \<leadsto> exp(-(t*(Kd + ((Kd\<^sup>2 - 4*Kp) powr (1/2))))/2)
+  *((Kd * v + 2*Kp*x - 2*Kp*xr + v *((Kd\<^sup>2 - 4*Kp) powr (1/2)))/(2*((Kd\<^sup>2 - 4*Kp) powr (1/2))) 
+    + (Kp*xr*exp((t*((Kd\<^sup>2 - 4*Kp) powr (1/2)))/2)*exp((Kd*t)/2))/((Kd\<^sup>2 - 4*Kp) powr (1/2))) 
+  - exp(-(t*(Kd - ((Kd\<^sup>2 - 4*Kp) powr (1/2))))/2)
+    *((Kd * v + 2*Kp*x - 2*Kp*xr - v *((Kd\<^sup>2 - 4*Kp) powr (1/2)))/(2*((Kd\<^sup>2 - 4*Kp) powr (1/2))) 
+    + (Kp*xr*exp(-(t*((Kd\<^sup>2 - 4*Kp) powr (1/2)))/2)*exp((Kd*t)/2))/((Kd\<^sup>2 - 4*Kp) powr (1/2)))])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+    prefer 3 subgoal
+    by expr_simp (auto simp: fun_eq_iff field_simps exp_minus_inverse)
+  subgoal
+    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _
+        "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (snd c, - Kp * fst c - Kd * snd c)))"]; expr_simp)
+    by (auto intro!: has_derivative_Blinfun derivative_eq_intros)
+  apply (intro poly_derivatives; (force intro!: poly_derivatives)?)
+  apply (auto simp: fun_eq_iff field_split_simps exp_minus_inverse closed_segment_eq_real_ivl split: if_splits)
+  oops
+
 (* x' = v, v' = -Kp*(x-xr) - Kd*v with Kp = 2 & Kd = 3*)
-lemma "local_flow_on [x \<leadsto> v, v \<leadsto> - 2 * (x - xr) - 3 * v] (x +\<^sub>L v) UNIV UNIV 
+lemma local_flow_STTT_9b: "local_flow_on [v \<leadsto> 2 * xr - 2 * x - 3 * v, x \<leadsto> v] (x +\<^sub>L v) UNIV UNIV 
   (\<lambda>t. [x \<leadsto> exp (-2*t) * (xr - 2 * xr * exp t + xr * exp (2 * t) - v + v * exp t - x + 2 * x * exp t), 
   v \<leadsto> exp (-2*t) * (-2 * xr + 2 * xr * exp t + 2 * v - v * exp t + 2 * x - 2 * x * exp t)])"
   apply (clarsimp simp add: local_flow_on_def)
@@ -1640,6 +1700,16 @@ lemma "local_flow_on [x \<leadsto> v, v \<leadsto> - 2 * (x - xr) - 3 * v] (x +\
         "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (snd c, - 2 * fst c - 3 * snd c)))"]; expr_simp)
   by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives split: if_splits)
     (auto simp: fun_eq_iff field_simps exp_minus_inverse)
+
+lemma STTT_9b_split:"(0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sub>e
+    \<le> |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<lbrakk>($xm + S) / 2/xr\<rbrakk>\<lbrakk>$x/xm\<rbrakk>
+  \<Longrightarrow> (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sub>e
+    \<le> |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2) 
+  \<Longrightarrow> (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sub>e
+    \<le> ((5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2 
+  \<longrightarrow> |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2))\<lbrakk>($xm + S) / 2/xr\<rbrakk>\<lbrakk>$x/xm\<rbrakk> \<and>
+        |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2))\<^sub>e"
+  by (expr_simp add: le_fun_def)
 
 (* v >= 0 & xm <= x & x <= S & xr = (xm + S)/2 & Kp = 2 & Kd = 3
            & 5/4*(x-xr)^2 + (x-xr)*v/2 + v^2/4 < ((S - xm)/2)^2
@@ -1656,10 +1726,28 @@ lemma "local_flow_on [x \<leadsto> v, v \<leadsto> - 2 * (x - xr) - 3 * v] (x +\
         }
       }*@invariant(v >= 0 & xm <= x & xr = (xm + S)/2 & 5/4*(x-xr)^2 + (x-xr)*v/2 + v^2/4 < ((S - xm)/2)^2)
     ] x <= S *)
-lemma "(v \<ge> 0 \<and> c > 0 \<and> Kp = 2 \<and> Kd = 3 \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)\<^sub>e \<le>
-  |{x` = v, v` = -Kp * (x-xr) - Kd * v}] 
-  ((5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)"
+lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<le> x \<and> x \<le> S \<and> xr = (xm + S)/2  
+  \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sub>e \<le>
+  |LOOP 
+    ((xm ::= x; 
+      xr ::= (xm + S)/2;
+      \<questiondown>5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2?) 
+    \<sqinter> \<questiondown>True?);
+    {x` = v, v` = -Kp * (x-xr) - Kd * v}
+   INV (v \<ge> 0 \<and> xm \<le> x \<and> xr = (xm + S)/2 \<and> 5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)] 
+  (x \<le> S)"
+  apply (subst change_loopI[where I="(v \<ge> 0 \<and> xm \<le> x \<and> xr = (xm + S)/2 \<and> Kp = 2 \<and> Kd = 3 
+  \<and> 5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e"])
+  apply (rule hoare_loopI)
+    prefer 3 subgoal
+    apply expr_simp
+    apply (auto simp: field_simps)
+    sorry
+  prefer 2 apply expr_simp
+  apply (hoare_wp_simp local_flow: local_flow_STTT_9b; expr_simp)
+  oops
 
+end
 
 value "2 \<noteq> 2"
 
@@ -1694,19 +1782,30 @@ value "2 \<noteq> 2"
 
 subsubsection \<open> LICS: Example 1 Continuous car accelerates forward \<close>
 
-context STTT
+dataspace LICS =
+  constants A::real B::real b::real m::real \<epsilon>::real
+  variables x::real v::real a::real t::real
+
+context LICS
 begin
+
+lemma local_flow_LICS: "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v) UNIV UNIV 
+  (\<lambda>\<tau>. [x \<leadsto> $a * \<tau>\<^sup>2 / 2 + $v * \<tau> + $x, v \<leadsto> $a * \<tau> + $v])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
 
 (* v>=0 & a>=0 -> [{x'=v, v'=a & v>=0}] v>=0 *)
 lemma "(v \<ge> 0 \<and> a \<ge> 0)\<^sub>e \<le> |{x` = v, v` = a | (v \<ge> 0)}] (v \<ge> 0)"
-  by (hoare_wp_auto local_flow: local_flow_STTT)
+  by (hoare_wp_auto local_flow: local_flow_LICS)
 
 end
  
 
 subsubsection \<open> LICS: Example 2 Single car drives forward \<close>
 
-context STTT
+context LICS
 begin
 
 (* v>=0  & A>=0 & b>0
@@ -1724,14 +1823,14 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> b > 0)\<^sub>e \<le>
     )
    INV (v \<ge> 0)
   ] (v \<ge> 0)"
-  by (hoare_wp_auto local_flow: local_flow_STTT)
+  by (hoare_wp_auto local_flow: local_flow_LICS)
 
 end
 
 
 subsubsection \<open> LICS: Example 3a event-triggered car drives forward \<close>
 
-context STTT
+context LICS
 begin
 
 (*
@@ -1756,7 +1855,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> b > 0)\<^sub>e \<le>
     )
    INV (v \<ge> 0)
   ] (v \<ge> 0)"
-  by (hoare_wp_auto local_flow: local_flow_STTT)
+  by (hoare_wp_auto local_flow: local_flow_LICS)
 
 end
 
@@ -1784,6 +1883,16 @@ proof-
     by (auto simp: field_simps)
 qed
 
+context LICS
+begin
+
+lemma local_flow_LICS2: "local_flow_on [t \<leadsto> 1, v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v +\<^sub>L t) UNIV UNIV
+  (\<lambda>\<tau>. [t \<leadsto> \<tau> + t, x \<leadsto> $a * \<tau>\<^sup>2 / 2 + $v * \<tau> + $x, v \<leadsto> $a * \<tau> + $v])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+  by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+
 (*v^2<=2*b*(m-x) & v>=0  & A>=0 & b>0
  -> [
       {
@@ -1792,24 +1901,31 @@ qed
         {x'=v, v'=a, t'=1 & v>=0 & t<=ep}
       }*@invariant(v^2<=2*b*(m-x))
     ] x <= m *)
-lemma "A \<ge> 0 \<Longrightarrow> b > 0 \<Longrightarrow> (\<lambda>s::real^4. s$2^2 \<le> 2*b*(m-s$1) \<and> s$2 \<ge> 0) \<le>
-  |LOOP
-    (\<lambda>s. (\<questiondown>\<lambda>s. 2*b*(m-s$1) \<ge> s$2^2+(A+b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>*(s$2))?;(3 ::= (\<lambda>s. A))) s \<union> (3 ::= (\<lambda>s. -b)) s);
-    (4 ::= (\<lambda>s. 0));
-    (x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 else (if i=2 then s$3 else (if i=3 then 0 else 1))) & (\<lambda>s. s$2 \<ge> 0 \<and> s$4 \<le> \<epsilon>))
-  INV (\<lambda>s. s$2^2 \<le> 2*b*(m-s$1))]
-  (\<lambda>s. s$1 \<le> m)"
-  apply (rule fbox_loopI) 
-    apply (simp_all add: fbox_choice local_flow.fbox_g_ode_subset[OF local_flow_STTT_Ex5])
-   apply(safe, smt not_sum_power2_lt_zero zero_compare_simps(10))
-  apply(rule LICSexample4a_arith[of A b "_$2" m "_$1" _ \<epsilon>]; simp?)
-   apply(force simp: field_simps)
-  apply bin_unfold
-  apply distribute
-  apply (mon_simp_vars b m)
-  done
+lemma "(v\<^sup>2 \<le> 2*b*(m-x) \<and> v\<ge>0 \<and> A \<ge> 0 \<and> b>0)\<^sub>e \<le>
+  |LOOP 
+    ((\<questiondown>2*b*(m-x) \<ge> v\<^sup>2+(A+b)*(A * \<epsilon>\<^sup>2+2*\<epsilon> * v)?; a ::= A) \<sqinter> a ::= - b);
+    (t ::= 0);
+    {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}
+   INV (v\<^sup>2 \<le> 2*b*(m-x))] 
+  (x \<le> m)"
+  apply (subst change_loopI[where I="(v\<^sup>2 \<le> 2*b*(m-x) \<and> A \<ge> 0 \<and> b > 0)\<^sup>e"])
+  apply (rule hoare_loopI)
+    apply (clarsimp simp add: wp fbox_g_dL_easiest[OF local_flow_LICS2] 
+      unrest_ssubst var_alpha_combine  usubst usubst_eval refine_iff_implies)
+  using LICSexample4a_arith[of A b "get\<^bsub>v\<^esub> _" m "get\<^bsub>x\<^esub> _" _ \<epsilon>]
+     apply (force simp: field_simps)
+    apply (bin_unfold, distribute, mon_simp_vars b m)
+   apply (expr_simp)
+  by clarsimp
+    (smt (verit, ccfv_SIG) mult.commute mult_le_cancel_left zero_le_power2)
+
+end
+
 
 subsubsection \<open> LICS: Example 4b progress of time-triggered car \<close>  (*N 56 *)
+
+context LICS
+begin
 
 (* ep() > 0 & A() > 0 & b() > 0
 ->
@@ -1821,38 +1937,20 @@ subsubsection \<open> LICS: Example 4b progress of time-triggered car \<close>  
         {x'=v, v'=a, t'=1 & v>=0 & t<=ep()}
     }*
   > (x >= p) *)
+lemma "\<epsilon> > 0 \<Longrightarrow> A > 0 \<Longrightarrow> b > 0 
+  \<Longrightarrow> \<forall>p. \<exists>M. (
+  |((\<questiondown>(2*b*(M-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
+  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}\<rangle> 
+  (x \<ge> p)) s"
+  apply clarsimp
+  oops
+
+value "2 \<noteq> 2"
+
+end
 
 
 subsubsection \<open> LICS: Example 4c relative safety of time-triggered car \<close>
-
-lemma in_fbox_loopI: 
-  "I s \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> |R] I \<Longrightarrow> ( |LOOP R INV I] Q) s"
-  using fbox_loopI[of I I Q R] by auto
-
-abbreviation LICS_Ex4c_f :: "real \<Rightarrow> real \<Rightarrow> real^4 \<Rightarrow> real^4" ("f")
-  where "f time acc s \<equiv> (\<chi> i. if i=1 then s$2 else (if i=2 then acc else if i=3 then 0 else time))"
-
-lemma local_flow_LICS_Ex4c_1:
-  "local_flow (f k a) UNIV UNIV
-  (\<lambda>t s. \<chi> i. if i=1 then a * t^2/2 + s$2 * t + s$1 else 
-             (if i=2 then a * t + s$2               else 
-             (if i=3 then s$3                       else 
-                          k * t + s$4               )))"
-  apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
-    apply(clarsimp, rule_tac x=1 in exI)+
-  apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_4 by (auto intro!: poly_derivatives simp: forall_4 vec_eq_iff)
-
-lemma local_flow_LICS_Ex4c_2:
-  "local_flow (\<lambda>s. f k (s$3) s) UNIV UNIV
-  (\<lambda>t s. \<chi> i. if i=1 then s$3 * t^2/2 + s$2 * t + s$1 else 
-             (if i=2 then s$3 * t + s$2               else 
-             (if i=3 then s$3                       else 
-                          k * t + s$4               )))"
-  apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
-    apply(clarsimp, rule_tac x=1 in exI)+
-  apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_4 by (auto intro!: poly_derivatives simp: forall_4 vec_eq_iff)
 
 lemma LICSexample4c_arith1:
   assumes "v\<^sup>2 \<le> 2 * b * (m - x)" "0 \<le> t" "A \<ge> 0" "b > 0"
@@ -1876,6 +1974,16 @@ proof-
     using obs2 by auto
 qed
 
+context LICS
+begin
+
+lemma local_flow_LICS3: "local_flow_on [v \<leadsto> c, x \<leadsto> $v] (x +\<^sub>L v) UNIV UNIV 
+  (\<lambda>\<tau>. [x \<leadsto> c * \<tau>\<^sup>2 / 2 + $v * \<tau> + $x, v \<leadsto> c * \<tau> + $v])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+
 (* ( [{x' = v, v' = -b()}]x<=m()
    & v >= 0
 	 & A() >= 0
@@ -1890,26 +1998,20 @@ qed
       {x' = v, v' = a, t' = 1 & v >= 0 & t <= ep()}
     }*@invariant(v^2<=2*b()*(m()-x))
   ]x<=m() *)
-
-lemma 
-  assumes "A \<ge> 0" "b > 0" "s$2 \<ge> 0"
-  shows "( |x\<acute>=(f 0 (-b)) & (\<lambda>s. True)] (\<lambda>s. s$1 \<le> m)) s \<Longrightarrow> 
-  ( |LOOP
-    (\<lambda>s. (\<questiondown>\<lambda>s. 2*b*(m-s$1) \<ge> s$2^2+(A+b)*(A*\<epsilon>^2+2*\<epsilon>*(s$2))?;(3 ::= (\<lambda>s. A))) s \<union> (3 ::= (\<lambda>s. -b)) s);
-    (4 ::= (\<lambda>s. 0));
-    (x\<acute>= (\<lambda>s. f 1 (s$3) s) & (\<lambda>s. s$2 \<ge> 0 \<and> s$4 \<le> \<epsilon>))
-  INV (\<lambda>s. s$2^2 \<le> 2*b*(m-s$1))] (\<lambda>s. s$1 \<le> m)) s"
-  apply(subst (asm) local_flow.fbox_g_ode_subset[OF local_flow_LICS_Ex4c_1], simp_all)
-  apply(rule in_fbox_loopI)
-     apply(erule_tac x="s$2/b" in allE)
-  using \<open>b > 0\<close> \<open>s$2 \<ge> 0\<close> apply(simp add: field_simps)
-   apply (simp add: le_fun_def, smt \<open>b > 0\<close> mult_sign_intros(6) sum_power2_ge_zero)
-  apply(simp add: fbox_choice)
-  apply(simp_all add: local_flow.fbox_g_ode_subset[OF local_flow_LICS_Ex4c_2], safe)
-  apply(rule LICSexample4c_arith1[OF _ _ \<open>0 \<le> A\<close> \<open>0 < b\<close>, of "_$2" m "_$1" _ \<epsilon>]; simp?)
+lemma "`|{x` = v, v` = -b}](x\<le>m \<and> v \<ge> 0 \<and> A \<ge> 0 \<and> b > 0) 
+  \<longrightarrow> |LOOP ((\<questiondown>(2*b*(m-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
+  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)} INV (v\<^sup>2 \<le> 2*b*(m - x))](x\<le>m)`"
+  apply (clarsimp simp: wp fbox_g_dL_easiest[OF local_flow_LICS3] taut_def)
+  apply (rule in_fbox_loopI)
+    apply (expr_simp, frule bspec[where x=0]; clarsimp)
+    apply (erule_tac x="get\<^bsub>v\<^esub> s/b" in ballE; clarsimp simp: field_simps)
+    apply (expr_simp, frule bspec[where x=0]; clarsimp)
+  apply (smt (verit, best) zero_le_mult_iff zero_le_power2)
+  apply (hoare_wp_auto local_flow: local_flow_LICS2; frule bspec[where x=0]; clarsimp)
+  using LICSexample4c_arith1[of "get\<^bsub>v\<^esub> _" b m "get\<^bsub>x\<^esub> _" _ A \<epsilon>]
   by (auto simp: field_simps)
 
-no_notation LICS_Ex4c_f ("f")
+end
 
 
 subsubsection \<open> LICS: Example 5 Controllability Equivalence \<close>
@@ -1970,24 +2072,23 @@ next
     by auto
 qed
 
+context LICS
+begin
+
 (* v>=0 & b>0 -> ( v^2<=2*b*(m-x) <-> [{x'=v, v'=-b}]x<=m ) *)
-lemma "b > 0 \<Longrightarrow> (s::real^2)$2 \<ge> 0 \<Longrightarrow> 
-   s$2^2 \<le> 2*b*(m-s$1) \<longleftrightarrow> ( |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 else -b) & (\<lambda>s. True)] (\<lambda>s. s$1 \<le> m)) s"
-  apply(subst local_flow.fbox_g_ode_subset[where T="UNIV" 
-        and \<phi>="\<lambda>t s. \<chi> i::2. if i=1 then -b * t^2/2 + s$2 * t + s$1 else -b * t + s$2"])
-      apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
-     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  unfolding UNIV_2 apply clarsimp
-  apply(force intro!: poly_derivatives)
-  using exhaust_2 apply(force simp: vec_eq_iff)
-  by (auto simp: LICSexample5_arith1 LICSexample5_arith2)
+lemma "`v \<ge> 0 \<and> b > 0 \<longrightarrow> (v\<^sup>2 \<le> 2*b*(m-x) \<longleftrightarrow> |{x` = v, v` = -b}](x\<le>m))`"
+  by (clarsimp simp: taut_def wp fbox_g_dL_easiest[OF local_flow_LICS3]; expr_simp)
+    (auto simp: LICSexample5_arith1 LICSexample5_arith2)
+
+end
 
 
 subsubsection \<open> LICS: Example 6 MPC Acceleration Equivalence \<close>  (*N 59 *)
 
 lemma LICSexample6_arith1:
-  assumes "0 \<le> v" "0 < b" "0 \<le> A" "0 \<le> \<epsilon>" and guard: "\<forall>t\<in>{0..}. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> \<tau> \<le> \<epsilon>) \<longrightarrow> (\<forall>\<tau>\<in>{0..}. 
-  A * t * \<tau> + v * \<tau> - b * \<tau>\<^sup>2 / 2 + (A * t\<^sup>2 / 2 + v * t + x) \<le> (m::real))"
+  assumes "0 \<le> v" "0 < b" "0 \<le> A" "0 \<le> \<epsilon>" 
+    and guard: "\<forall>t\<in>{0..}. (\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> \<tau> \<le> \<epsilon>) \<longrightarrow> (\<forall>\<tau>\<in>{0..}. 
+      A * t * \<tau> + v * \<tau> - b * \<tau>\<^sup>2 / 2 + (A * t\<^sup>2 / 2 + v * t + x) \<le> (m::real))"
   shows "v\<^sup>2 + (A * (A * \<epsilon>\<^sup>2 + 2 * \<epsilon> * v) + b * (A * \<epsilon>\<^sup>2 + 2 * \<epsilon> * v)) \<le> 2 * b * (m - x)"
 proof-
   {fix \<tau>::real
@@ -2017,47 +2118,43 @@ proof-
 qed
 
 
-lemma LICSexample6_arith2:
-  assumes "0 \<le> v" "0 < b" "0 \<le> A" "0 \<le> t" "0 \<le> \<tau>" "t \<le> \<epsilon>"
-    and "v\<^sup>2 + (A * (A * \<epsilon>\<^sup>2 + 2 * \<epsilon> * v) + b * (A * \<epsilon>\<^sup>2 + 2 * \<epsilon> * v)) \<le> 2 * b * (m - x)"
-  shows "A * \<epsilon> * \<tau> + s $ 2 * \<tau> - b * \<tau>\<^sup>2 / 2 + (A * \<epsilon>\<^sup>2 / 2 + s $ 2 * \<epsilon> + s $ 1) \<le> m"
-  (* Need to show that function (\<lambda>\<tau>. A * \<epsilon> * \<tau> + s $ 2 * \<tau> - b * \<tau>\<^sup>2 / 2) attains maximum at \<tau> = (A*\<epsilon> + v)/b *)
-  oops
+context LICS
+begin
 
-lemma local_flow_LICS_Ex6:
-  "local_flow (\<lambda>s::real^3. \<chi> i. if i=1 then s$2 else (if i=2 then k1 else k2)) UNIV UNIV
-  (\<lambda>t s. \<chi> i. if i = 1 then k1 * t^2/2 + s$2 * t + s$1 else (if i=2 then k1 * t + s$2 else k2 * t + s$3))"
-  apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
-    apply(clarsimp, rule_tac x=1 in exI)+
-  apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_3 by (auto intro!: poly_derivatives simp: forall_3 vec_eq_iff)
+lemma local_flow_LICS4: "local_flow_on [t \<leadsto> 1, v \<leadsto> c, x \<leadsto> $v] (x +\<^sub>L v +\<^sub>L t) UNIV UNIV 
+  (\<lambda>\<tau>. [x \<leadsto> c * \<tau>\<^sup>2 / 2 + $v * \<tau> + $x, v \<leadsto> c * \<tau> + $v, t \<leadsto> \<tau> + t])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
 
 (* v>=0 & b>0 & A>=0 & ep>=0 -> (
     [t:=0; {x'=v, v'=A, t'=1 & t<=ep}][{x'=v, v'=-b}]x<=m
     <->
     2*b*(m-x) >= v^2 + (A + b)*(A*ep^2 + 2*ep*v)
    ) *)
-lemma "s$2 \<ge> 0 \<Longrightarrow> b>0 \<Longrightarrow> A \<ge> 0 \<Longrightarrow> \<epsilon> \<ge> 0 \<Longrightarrow>  
-  ( |(3 ::= (\<lambda>s. 0));
-    (x\<acute>= (\<lambda>s::real^3. \<chi> i. if i=1 then s$2 else (if i=2 then A else 1)) & (\<lambda>s. s$3 \<le> \<epsilon>))]
-  |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 else (if i=2 then -b else 0)) & (\<lambda>s. True)] (\<lambda>s. s$1 \<le> m)) s
-\<longleftrightarrow>
-  2*b*(m-s$1) \<ge> s$2^2+(A+b)*(A*\<epsilon>^2+2*\<epsilon>*(s$2))"
-  apply (simp add: le_fbox_choice_iff local_flow.fbox_g_ode_subset[OF local_flow_LICS_Ex6], safe)
-  apply(subst Groups.algebra_simps(17))
-   apply(rule LICSexample6_arith1[of "_$2" b A \<epsilon> "_$1" m]; simp?)
-   apply(force simp: field_simps)
-  apply(erule_tac x=t in allE; clarsimp)
-  apply(rename_tac t \<tau>)
-  apply(rule_tac b="A * \<epsilon> * \<tau> + s $ 2 * \<tau> - b * \<tau>\<^sup>2 / 2 + (A * \<epsilon>\<^sup>2 / 2 + s $ 2 * \<epsilon> + s $ 1)" in order.trans)
-   apply(simp add: algebra_simps)
-  (* using LICSexample6_arith2 *)
+lemma "`v \<ge> 0 \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0 \<longrightarrow> 
+    ( |t::=0; {x` = v, v` = A, t` = 1| (t \<le> \<epsilon>)}]|{x` = v, v` = -b}](x\<le>m))
+    \<longleftrightarrow> 
+    2*b*(m-x) \<ge> v\<^sup>2 + (A + b)*(A*\<epsilon>\<^sup>2 + 2*\<epsilon>* v)`"
+  apply (clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS3] 
+      fbox_g_dL_easiest[OF local_flow_LICS4], safe; expr_simp; clarsimp?)
+  using LICSexample6_arith1[of "get\<^bsub>v\<^esub> _" b A \<epsilon> "get\<^bsub>x\<^esub> _" m]
+   apply (force simp: field_simps)
+  apply (frule spec[where x=0]; clarsimp)
+  apply (rename_tac s t \<tau>)
+  apply distribute
+  apply (mon_simp_vars A \<epsilon>)
+  apply (mon_simp_vars \<epsilon> b)
   oops
+
+  value "2 \<noteq> 2"
+
+end
+
 
 
 subsubsection \<open> LICS: Example 7 Model-Predictive Control Design Car \<close>  (*N 60 *)
-
-notation LICS_Ex4c_f ("f")
 
 (* [{x'=v, v'=-b}](x<=m)
    & v >= 0
@@ -2074,21 +2171,7 @@ notation LICS_Ex4c_f ("f")
     }*@invariant([{x'=v, v'=-b}](x<=m))
   ] (x <= m) *)
 
-lemma "( |x\<acute>=(f 0 (-b)) & (\<lambda>s. True)] (\<lambda>s. s$1 \<le> m)) s \<Longrightarrow> s$2 \<ge> 0 \<Longrightarrow> A \<ge> 0 \<Longrightarrow> b > 0 \<Longrightarrow> 
-  ( |LOOP (
-  (\<lambda>s. (\<questiondown>|(3 ::= (\<lambda>s. 0));(x\<acute>= (f 1 A) & (\<lambda>s. s$2 \<ge> 0 \<and> s$4 \<le> \<epsilon>))] |x\<acute>= (f 0 (-b)) & (\<lambda>s. True)] (\<lambda>s. s$1 \<le> m)?;
-  (3 ::= (\<lambda>s. A))) s \<union> 
-  (3 ::= (\<lambda>s. -b)) s); 
-  (4 ::= (\<lambda>s. 0)); 
-  (x\<acute>= (\<lambda>s. f 1 (s$3) s) & (\<lambda>s. s$2 \<ge> 0 \<and> s$4 \<le> \<epsilon>))
-  ) INV (\<lambda>s. ( |x\<acute>=(f 1 (-b)) & (\<lambda>s. True)] (\<lambda>s. s$1 \<le> m)) s)] (\<lambda>s. s$1 \<le> m)) s"
-  apply(rule in_fbox_loopI, simp_all add: local_flow.fbox_g_ode_subset[OF local_flow_LICS_Ex4c_1]
-      local_flow.fbox_g_ode_subset[OF local_flow_LICS_Ex4c_2] le_fbox_choice_iff, safe)
-      apply(erule_tac x=0 in allE, erule_tac x=0 in allE, simp)
-  oops
-
-
-no_notation LICS_Ex4c_f ("f")
+value "2 \<noteq> 2"
 
 
 subsection \<open>Advanced\<close>
@@ -2096,43 +2179,8 @@ subsection \<open>Advanced\<close>
 
 subsubsection \<open> ETCS: Essentials \<close>
 
-locale ETCS =
-  fixes \<epsilon> b A m::real
-(* Real ep; /* Control cycle duration upper bound */
-   Real b;  /* Braking force */
-   Real A;  /* Maximum acceleration */
-   Real m;  /* End of movement authority (train must not drive past m) *)
-begin
-
-(* Real stopDist(Real v) = v^2/(2*b) *)
-abbreviation "stopDist v \<equiv> v^2/(2*b)"
-
-(* Real accCompensation(Real v) = (((A/b) + 1)*((A/2)*ep^2 + ep*v)) *)
-abbreviation "accCompensation v \<equiv> ((A/b) + 1) * ((A/2)*\<epsilon>^2 + \<epsilon> * v)"
-
-(* Real SB(Real v) = stopDist(v) + accCompensation(v) *)
-abbreviation "SB v \<equiv> stopDist v + accCompensation v"
-
-(* initial(Real m, Real z, Real v) <-> (v >= 0 & m-z >= stopDist(v) & b>0 & A>=0 & ep>=0) *)
-abbreviation "initial m' z v \<equiv> (v \<ge> 0 \<and> (m' - z) \<ge> stopDist v)" (* Initial states *)
-
-(* Bool safe(Real m, Real z, Real v, Real d) <-> (z >= m -> v <= d) *)
-abbreviation "safe m' z v \<delta> \<equiv> z \<ge> m' \<longrightarrow> v \<le> \<delta>" 
-
-(* Bool loopInv(Real m, Real z, Real v) <-> (v >= 0 & m-z >= stopDist(v) *)
-abbreviation "loopInv m' z v \<equiv> v \<ge> 0 \<and> m' - z \<ge> stopDist v" (* always maintain sufficient stopping distance *)
-
-(*HP ctrl ::= {?m - z <= SB(v); a := -b; ++ ?m - z >= SB(v); a :=  A; *)
-abbreviation "ctrl s \<equiv> (\<questiondown>\<lambda>s::real^4. m - s$1 \<le> SB (s$2)?;(3 ::= (\<lambda>s. -b))) s \<union> 
- (\<questiondown>\<lambda>s. m - s$1 \<ge> SB (s$2)?;(3 ::= (\<lambda>s. A))) s" (* train controller *)
-
-(* HP drive ::= {t := 0;{z'=v, v'=a, t'=1  & v >= 0 & t <= ep} *)
-abbreviation "drive \<equiv> (4 ::= (\<lambda>s. 0));
-  (x\<acute>= (\<lambda>s::real^4. \<chi> i. if i=1 then s$2 else (if i=2 then s$3 else (if i=3 then 0 else 1))) 
-  & (\<lambda>s. s$2 \<ge> 0 \<and> s$4 \<le> \<epsilon>))"
-
 lemma ETCS_arith1: 
-  assumes "0 < b" "0 \<le> A" "0 \<le> v" "0 \<le> t"
+  assumes "0 < b" "0 \<le> A" "0 \<le> v" "0 \<le> (t::real)"
     and "v\<^sup>2 / (2 * b) + (A * (A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * v)/ b + (A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * v)) \<le> m - x" (is "?expr1 \<le> m - x")
     and guard: "\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> \<tau> \<le> \<epsilon>"
   shows "(A * t + v)\<^sup>2/(2 * b) \<le> m - (A * t\<^sup>2/2 + v * t + x)" (is "?lhs \<le> ?rhs")
@@ -2165,22 +2213,8 @@ proof-
   finally show "?lhs \<le> ?rhs" .
 qed
 
-(* Safety specification of the form: initial -> [{ctrl;plant}*]safe *)
-lemma "b > 0 \<Longrightarrow> A \<ge> 0 \<Longrightarrow> \<epsilon> \<ge> 0 \<Longrightarrow> 
-  (\<lambda>s. initial m (s$1) (s$2)) \<le> |LOOP ctrl;drive INV (\<lambda>s. loopInv m (s$1) (s$2))] (\<lambda>s. s$1 \<le> m)"
-  apply (rule fbox_loopI)
-    apply (simp_all add: le_fbox_choice_iff local_flow.fbox_g_ode_subset[OF local_flow_STTT_Ex5], safe)
-    apply (smt divide_le_cancel divide_minus_left not_sum_power2_lt_zero)
-   apply(auto simp: field_simps)[1]
-  by (rule ETCS_arith1[of "_$2" _ "_$1"], auto simp: field_simps)
-
-subsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
-
-(* Bool Assumptions(Real v, Real d) <-> ( v>=0 & d>=0 & b>0 ) *)
-abbreviation "assumptions v \<delta> \<equiv> (v \<ge> 0 \<and> \<delta> \<ge> 0 \<and> b > 0)" 
-
 lemma ETCS_Prop1_arith1:
-  assumes "0 \<le> v" "0 \<le> \<delta>" "0 < b" "x \<le> m"
+  assumes "0 \<le> v" "0 \<le> \<delta>" "0 < (b::real)" "x \<le> m"
     and "\<forall>t\<in>{0..}. (\<forall>\<tau>\<in>{0--t}. b * \<tau> \<le> v) \<longrightarrow>
        m \<le> v * t - b * t\<^sup>2 / 2 + x \<longrightarrow> v - b * t \<le> \<delta>"
   shows "v\<^sup>2 - \<delta>\<^sup>2 \<le> 2 * b * (m - x)"
@@ -2188,7 +2222,7 @@ lemma ETCS_Prop1_arith1:
   sorry
 
 lemma ETCS_Prop1_arith2:
-  assumes "0 \<le> v" "0 \<le> \<delta>" "0 < b" "x \<le> m" "0 \<le> t"
+  assumes "0 \<le> v" "0 \<le> \<delta>" "0 < b" "x \<le> m" "0 \<le> (t::real)"
       and key: "v\<^sup>2 - \<delta>\<^sup>2 \<le> 2 * b * (m - x)" "m \<le> v * t - b * t\<^sup>2 / 2 + x"
       and guard: "\<forall>\<tau>\<in>{0--t}. b * \<tau> \<le> v"
     shows "v - b * t \<le> \<delta>"
@@ -2203,45 +2237,117 @@ proof-
     using guard \<open>0 \<le> t\<close> \<open>0 \<le> \<delta>\<close> by auto
 qed
 
+dataspace ETCS =
+  constants 
+    \<epsilon> :: real \<comment> \<open> control cycle duration upper bound \<close>
+    b :: real \<comment> \<open> braking force \<close>
+    A :: real \<comment> \<open> maximum acceleration \<close>
+    m :: real \<comment> \<open> end of movement authority (train must not drive past m) \<close>
+  variables
+    t :: real
+    z :: real
+    v :: real
+    a :: real
+context ETCS
+begin
+
+(* Real stopDist(Real v) = v^2/(2*b) *)
+abbreviation "stopDist w \<equiv> w\<^sup>2/(2*b)"
+
+(* Real accCompensation(Real v) = (((A/b) + 1)*((A/2)*ep^2 + ep*v)) *)
+abbreviation "accCompensation w \<equiv> ((A/b) + 1) * ((A/2)*\<epsilon>\<^sup>2 + \<epsilon> * w)"
+
+(* Real SB(Real v) = stopDist(v) + accCompensation(v) *)
+abbreviation "SB w \<equiv> stopDist w + accCompensation w"
+
+(* initial(Real m, Real z, Real v) <-> (v >= 0 & m-z >= stopDist(v) & b>0 & A>=0 & ep>=0) *)
+abbreviation "initial \<equiv> (v \<ge> 0 \<and> (m - z) \<ge> stopDist v \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0)\<^sub>e"
+\<comment> \<open> initial states \<close>
+
+(* Bool safe(Real m, Real z, Real v, Real d) <-> (z >= m -> v <= d) *)
+abbreviation "safe \<mu> \<zeta> w \<delta> \<equiv> \<zeta> \<ge> \<mu> \<longrightarrow> w \<le> \<delta>" 
+
+(* Bool loopInv(Real m, Real z, Real v) <-> (v >= 0 & m-z >= stopDist(v) *)
+abbreviation "loopInv \<equiv> (v \<ge> 0 \<and> m - z \<ge> stopDist v)\<^sub>e"
+\<comment> \<open> always maintain sufficient stopping distance \<close>
+
+(* HP ctrl ::= {?m - z <= SB(v); a := -b; ++ ?m - z >= SB(v); a :=  A; *)
+abbreviation "ctrl \<equiv> (\<questiondown>m - z \<le> SB(v)?; a ::= -b) \<sqinter> (\<questiondown>m - z \<ge> SB(v)?; a ::= A)"
+\<comment> \<open> train controller \<close>
+
+
+subsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
+
+(* HP drive ::= {t := 0;{z'=v, v'=a, t'=1  & v >= 0 & t <= ep} *)
+abbreviation "drive \<equiv> (t ::= 0);{z` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}"
+
+lemma local_flow_LICS1: "local_flow_on [t \<leadsto> 1, v \<leadsto> $a, z \<leadsto> $v] (z +\<^sub>L v +\<^sub>L t) UNIV UNIV
+  (\<lambda>\<tau>. [t \<leadsto> \<tau> + t, z \<leadsto> $a * \<tau>\<^sup>2 / 2 + $v * \<tau> + $z, v \<leadsto> $a * \<tau> + $v])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+  by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+
+(* initial(m, z, v)  ->
+    [
+      {
+        ctrl;
+        drive;
+      }*@invariant(loopInv(m, z, v))
+    ] (z <= m) *)
+lemma "initial \<le> |LOOP ctrl;drive INV @loopInv] (z \<le> m)"
+  apply (subst change_loopI[where I="(@loopInv \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0)\<^sup>e"])
+  apply (rule hoare_loopI)
+  using ETCS_arith1[of b A "get\<^bsub>v\<^esub> _" _ \<epsilon> m "get\<^bsub>z\<^esub> _"]
+  by (auto simp: unrest_ssubst var_alpha_combine wp usubst usubst_eval 
+      fbox_g_dL_easiest[OF local_flow_LICS1] field_simps taut_def)
+    (smt (verit, best) mult_left_le_imp_le zero_le_square)
+
+(* Bool Assumptions(Real v, Real d) <-> ( v>=0 & d>=0 & b>0 ) *)
+abbreviation "Assumptions d \<equiv> (v \<ge> 0 \<and> d \<ge> 0 \<and> b > 0)\<^sub>e"
+
+lemma local_flow_LICS2: "local_flow_on [v \<leadsto> -b, z \<leadsto> $v] (z +\<^sub>L v) UNIV UNIV
+  (\<lambda>\<tau>. [z \<leadsto> -b * \<tau>\<^sup>2 / 2 + $v * \<tau> + $z, v \<leadsto> -b * \<tau> + $v])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+  by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+
 (* Assumptions(v, d) & z<=m
   ->
   ( [ {z'=v, v'=-b & v>=0 } ](z>=m -> v<=d)
     <->
     v^2-d^2 <= 2*b*(m-z)
   ) *)
-lemma "assumptions (s$2) \<delta> \<and> (s$1) \<le> m \<Longrightarrow> 
-  ( |x\<acute>= (\<lambda>t s::real^2. \<chi> i. if i=1 then (s$2) else -b) & (\<lambda>s. s$2 \<ge> 0) on (\<lambda>s. {0..}) UNIV @ 0]
-  (\<lambda>s. s$1 \<ge> m \<longrightarrow> s$2 \<le> \<delta>)) s \<longleftrightarrow> s$2^2 - \<delta>^2 \<le> 2*b*(m-s$1)"
-  apply(subst local_flow.fbox_g_ode_subset[where T="UNIV" 
-        and \<phi>="\<lambda>t s. \<chi> i::2. if i=1 then -b * t^2/2 + s$2 * t + s$1 else -b * t + s$2"])
-      apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
-     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  unfolding UNIV_2 using exhaust_2 
-  by (auto intro!: poly_derivatives simp: vec_eq_iff 
-      ETCS_Prop1_arith1 closed_segment_eq_real_ivl ETCS_Prop1_arith2)
+lemma "`@(Assumptions d) \<and> z \<le> m \<longrightarrow>
+  ( |{z` = v, v` = -b | (v \<ge> 0)}] (z \<ge> m \<longrightarrow> v \<le> d)
+  \<longleftrightarrow>
+  v\<^sup>2 -d\<^sup>2 \<le> 2*b*(m-z))`"
+  apply (clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS2], safe; expr_simp)
+  using ETCS_Prop1_arith1 apply (force simp: closed_segment_eq_real_ivl)
+  using ETCS_Prop1_arith2 by (force simp: closed_segment_eq_real_ivl)
 
 
 subsection \<open> ETCS: Proposition 4 (Reactivity) \<close> (*N 63 *)
 
-(* Bool Assumptions(Real v, Real d) <-> ( v>=0 & d>=0 & b>0 ) *)
-term "assumptions v \<delta>"
-
 (* Bool Controllable(Real m, Real z, Real v, Real d) <-> (v^2-d^2 <= 2*b*(m-z) & Assumptions(v, d)) *)
-abbreviation "controllable m' z v \<delta> \<equiv> v^2 - \<delta>^2 \<le> 2 * b * (m' - z) \<and> assumptions v \<delta>"
+abbreviation "Controllable d \<equiv> (v\<^sup>2 -d\<^sup>2 \<le> 2*b*(m-z) \<and> @(Assumptions d))\<^sub>e"
 
-(* HP drive ::= {t := 0;{z'=v, v'=a, t'=1  & v >= 0 & t <= ep}} *)
-term "drive"
-
-(* em = 0 & d >= 0 & b > 0 & ep > 0 & A > 0 & v>=0
-  -> ((\<forall> m \<forall> z (m-z>= sb & Controllable(m,z,v,d) -> [ a:=A; drive; ]Controllable(m,z,v,d)) )
+(*
+em = 0 & d >= 0 & b > 0 & ep > 0 & A > 0 & v>=0
+  -> ((\forall m \forall z (m-z>= sb & Controllable(m,z,v,d) -> [ a:=A; drive; ]Controllable(m,z,v,d)) )
       <->
-      sb >= (v^2 - d^2) /(2*b) + (A/b + 1) * (A/2 * ep^2 + ep*v)) *)
-lemma "\<delta> \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 \<and> s$2 \<ge> 0 \<Longrightarrow> 
- (\<forall>m. \<forall>z. m - s$1 \<ge> sb \<and> controllable m (s$1) (s$2) \<delta> \<longrightarrow> ( |(3 ::= (\<lambda>s. A));drive] (\<lambda>s. controllable m (s$1) (s$2) \<delta>)) s)
-  \<longleftrightarrow> sb \<ge> (s$2\<^sup>2 - \<delta>\<^sup>2)/(2*b) + (A/b + 1) * (A/2 * \<epsilon>\<^sup>2 + \<epsilon> * (s$2))"
-  apply (simp_all add: local_flow.fbox_g_ode_subset[OF local_flow_STTT_Ex5])
-  apply(rule iffI, safe)
+      sb >= (v^2 - d^2) /(2*b) + (A/b + 1) * (A/2 * ep^2 + ep*v)
+     )
+*)
+lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 \<and> v \<ge> 0 
+  \<longrightarrow> ((\<forall>m.\<forall>z. m - z \<ge> sb \<and> @(Controllable d) \<longrightarrow> |a ::= A; drive]@(Controllable d)) 
+    \<longleftrightarrow> (sb \<ge> (v\<^sup>2 - d\<^sup>2)/(2*b) + (A/b + 1) * (A/2 * \<epsilon>\<^sup>2 + \<epsilon> * v)))`"
+  apply (clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS1], safe; expr_simp)
+  apply (metis diff_zero order.refl)
   oops
+
+value "2 \<noteq> 2"
 
 end
 

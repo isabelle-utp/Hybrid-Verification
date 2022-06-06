@@ -372,6 +372,10 @@ lemma change_loopI: "LOOP X INV G = LOOP X INV I"
 lemma fbox_loopI: "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> |F] I \<Longrightarrow> P \<le> |LOOP F INV I] Q"
   unfolding loopi_def using fbox_kstarI[of "P"] by (auto simp: SEXP_def)
 
+lemma in_fbox_loopI: "I s \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> ( |R] @(I)) \<Longrightarrow> ( |LOOP R INV @I] (@Q)) s"
+  using fbox_loopI[of I I Q R]
+  by (clarsimp simp: le_fun_def)
+
 lemma fbox_loopI': "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> fbox F I \<Longrightarrow> P \<le> fbox (loopi F I) Q"
   by (metis clarify_fbox fbox_kstarI loopi_def)
 
