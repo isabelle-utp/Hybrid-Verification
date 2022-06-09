@@ -54,6 +54,8 @@ subsection \<open> Forward diamond operator \<close>
 definition fdia :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred"
   where "fdia F P = (\<lambda>s. (\<exists>s'. s' \<in> F s \<and> P s'))"
 
+expr_ctr fdia
+
 syntax "_fdia" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("|_\<rangle> _" [0,81] 82)
 translations "_fdia F P" == "CONST fdia F (P)\<^sub>e"
 
@@ -201,8 +203,8 @@ lemma hoare_choice:
   "\<^bold>{P\<^bold>} F \<^bold>{Q\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} G \<^bold>{Q\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} (F \<sqinter> G) \<^bold>{Q\<^bold>}"
   by (subst le_fbox_choice_iff, simp)
 
-lemma fdia_choice: "|F \<sqinter> G\<rangle> P = (\<lambda>s. ( |F\<rangle> P) s \<or> ( |G\<rangle> P ) s)"
-  unfolding fdia_def nondet_choice_def by auto
+lemma fdia_choice: "|F \<sqinter> G\<rangle> P = ( |F\<rangle> P \<or> |G\<rangle> P)\<^sub>e"
+  unfolding fdia_def nondet_choice_def by expr_auto
 
 definition Nondet_choice :: "('i \<Rightarrow> 's prog) \<Rightarrow> 'i set \<Rightarrow> 's prog"
   where "Nondet_choice F I = (\<lambda> s. \<Union> i\<in>I. F i s)"
@@ -416,10 +418,10 @@ lemma frame_skip: "idem_scene a \<Longrightarrow> a:[skip] = skip"
   by (auto simp add: skip_def frame_def fun_eq_iff)
   
 lemma frame_assign_in:
-  assumes "vwb_lens x" "idem_scene a" "x \<in>\<^sub>S a"
+  assumes "vwb_lens x" "idem_scene a" "\<lbrakk>x\<rbrakk>\<^sub>\<sim> \<le> a"
   shows "a:[x ::= v] = x ::= v"
   using assms
-  by (auto simp add: prog_defs expr_defs fun_eq_iff lens_member_put)
+  by (auto simp add: prog_defs expr_defs fun_eq_iff put_scene_override_le)
   
 definition not_modifies :: "'s prog \<Rightarrow> 's scene \<Rightarrow> bool" where
   "not_modifies P a = (\<forall> s s'. s' \<in> P s \<longrightarrow> s' \<approx>\<^sub>S s on a)" 
@@ -492,32 +494,27 @@ lemma nmods_test [closure]:
   "idem_scene a \<Longrightarrow> \<questiondown>b? nmods a"
   by (auto simp add: not_modifies_def prog_defs scene_equiv_def)
 
-lemma lens_not_member_put:
-  assumes "vwb_lens x" "idem_scene a" "x \<notin>\<^sub>S a"
-  shows "put\<^bsub>x\<^esub> s v \<oplus>\<^sub>S s on a = put\<^bsub>x\<^esub> s v"
-  by (metis assms idem_scene_uminus lens_member_put 
-      scene_override_commute scene_override_overshadow_right)
-  
 lemma nmods_assign [closure]:
-  assumes "vwb_lens x" "idem_scene a" "x \<notin>\<^sub>S a"
+  assumes "vwb_lens x" "idem_scene a" "var_alpha x \<bowtie>\<^sub>S a"
   shows "x ::= e nmods a"
-  by (expr_simp add: not_modifies_def assigns_def, simp add: lens_not_member_put assms)
+  using assms
+  by (expr_simp add: not_modifies_def assigns_def put_scene_override_indep)
 
 lemma nmods_g_orbital_on_discrete [closure]:
-  assumes "vwb_lens x" "idem_scene a" "x \<notin>\<^sub>S a"
+  assumes "vwb_lens x" "idem_scene a" "var_alpha x \<bowtie>\<^sub>S a"
   shows "(g_orbital_on x f G U S t\<^sub>0) nmods a"
   using assms
-  by (auto simp add: g_orbital_on_def not_modifies_def lens_not_member_put scene_equiv_def)
+  by (auto simp add: g_orbital_on_def not_modifies_def scene_equiv_def put_scene_override_indep var_alpha_def)
 
 lemma nmods_g_orbital_on_discrete' [closure]:
   assumes "vwb_lens x" 
   shows "(g_orbital_on x f G U S t\<^sub>0) nmods (- $x)"
-  by (rule nmods_g_orbital_on_discrete, simp_all add: assms lens_member_def lens_override_def)
+  by (rule nmods_g_orbital_on_discrete, simp_all add: assms lens_override_def scene_indep_self_compl var_alpha_def)
 
 lemma nmods_g_orbital_on_discrete_lens [closure]:
   assumes "vwb_lens A" "vwb_lens x" "x \<bowtie> A"
   shows "(g_orbital_on A f G U S t\<^sub>0) nmods $x"
-  by (rule nmods_g_orbital_on_discrete, simp_all add: assms lens_indep_sym) 
+  by (rule nmods_g_orbital_on_discrete, simp_all add: assms lens_indep_sym scene_indep_sym var_alpha_def) 
 
 lemma nmods_via_fbox:
   "\<lbrakk> vwb_lens x; \<And> v. |P] ($x = \<guillemotleft>v\<guillemotright>) = ($x = \<guillemotleft>v\<guillemotright>)\<^sub>e \<rbrakk> \<Longrightarrow> P nmods $x"
@@ -538,7 +535,6 @@ lemma nmods_invariant:
   shows "\<^bold>{b\<^bold>}P\<^bold>{b\<^bold>}"
   using assms
   by (auto simp add: prog_defs fbox_def expr_defs scene_override_commute not_modifies_def scene_equiv_def, metis)
-
 
 subsection \<open> Analytic dynamics \<close>
 
@@ -595,7 +591,6 @@ term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x}"
 term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x | $x \<ge> 0 \<and> \<guillemotleft>\<tau>\<guillemotright> \<le> \<guillemotleft>max\<guillemotright>}"
 term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x | $x \<ge> 0 \<and> \<guillemotleft>\<tau>\<guillemotright> \<le> \<guillemotleft>max\<guillemotright> on {0--\<guillemotleft>t\<guillemotright>}}"
 term "{EVOL (x, y) = ($x * cos \<guillemotleft>\<tau>\<guillemotright> + $y * sin \<guillemotleft>\<tau>\<guillemotright>, - $x * sin \<guillemotleft>\<tau>\<guillemotright> + $y * cos \<guillemotleft>\<tau>\<guillemotright>) | true on UNIV}"
-
 
 lemma fbox_g_evol_on [wp]:
   assumes "vwb_lens a"
