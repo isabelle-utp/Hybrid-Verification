@@ -1114,11 +1114,59 @@ lemma diff_ghost_rule:
 
 lemma diff_ghost_rule_very_simple:
   fixes y :: "real \<Longrightarrow> _"
-  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B" "(F)\<^sub>e = G \\ $y"
-    "\<^bold>{G\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (\<sigma>(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) B \<^bold>{G\<^bold>}"
-  shows "\<^bold>{F\<^bold>} g_dl_ode_frame a \<sigma> B \<^bold>{F\<^bold>}"
+  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(I)\<^sub>e = J \\ $y"
+    "\<^bold>{J\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) G \<^bold>{J\<^bold>}"
+  shows "\<^bold>{I\<^bold>} g_dl_ode_frame a f G \<^bold>{I\<^bold>}"
   using assms
   by (metis SEXP_def diff_ghost_very_simple fbox_diff_inv_on) 
+
+lemma strengthen: "`Q1 \<longrightarrow> Q2` \<Longrightarrow> P \<le> |X] Q1 \<Longrightarrow> P \<le> |X] Q2"
+  by (expr_simp add: fbox_def le_fun_def)
+
+lemma weaken: "`P1 \<longrightarrow> P2` \<Longrightarrow> P2 \<le> |X] Q \<Longrightarrow> P1 \<le> |X] Q"
+  by (expr_auto add: fbox_def le_fun_def)
+
+lemma darboux: 
+  fixes a y z :: "real \<Longrightarrow> _"
+    and e :: "_ \<Rightarrow> real"
+    and g :: real
+  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
+    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
+    and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
+    and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
+    (*and "D e = e' on {t. 0 \<le> t}"
+    and "e' \<ge> (\<guillemotleft>g\<guillemotright> * e')\<^sub>e"*)
+  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
+  apply (rule diff_ghost_rule_very_simple[where k="-g", OF vwbs(2) indeps(1) yGhost])
+  apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
+  using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
+  apply (subst SEXP_def[symmetric, of G])
+  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
+   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
+  using indeps apply (expr_simp) 
+  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF vwbs(3) _ zGhost])
+  using indeps apply expr_simp
+  apply (subst hoare_diff_inv_on)
+  apply (rule diff_inv_on_raw_eqI; clarsimp?)
+  using vwbs indeps
+    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
+  using assms
+   apply (auto intro!: poly_derivatives)[1]
+  oops
+   apply expr_simp
+  apply (expr_auto add: )
+  apply (intro poly_derivatives)
+           apply force
+          apply force
+         apply force
+        apply force
+           apply force
+           apply force
+           apply force
+           apply force
+   apply (force intro!: poly_derivatives)
+  apply (expr_auto add: )
+  oops
 
 no_notation Union ("\<mu>")
 
