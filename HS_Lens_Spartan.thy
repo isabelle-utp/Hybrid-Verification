@@ -1120,53 +1120,6 @@ lemma diff_ghost_rule_very_simple:
   using assms
   by (metis SEXP_def diff_ghost_very_simple fbox_diff_inv_on) 
 
-lemma strengthen: "`Q1 \<longrightarrow> Q2` \<Longrightarrow> P \<le> |X] Q1 \<Longrightarrow> P \<le> |X] Q2"
-  by (expr_simp add: fbox_def le_fun_def)
-
-lemma weaken: "`P1 \<longrightarrow> P2` \<Longrightarrow> P2 \<le> |X] Q \<Longrightarrow> P1 \<le> |X] Q"
-  by (expr_auto add: fbox_def le_fun_def)
-
-lemma darboux: 
-  fixes a y z :: "real \<Longrightarrow> _"
-    and e :: "_ \<Rightarrow> real"
-    and g :: real
-  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
-    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
-    and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
-    and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
-    (*and "D e = e' on {t. 0 \<le> t}"
-    and "e' \<ge> (\<guillemotleft>g\<guillemotright> * e')\<^sub>e"*)
-  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
-  apply (rule diff_ghost_rule_very_simple[where k="-g", OF vwbs(2) indeps(1) yGhost])
-  apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
-  using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
-  apply (subst SEXP_def[symmetric, of G])
-  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
-   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
-  using indeps apply (expr_simp) 
-  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF vwbs(3) _ zGhost])
-  using indeps apply expr_simp
-  apply (subst hoare_diff_inv_on)
-  apply (rule diff_inv_on_raw_eqI; clarsimp?)
-  using vwbs indeps
-    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
-  using assms
-   apply (auto intro!: poly_derivatives)[1]
-  oops
-   apply expr_simp
-  apply (expr_auto add: )
-  apply (intro poly_derivatives)
-           apply force
-          apply force
-         apply force
-        apply force
-           apply force
-           apply force
-           apply force
-           apply force
-   apply (force intro!: poly_derivatives)
-  apply (expr_auto add: )
-  oops
 
 no_notation Union ("\<mu>")
 
@@ -1236,8 +1189,222 @@ method diff_cut_ineq for I::"'a \<Rightarrow> bool" (* create tactic move to gua
     (diff_inv_on_weaken_ineq I dLeq dGeg)
     )
 
-method dGhost for y :: "real \<Longrightarrow> 's" and G :: "'s \<Rightarrow> bool" and k :: real 
-  = (rule diff_ghost_rule_very_simple[where y="y" and G="G" and k="k"]
+method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
+  = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"]
     ,simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
+
+
+(**** DARBOUX ****)
+
+lemma strengthen: "`Q1 \<longrightarrow> Q2` \<Longrightarrow> P \<le> |X] Q1 \<Longrightarrow> P \<le> |X] Q2"
+  by (expr_simp add: fbox_def le_fun_def)
+
+lemma weaken: "`P1 \<longrightarrow> P2` \<Longrightarrow> P2 \<le> |X] Q \<Longrightarrow> P1 \<le> |X] Q"
+  by (expr_auto add: fbox_def le_fun_def)
+
+lemma lets_see: "D X = X' on T \<Longrightarrow> D (\<lambda>t. snd (fst (X t))) = (\<lambda>t. (snd (fst (X' t)))) on T"
+  by (auto intro!: poly_derivatives)
+
+lemma get_put_put_indep:
+  assumes vwbs: "vwb_lens y"
+    and indeps: "z \<bowtie> y"
+  shows "get\<^bsub>y\<^esub>
+          (put\<^bsub>z\<^esub> 
+            (put\<^bsub>y\<^esub> something expr4y) expr4z) = expr4y"
+  by (metis indeps lens_indep.lens_put_irr2 mwb_lens_weak 
+      vwb_lens_def vwbs weak_lens.put_get)
+
+lemma vector_derivative_chain_eq: "(f has_vector_derivative f') (at x within S) 
+  \<Longrightarrow> D g \<mapsto> g' at (f x) within \<P> f S 
+  \<Longrightarrow> h = g' f'
+  \<Longrightarrow> (g \<circ> f has_vector_derivative h) (at x within S)"
+  using vector_derivative_diff_chain_within[of f f' x S g g']
+  by force
+
+thm has_vderiv_on_compose
+
+lemma has_vderiv_on_chain:
+  fixes f :: "'a::real_normed_vector \<Rightarrow> 'b::real_normed_vector"
+  assumes "D g = g' on T" 
+    and "\<forall>t\<in>T. D f \<mapsto> f' at (g t) within \<P> g T"
+    and "\<forall>t\<in>T. f' (g' t) = h t"
+  shows "D (f \<circ> g) = h on T"
+  using assms vector_derivative_diff_chain_within[of g _ _ T f f']
+  unfolding has_vderiv_on_def by metis
+
+lemma has_vderiv_put:
+  "bounded_linear (put\<^bsub>x\<^esub> s) \<Longrightarrow> D X = X' on T \<Longrightarrow> D (\<lambda>t. put\<^bsub>x\<^esub> s (X t)) = (\<lambda>t. put\<^bsub>x\<^esub> s (X' t)) on T"
+  apply (subst comp_def[symmetric, where g=X])
+  apply (rule_tac has_vderiv_on_chain, force, clarsimp)
+  by (rule bounded_linear_imp_has_derivative, auto)
+
+lemmas vderiv_putI = has_vderiv_put[THEN has_vderiv_on_eq_rhs]
+
+
+lemma darboux: 
+  fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
+    and e e' :: "'a \<Rightarrow> real"
+    and g :: real
+  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
+    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
+    and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
+    and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
+    and dbx_hyp: "e' \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
+    and deriv: "\<forall>t. D e \<mapsto> e' (at t)"
+  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
+  apply (rule diff_ghost_rule_very_simple[where k="-g", OF vwbs(2) indeps(1) yGhost])
+  apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
+  using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
+  apply (subst SEXP_def[symmetric, of G])
+  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
+   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
+  using indeps apply (expr_simp) 
+  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF vwbs(3) _ zGhost])
+  using indeps apply expr_simp
+  apply (subst hoare_diff_inv_on)
+  apply (rule diff_inv_on_raw_eqI; clarsimp?)
+  using vwbs indeps
+    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
+  using vwbs indeps apply expr_simp
+   apply (intro poly_derivatives; force?)
+   apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
+   apply expr_simp
+   apply (subst get_put_put_indep; (clarsimp simp: power2_eq_square))
+  apply (rule_tac I="(0 < $y \<and> 0 \<le> e * $y)\<^sup>e" in diff_inv_on_rule)
+    apply expr_simp
+   prefer 2 apply expr_simp
+   apply (rule diff_inv_on_raw_conjI)
+   apply (simp add: diff_inv_on_eq)
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+  apply (rule_tac \<nu>'="(0)\<^sup>e" and \<mu>'="(e' * y + e * (- \<guillemotleft>g\<guillemotright> *\<^sub>R y))\<^sup>e" in diff_inv_on_raw_leqI)
+  using assms lens_indep_sym plus_vwb_lens apply blast
+     apply clarsimp
+    using dbx_hyp
+    apply (clarsimp simp: le_fun_def mult.commute)
+   apply clarsimp
+  apply (rule_tac poly_derivatives(4))
+    prefer 2 apply (rule poly_derivatives)
+   prefer 2 apply force
+  apply (rule poly_derivatives)
+  prefer 2 using vwbs indeps apply expr_simp
+    apply (rule poly_derivatives, force, force)
+   prefer 2 using vwbs indeps apply expr_simp
+  apply (rule disjI2)
+   apply force
+  apply (subst comp_def[where f=e, symmetric])
+    apply (rule_tac f'=e' in has_vderiv_on_chain)
+  prefer 2 apply clarsimp
+    using deriv has_derivative_at_withinI apply blast
+     prefer 2 apply clarsimp
+     apply (rule_tac f=e' in arg_cong)
+     apply force
+    using vwbs indeps yGhost(1,2) apply expr_simp
+
+(*      apply (subst comp_def[where g=X, symmetric])
+    apply (rule_tac has_vderiv_on_chain, force)
+     apply clarify
+     apply (rule bounded_linear_imp_has_derivative)
+    subgoal sorry
+    using vwbs indeps yGhost(1,2) apply expr_simp
+    oops*)
+     apply (subgoal_tac "(\<lambda>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x)))) 
+  = (\<lambda>x. (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))), - (g * snd (X x))))")
+     prefer 2 apply (clarsimp simp: fun_eq_iff)[1]
+     apply (metis (no_types, lifting) lens_indep_def)
+  proof-
+    fix X s
+    assume hyp1: "(X has_vderiv_on (\<lambda>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x)))))
+            (Collect ((\<le>) 0))"
+      and deriv_eq: "(\<lambda>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x)))) =
+           (\<lambda>x. (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))), - (g * snd (X x))))"
+    hence another_eq: "\<And>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x))) =
+    (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))), - (g * snd (X x)))"
+      by (clarsimp simp: fun_eq_iff)
+    have "(X has_vderiv_on (\<lambda>x. (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))), - (g * snd (X x)))))
+            (Collect ((\<le>) 0))"
+      using hyp1 by (subst (asm) deriv_eq, simp)
+    hence "D (\<lambda>t. fst (X t)) = (\<lambda>t. (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X t)))))) on (Collect ((\<le>) 0))"
+      and "D (\<lambda>t. snd (X t)) = (\<lambda>t. - (g * snd (X t))) on (Collect ((\<le>) 0))"
+      using vderiv_on_fst vderiv_on_snd by fastforce+
+
+    show "((\<lambda>x. put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x))) has_vderiv_on (\<lambda>x. put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (Collect ((\<le>) 0))"
+      apply (subst comp_def[where g=X, symmetric])
+      apply (rule_tac has_vderiv_on_chain[OF hyp1])
+       apply clarsimp
+       apply(rule cont_lens.has_derivative_put'[of a "\<lambda>b. put\<^bsub>y\<^esub> s (snd b)" "\<lambda>b. fst (b)" ])
+      subgoal sorry
+      subgoal sorry
+       apply (rule has_derivative_fst, rule has_derivative_ident)
+      apply clarify
+      apply (subst another_eq)
+      apply (subst another_eq)
+      apply clarsimp
+      using indeps vwbs
+      apply expr_simp
+      sorry
+  qed
+
+    apply (clarsimp simp: has_vderiv_on_def has_vector_derivative_def)
+    apply (rule derivative_eq_intros)
+    using cont_lens.has_derivative_put'[OF cont_lens_a]
+       apply (rule bounded_linear_imp_has_derivative)
+
+  oops
+  apply (diff_inv_on_ineq "(0)\<^sup>e" "(e' * y + e * (- \<guillemotleft>g\<guillemotright> *\<^sub>R y))\<^sup>e")
+  using assms lens_indep_sym plus_vwb_lens apply blast
+  using dbx_hyp apply (expr_simp add: le_fun_def mult.commute)
+  apply (rule poly_derivatives)
+    prefer 2 apply (rule poly_derivatives)
+   prefer 2 apply force
+  subgoal for X t s
+    apply (rule poly_derivatives)
+    apply (subst comp_def[where f=e, symmetric])
+    apply (rule_tac f'=e' in has_vderiv_on_chain)
+        apply (subst comp_def[where f="\<lambda>vec. put\<^bsub>a +\<^sub>L y\<^esub> s vec", symmetric])
+        apply (rule_tac has_vderiv_on_chain, force, clarsimp)
+    using vwbs indeps apply expr_simp
+         apply (rule has_derivative_split)
+       apply (rule bounded_linear_imp_has_derivative)
+    subgoal sorry
+        apply force
+    using deriv has_derivative_at_withinI apply blast
+      apply force
+    using vwbs indeps apply expr_simp
+     apply (rule poly_derivatives, force, force)
+    using vwbs indeps apply expr_simp
+    apply (rule disjI2)
+    apply (rule_tac f=e' in arg_cong)
+    using yGhost(1,2) apply expr_simp
+    term "(X has_vderiv_on (\<lambda>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x)))))
+          (Collect ((\<le>) 0))"
+    term "(X has_vderiv_on (\<lambda>x. (get\<^bsub>a\<^esub> (f (put\<^bsub>y\<^esub> (put\<^bsub>a\<^esub> s (fst (X x))) (- (g * snd (X x))))), - (g * snd (X x)))))
+          (Collect ((\<le>) 0))"
+    term "(X has_vderiv_on (\<lambda>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x)))))
+          (Collect ((\<le>) 0))"
+    term "(X has_vderiv_on (\<lambda>x. (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))), - (g * snd (X x)))))
+          (Collect ((\<le>) 0))"
+    term "put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (- (g * snd (X x)))) (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x))))) =
+         put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x))"
+    apply (auto intro!: poly_derivatives)[1]
+    oops
+  subgoal for X t s
+    apply (rule poly_derivatives(5)[of _ "\<lambda>x. e' (put\<^bsub>a +\<^sub>L y\<^esub> s (X x))" _ _ "\<lambda>x. - (g * get\<^bsub>y\<^esub> (put\<^bsub>a +\<^sub>L y\<^esub> s (X x)))"])
+      prefer 3 apply expr_simp
+     prefer 2 using vwbs indeps apply expr_simp
+    using vderiv_on_snd apply fastforce
+    apply (subst comp_def[where f=e, symmetric])
+    apply (rule_tac f'=e' and g'="\<lambda>t. (put\<^bsub>a +\<^sub>L y\<^esub> s (X t))" in has_vderiv_on_chain)
+      prefer 3 apply expr_simp
+     prefer 2 using deriv has_derivative_at_withinI apply blast
+    apply (subst comp_def[where f="\<lambda>vec. put\<^bsub>a +\<^sub>L y\<^esub> s vec", symmetric])
+      apply (rule_tac has_vderiv_on_chain, force)
+       apply clarsimp
+       apply (rule bounded_linear_imp_has_derivative)
+    subgoal sorry
+
+    oops
+
+  thm has_vderiv_on_const[THEN has_vderiv_on_eq_rhs]
+
 
 end
