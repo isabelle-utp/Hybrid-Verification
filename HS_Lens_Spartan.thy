@@ -1341,8 +1341,7 @@ lemma darboux:
       apply clarsimp
       using indeps vwbs
       apply expr_simp
-      sorry
-  qed
+      oops
 
     apply (clarsimp simp: has_vderiv_on_def has_vector_derivative_def)
     apply (rule derivative_eq_intros)
