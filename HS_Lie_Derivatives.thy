@@ -499,7 +499,7 @@ lemma darboux:
     and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
     and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
     and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
-    and dbx_hyp: "\<L>\<^bsub>subst_upd f y (\<lambda>a. - (g * get\<^bsub>y\<^esub> a))\<^esub> e on (a +\<^sub>L y) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
+    and dbx_hyp: "\<L>\<^bsub>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> * $y)\<^esub> e on (a +\<^sub>L y) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
     and deriv: "\<forall>t. D e \<mapsto> e' (at t)"
   shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
   apply (rule diff_ghost_rule_very_simple[where k="-g", OF vwbs(2) indeps(1) yGhost])
@@ -535,7 +535,10 @@ lemma darboux:
   prefer 2 using vwbs indeps apply expr_simp
    apply (metis lens_indep_sym lens_plus_def plus_vwb_lens)
   apply (subgoal_tac "differentiable\<^sub>e e on a +\<^sub>L y when True")
-   prefer 2 subgoal sorry
+   prefer 2
+  subgoal
+    using dbx_hyp apply (expr_simp add: le_fun_def)
+    sorry
   using vwbs indeps apply -
   apply(rule lie_deriv_le_rule; clarsimp?)
     apply (rule differentiable_times; clarsimp?)
@@ -545,9 +548,8 @@ lemma darboux:
    apply (subst lie_deriv_times; clarsimp?)
      apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
   apply (subst lie_deriv_cont_var; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-
-  apply (subst lie_deriv)
-  using vwbs indeps apply (expr_simp add: lie_deriv closure usubst unrest_ssubst unrest usubst_eval)
+  using yGhost(1,2) indeps vwbs dbx_hyp apply expr_simp
+  by (clarsimp simp: lie_deriv closure usubst unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
 
 

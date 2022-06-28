@@ -1062,6 +1062,27 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
   ] (w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)"
   apply (subst change_loopI[where I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c \<and> d \<ge>0 \<and> w\<ge>0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
   apply (rule hoare_loopI)
+    prefer 3 apply expr_simp
+   prefer 2 apply expr_simp
+  apply (rule_tac hoare_kcomp[where R="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c \<and> 0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
+    apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
+         apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
+apply (expr_simp add: le_fun_def)
+          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+          apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")?)
+    apply (expr_simp add: le_fun_def)
+   apply (rule_tac I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e" in fbox_diff_invI)
+     prefer 3 apply expr_simp
+    prefer 2 apply (expr_simp add: le_fun_def)
+   prefer 2 apply (simp add: wp)
+   apply expr_auto[1]
+
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+  oops
+  apply (diff_inv_on_ineq "(2*w\<^sup>2*x*y+2*y*(-w\<^sup>2*x-2*d*w*y))\<^sup>e" "(0)\<^sup>e")
+
+          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+
     apply (simp add: wp)
     apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
          apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
@@ -1069,38 +1090,14 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
           apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
           apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")?)
      apply (expr_simp add: le_fun_def)
-  apply (subst hoare_conj_posc, intro conjI)
-    apply (simp add: wp hoare_conj_posc, intro conjI)
-     apply (rule diff_weak_on_rule, expr_auto)
-     apply (auto simp: field_simps)[1]
+  apply (simp add: wp hoare_conj_posc, intro conjI)
+         prefer 8 apply (rule diff_weak_on_rule, expr_auto)
+        prefer 7 apply (rule diff_weak_on_rule, expr_auto)
+       prefer 6 apply (rule diff_weak_on_rule, expr_auto)
+      prefer 5 apply (rule diff_weak_on_rule, expr_auto)
+     prefer 4 apply (rule diff_weak_on_rule, expr_auto)
 
   oops
-    apply (simp add: wp hoare_conj_posc, intro conjI)
-        apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w)\<^sup>e"])
-         apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w)\<^sup>e"])
-           apply (expr_simp add: le_fun_def)
-          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-          apply (rule diff_inv_on_raw_conjI)
-           apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
-          apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
-         apply (expr_simp add: le_fun_def)
-        apply (rule diff_cut_on_rule[where C="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e"])
-         apply (rule fbox_inv[where I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e"])
-           apply (expr_simp add: le_fun_def)
-          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-  apply (diff_inv_on_single_ineq_intro "(4*w\<^sup>2*x*y+2*y*(-w\<^sup>2*x-2*d*w*y))\<^sup>e" "(0)\<^sup>e"; expr_simp)
-         apply(auto intro!: poly_derivatives simp: field_simps power2_eq_square)[1]
-  oops
-  apply (diff_inv_on_ineq "(4*w\<^sup>2*x*y+2*y*(-w\<^sup>2*x-2*d*w*y))\<^sup>e" "(0)\<^sup>e")
-
-
-         apply (diff_cut_ineq "(0 \<le> d)\<^sup>e" "(0)\<^sup>e" "(0)\<^sup>e")
-  apply (rule C="" in diff_cut_rule
-  using hoare_posc_distrib_conj[of "(w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> c \<and> 0 \<le> d \<and> 0 \<le> w)\<^sup>e" _ ]
-  apply (subst hoare_posc_distrib_conj)
-  apply (intro conjI)
-    prefer 3 apply expr_simp
-   prefer 2 apply expr_simp
 
 (* verified with the help of a CAS *)
 value "2 \<noteq> 2"
