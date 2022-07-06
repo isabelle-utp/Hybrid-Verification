@@ -169,6 +169,12 @@ lemma hoare_assign: "\<^bold>{Q\<lbrakk>e/x\<rbrakk>\<^bold>} (x ::= e) \<^bold>
 lemma fbox_assigns [wp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (Q)\<^sub>e"
   by (simp add: assigns_def expr_defs fbox_def)
 
+lemma H_assign_floyd_hoare:
+  assumes "vwb_lens x"
+  shows "\<^bold>{p\<^bold>} x ::= e \<^bold>{\<exists> v . p\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk> \<and> $x = e\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk>\<^bold>}"
+  using assms apply (simp add: wp, expr_auto)
+  by (metis vwb_lens_def wb_lens.source_stability)
+
 lemma fdia_assign: "|x ::= e\<rangle> P = (P\<lbrakk>e/x\<rbrakk>)\<^sub>e"
   by (simp add: assigns_def expr_defs fdia_def)
 

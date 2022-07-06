@@ -7,6 +7,8 @@ theory ARCH2022_Examples
   imports 
     HS_Lie_Derivatives
     Real_Arith_Tactics
+    "HOL-Decision_Procs.Ferrack"
+    "HOL-Decision_Procs.Reflective_Field"
 
 begin
 
@@ -15,7 +17,9 @@ subsection \<open> Basic \<close>
 
 lit_vars \<comment> \<open> disable constants \<close>
 no_notation disj (infixr "|" 30)
-
+hide_const Ferrack.T
+hide_const Ferrack.A
+hide_const Ferrack.E
 
 subsubsection \<open> Basic assignment \<close> 
 
@@ -702,7 +706,7 @@ lemma "(x\<^sup>3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x\<^sup>3 + x\<^sup>4, 
     apply(rule current_vderiv_ge_always_ge[of 5 "\<lambda>t. (fst (X t))\<^sup>3" 0 
         "\<lambda>t. 3 * (fst (X t))\<^sup>2 * ((fst (X t))\<^sup>3 + (fst (X t))\<^sup>4)", where g="\<lambda>t. 3 * t\<^sup>2 + 3 * (root 3 t)\<^sup>5", rule_format])
     by (auto intro!: poly_derivatives simp: odd_real_root_power_cancel split: if_splits) 
-      (distribute, mon_pow_simp, force)
+      (clarsimp simp: fun_eq_iff, ferrack)
   apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
    apply (expr_simp add: Collect_ge_ivl)
   by (rule current_vderiv_ge_always_ge[rule_format, of 2 "\<lambda>t. (snd (_ t))", where g="\<lambda>t. 5 * t + t\<^sup>2"])
@@ -754,10 +758,7 @@ lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(0)\<^sup>e"; expr_simp)
   apply (intro poly_derivatives; (assumption)?, (rule poly_derivatives)?)
-                      apply force+
-  subgoal for X t
-    by distribute (mon_simp_vars "fst (X t)" "snd (X t)")
-  done
+  by force+ ferrack
 
 end
 
@@ -1028,6 +1029,28 @@ end
 
 subsubsection \<open> Dynamics: Parametric switching between two different damped oscillators \<close> (*N 33 *)
 
+lemma dyn_param_switch_arith1:
+  assumes hyp: "w\<^sup>2 * (y * a)\<^sup>2 + y\<^sup>2 \<le> c" 
+    and w_hyp: "0 \<le> (w::real)" 
+    and a_hyp: "- 2 \<le> a" "a \<le> 2" 
+  shows "4 * w\<^sup>2 * (y * a)\<^sup>2 + y\<^sup>2 \<le> c * (16 * w\<^sup>2 + 1) / (4 * w\<^sup>2 + 1)"
+  using assms apply -
+  apply (auto simp: field_simps)
+  apply (mon_simp_vars w a)
+  apply (mon_simp_vars c w)
+  apply ferrack
+  sorry
+
+lemma dyn_param_switch_arith2: "w\<^sup>2 * (y * b)\<^sup>2 + y\<^sup>2 \<le> (c::real) \<Longrightarrow>
+          0 \<le> w \<Longrightarrow>
+          1 \<le> b\<^sup>2 * 3 \<Longrightarrow>
+          (w / 2)\<^sup>2 * (y * b)\<^sup>2 + y\<^sup>2 \<le> c * ((w / 2)\<^sup>2 + 1) / (2 * (w / 2)\<^sup>2 + 1)"
+  apply (auto simp: field_simps)
+  apply (mon_simp_vars w b)
+  apply (mon_simp_vars c w)
+  apply ferrack
+  sorry
+
 
 dataspace dyn_param_switch =
   variables 
@@ -1037,7 +1060,7 @@ dataspace dyn_param_switch =
     c :: real
     d :: real
 
-context dyn_param_switch
+context dyn_param_switch (* current *)
 begin
 
 (*     w>=0 & d>=0
@@ -1065,6 +1088,8 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
     prefer 3 apply expr_simp
    prefer 2 apply expr_simp
   apply (rule_tac hoare_kcomp[where R="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c \<and> 0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
+  prefer 2 using dyn_param_switch_arith1 dyn_param_switch_arith2
+   apply (simp add: wp; expr_auto)[1]
     apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
          apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
 apply (expr_simp add: le_fun_def)
@@ -1073,31 +1098,15 @@ apply (expr_simp add: le_fun_def)
     apply (expr_simp add: le_fun_def)
    apply (rule_tac I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e" in fbox_diff_invI)
      prefer 3 apply expr_simp
-    prefer 2 apply (expr_simp add: le_fun_def)
-   prefer 2 apply (simp add: wp)
-   apply expr_auto[1]
-
+   prefer 2 apply (expr_simp add: le_fun_def)
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-  oops
-  apply (diff_inv_on_ineq "(2*w\<^sup>2*x*y+2*y*(-w\<^sup>2*x-2*d*w*y))\<^sup>e" "(0)\<^sup>e")
+  apply (diff_inv_on_single_ineq_intro "(2*w\<^sup>2*x*y+2*y*(-w\<^sup>2*x-2*d*w*y))\<^sup>e" "(0)\<^sup>e")
+      apply (simp, simp)
+    apply (auto simp: field_simps)[1]
+  apply (auto simp: field_simps)[1]
+  apply expr_simp
+  by (auto intro!: poly_derivatives)
 
-          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-
-    apply (simp add: wp)
-    apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
-         apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
-           apply (expr_simp add: le_fun_def)
-          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-          apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")?)
-     apply (expr_simp add: le_fun_def)
-  apply (simp add: wp hoare_conj_posc, intro conjI)
-         prefer 8 apply (rule diff_weak_on_rule, expr_auto)
-        prefer 7 apply (rule diff_weak_on_rule, expr_auto)
-       prefer 6 apply (rule diff_weak_on_rule, expr_auto)
-      prefer 5 apply (rule diff_weak_on_rule, expr_auto)
-     prefer 4 apply (rule diff_weak_on_rule, expr_auto)
-
-  oops
 
 (* verified with the help of a CAS *)
 value "2 \<noteq> 2"
@@ -1685,36 +1694,20 @@ end
 
 subsubsection \<open> STTT Tutorial: Example 9b \<close> (*N 50 *)
 
-lemma 
+lemma kcomp_assoc: "a ; b ; c = a ; (b ; c)"
+  by (auto simp: kcomp_def)
+
+lemma split_conj_posc: "(P)\<^sub>e \<le> (Q1 \<and> Q2)\<^sub>e = ((P)\<^sub>e \<le> (Q1)\<^sub>e \<and> (P)\<^sub>e \<le> (Q2)\<^sub>e)"
+  by (expr_auto add: le_fun_def)
+
+lemma split_impl: "((P1)\<^sub>e  \<le> (P2 \<longrightarrow> Q)\<^sub>e) = ((P1 \<and> P2)\<^sub>e \<le> (Q)\<^sub>e)"
+  by (expr_auto add: le_fun_def)
+
+lemma STTT_9b_arith:
   assumes "0 \<le> (v::real)" and "xm \<le> x" and "xr * 2 = xm + S" 
     and "5 * (x - xr)\<^sup>2 / 4 + (x - xr) * v / 2 + v\<^sup>2 / 4 < ((S - xm) / 2)\<^sup>2" 
   shows "x \<le> S"
-proof-
-  have "5 * (x - xr)\<^sup>2 + 2 * v * x - 2 * xr * v + v\<^sup>2 < (S - xm)\<^sup>2"
-    using assms(4)
-    by (simp add: field_simps)
-  moreover have "xr = (xm + S)/2"
-    using assms by auto
-  ultimately have "16 * v * x + 8 * v\<^sup>2 + 10 * (x * 2 - (S + xm))\<^sup>2 - (v * (xm * 8) + 8 * (S - xm)\<^sup>2) 
-    < S * (v * 8)"
-    by (simp add: field_split_simps)
-  hence "16 * v * x + 8 * v\<^sup>2 + 40 * x\<^sup>2 + 2 * xm\<^sup>2 - v * (xm * 8) - 40 * (x * xm)
-    < - 2 * S\<^sup>2 - 36 * S * xm + 40 * x * S + 8 * S * v"
-    apply (bin_unfold)
-    by distribute (mon_simp_vars xm S)
-  hence "- 8 * v * x - 4 * v\<^sup>2 - 20 * x\<^sup>2 - xm\<^sup>2 + 4 * v * xm + 20 * x * xm
-    > S\<^sup>2 + 18 * S * xm - 20 * S * x - 4 * S * v"
-    by (auto simp: field_simps)
-
-(*  - 8vx - 4v\<^sup>2 - 20x\<^sup>2 - c\<^sup>2 + 4vc + 20xc > S\<^sup>2 + 18Sc - 20Sx - 4Sv
-\<Longrightarrow> - 20x\<^sup>2 - 8vx + 20xc - 4v\<^sup>2 - c\<^sup>2 + 4vc > S\<^sup>2 + 2S(9c - 10x - 4v)
-\<Longrightarrow> - 20x\<^sup>2 - 4x(2v - 5c) - (2v - c)\<^sup>2 > S\<^sup>2 - 20Sx + 18Sc - 4Sv
-\<Longrightarrow>   80x\<^sup>2 - 4x(2v - 5c) > 18Sc - 4Sv
-\<Longrightarrow>   80x\<^sup>2 - 4x(2v - 5c) > 2S(9c - 2v)
-\<Longrightarrow>   40x\<^sup>2 - 2x(2v - 5c) > S(4c - (2v - 5c))
- ??????
-*)
-  oops
+  sorry
 
 dataspace STTT_9b =
   constants S::real Kp::real Kd::real
@@ -1761,16 +1754,6 @@ lemma local_flow_STTT_9b: "local_flow_on [v \<leadsto> 2 * xr - 2 * x - 3 * v, x
   by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives split: if_splits)
     (auto simp: fun_eq_iff field_simps exp_minus_inverse)
 
-lemma STTT_9b_split:"(0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sub>e
-    \<le> |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<lbrakk>($xm + S) / 2/xr\<rbrakk>\<lbrakk>$x/xm\<rbrakk>
-  \<Longrightarrow> (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sub>e
-    \<le> |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2) 
-  \<Longrightarrow> (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sub>e
-    \<le> ((5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2 
-  \<longrightarrow> |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2))\<lbrakk>($xm + S) / 2/xr\<rbrakk>\<lbrakk>$x/xm\<rbrakk> \<and>
-        |X] (0 \<le> $v \<and> $xm \<le> $x \<and> $xr * 2 = $xm + S \<and> 5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2))\<^sub>e"
-  by (expr_simp add: le_fun_def)
-
 (* v >= 0 & xm <= x & x <= S & xr = (xm + S)/2 & Kp = 2 & Kd = 3
            & 5/4*(x-xr)^2 + (x-xr)*v/2 + v^2/4 < ((S - xm)/2)^2
  -> [ { {  xm := x;
@@ -1800,11 +1783,24 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
   \<and> 5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e"])
   apply (rule hoare_loopI)
     prefer 3 subgoal
-    apply expr_simp
-    apply (auto simp: field_simps)
-    sorry
-  prefer 2 apply expr_simp
-  apply (hoare_wp_simp local_flow: local_flow_STTT_9b; expr_simp)
+    using STTT_9b_arith[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
+    by expr_simp force
+   prefer 2 apply expr_simp
+  apply simp
+  apply (rule hoare_kcomp)
+  apply (simp only: kcomp_assoc le_fbox_choice_iff)
+  apply (rule hoare_kcomp)
+   apply (simp add: wp)
+  apply (expr_simp add: le_fun_def)
+  apply (rule hoare_fwd_assign)
+  apply (simp add: wp le_fbox_choice_iff del: fbox_choice)
+  apply (intro conjI)
+  apply (subst new_subst)
+  apply (expr_simp add: le_fun_def, clarsimp)
+  apply (hoare_wp_simp local_flow: local_flow_STTT_9b)
+  apply expr_simp
+  apply clarsimp
+  apply (intro conjI impI allI iffI)
   oops
 
 end
