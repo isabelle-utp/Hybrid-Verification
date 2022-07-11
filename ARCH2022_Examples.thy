@@ -9,6 +9,7 @@ theory ARCH2022_Examples
     Real_Arith_Tactics
     "HOL-Decision_Procs.Ferrack"
     "HOL-Decision_Procs.Reflective_Field"
+    HS_CAS_Integration
 
 begin
 
@@ -362,7 +363,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
 (* proof with ghosts *)
 (* x>0 -> [{x'=-x}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
-   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
+  apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
   by (expr_auto add: exp_ghost_arith)
     (diff_inv_on_eq)
 
@@ -494,6 +495,15 @@ begin
 lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 + y\<^sup>2 = 1)"
   by (diff_inv_on_eq)
 
+lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 + y\<^sup>2 = 1)"
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> $x * cos t + - 1 * $y * sin t, y \<leadsto> $y * cos t + $x * sin t]"])
+  apply (clarsimp simp: local_flow_on_def)
+  apply (unfold_locales; clarsimp?)
+     apply (lipschitz 1, simp add: abs_minus_commute norm_Pair)
+     apply vderiv
+    apply expr_simp
+  by expr_simp (smt (verit, ccfv_SIG) norm_rotate_eq(1))
+
 end
 
 
@@ -503,7 +513,7 @@ context three_vars
 begin
 
 (* x\<^sup>2+y\<^sup>2=1 & e=x -> [{x'=-y, y'=e, e'=-y}](x\<^sup>2+y\<^sup>2=1 & e=x) *)
-lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z, z` = -y}] (x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)"
+lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z, z` = -y}] (x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)"  
   apply (rule diff_cut_on_rule[where C="(z = x)\<^sup>e"])
    apply (rule fbox_inv[where I="(z = x)\<^sup>e"])
      apply (expr_simp add: le_fun_def)
@@ -515,6 +525,18 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z,
     apply (diff_inv_on_eq)
   by (expr_simp add: le_fun_def)
     (rule diff_weak_on_rule, expr_auto)
+
+lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z, z` = -y}] (x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)"
+  find_local_flow
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> $x + $z * (- 1 + cos t) + - 1 * $y * sin t, 
+  y \<leadsto> $y * cos t + $z * sin t, 
+  z \<leadsto> $z * cos t + - 1 * $y * sin t]"]; expr_simp?)
+   prefer 2 subgoal sorry
+  apply (clarsimp simp: local_flow_on_def)
+  apply (unfold_locales; clarsimp?)
+   prefer 2 apply vderiv
+  apply (lipschitz 1, simp add: abs_minus_commute norm_Pair dist_norm)
+  oops
 
 end
 
@@ -540,6 +562,24 @@ lemma "(d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<a
   |{x1` = d1, x2` = d2, d1` = - w * d2, d2` = w * d1}] 
   (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)"
   by (rule fbox_invs; (rule fbox_invs)?) diff_inv_on_eq+
+
+lemma "w \<noteq> 0 \<Longrightarrow> (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)\<^sub>e \<le>
+  |{x1` = d1, x2` = d2, d1` = - w * d2, d2` = w * d1}] 
+  (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)"
+  find_local_flow
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [d1 \<leadsto> $d1 * cos (t * w) + - 1 * $d2 * sin (t * w), 
+    d2 \<leadsto> $d2 * cos (t * w) + $d1 * sin (t * w), 
+    x1 \<leadsto> $x1 + 1 / w * $d2 * (- 1 + cos (t * w)) + 1 / w * $d1 * sin (t * w), 
+    x2 \<leadsto> $x2 + 1 / w * $d1 * (1 + - 1 * cos (t * w)) + 1 / w * $d2 * sin (t * w)]"]; expr_simp?)
+   prefer 2 subgoal sorry
+     apply (clarsimp simp: local_flow_on_def)
+  apply (unfold_locales; clarsimp?)
+   prefer 2
+  subgoal for t a c1 c2 b
+    apply (intro poly_derivatives; (force | rule poly_derivatives)?)
+    sorry
+  apply (lipschitz 1, simp add: abs_minus_commute norm_Pair dist_norm)
+  oops
 
 end
 
@@ -844,6 +884,21 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillem
         continuous_on_compose[of UNIV fst X, unfolded comp_def] )
   done
 
+lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillemotright>*x, z` = A*z*x+B*z | G on UNIV UNIV @ 0}] (0= -x - z)"
+  find_local_flow
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [
+    x \<leadsto> - 1 * B * exp (B * t + B * $x) * (1 / (- 1 + A * exp (B * t + B * $x))), 
+    z \<leadsto> exp (- 1 * B * (- 1 * (1 / B) * ln (exp (B * (t + $x))) + 
+      1 / B * ln (- 1 + A * exp (B * (t + $x))))) * $z]"]; expr_simp?)
+   prefer 2 subgoal sorry
+  apply (clarsimp simp: local_flow_on_def)
+  apply (unfold_locales; clarsimp?)
+    prefer 2
+  subgoal for t a b
+    apply (intro poly_derivatives; (force | rule poly_derivatives)?)
+       apply (auto simp: field_simps)
+    oops
+
 end
 
 
@@ -1139,6 +1194,14 @@ begin
 lemma "(x1 + x2\<^sup>2/2 = a)\<^sub>e \<le> |{x1` = x1 * x2, x2` = -x1}] (x1 + x2\<^sup>2/2 = a)"
   by (diff_inv_on_eq)
 
+lemma "(x1 + x2\<^sup>2/2 = a)\<^sub>e \<le> |{x1` = x1 * x2, x2` = -x1}] (x1 + x2\<^sup>2/2 = a)"
+  find_local_flow
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [
+    x1 \<leadsto> $x1 + - 1 * $x1 * (tanh (1 / 2 * (- 1 * 2 powr (1 / 2) * t * $x1 powr (1 / 2) + - 1 * $x1 powr (1 / 2) * $x2)))\<^sup>2,
+    x2 \<leadsto> 2 powr (1 / 2) * ($x1 * (tanh (1 / 2 * (- 1 * 2 powr (1 / 2) * t * $x1 powr (1 / 2) + 
+      - 1 * $x1 powr (1 / 2) * $x2)))\<^sup>2) powr (1 / 2)]"])
+  oops
+
 end
 
 
@@ -1166,6 +1229,22 @@ lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   by (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "((- x1 + x2 - x1*x2)*x2 - x1 * (-x2 - x2\<^sup>2))\<^sup>e"; expr_simp)
     (auto simp: field_simps fun_eq_iff intro!: poly_derivatives split: if_splits)
+
+lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^sup>2}] (-x1*x2 \<ge> a)"
+  find_local_flow
+  apply (subst fbox_solve[where \<phi>="\<lambda>t. [
+    x1 \<leadsto> (- 1 * exp t + exp ($x1)) * $x2 
+      + exp (- 1 * $x1) * (- 1 * exp t + exp ($x1)) * (exp ($x1) * (1 / (- 1 * exp t + exp ($x1))) 
+        + ln (exp t) + - 1 * ln (- 1 * exp t + exp ($x1))),
+    x2 \<leadsto> - 1 * exp ($x1) * (1 / (- 1 * exp t + exp ($x1)))]"]; expr_simp?)
+   prefer 2 subgoal sorry
+  apply (clarsimp simp: local_flow_on_def)
+  apply (unfold_locales; clarsimp?)
+    prefer 2
+  subgoal for t a b
+    apply (intro poly_derivatives; (force | rule poly_derivatives)?)
+    oops
+
 
 end
 
@@ -1997,6 +2076,7 @@ end
 
 subsubsection \<open> LICS: Example 4b progress of time-triggered car \<close>  (*N 56 *)
 
+
 context LICS
 begin
 
@@ -2010,6 +2090,16 @@ begin
         {x'=v, v'=a, t'=1 & v>=0 & t<=ep()}
     }*
   > (x >= p) *)
+lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0 
+  \<longrightarrow> (\<forall>p. \<exists>M. 
+  ( |((\<questiondown>(2*b*(M-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
+  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}\<rangle> 
+  (x \<ge> p)))`"
+  apply (clarsimp simp: taut_def fdia_skip fdia_abort fdia_test fdia_assign 
+      fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on)
+  oops
+
+
 lemma "\<epsilon> > 0 \<Longrightarrow> A > 0 \<Longrightarrow> b > 0 
   \<Longrightarrow> \<forall>p. \<exists>M. (
   |((\<questiondown>(2*b*(M-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
