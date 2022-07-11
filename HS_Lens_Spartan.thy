@@ -82,25 +82,19 @@ lemma hoare_invs:
 
 text \<open> Need to generalise these laws \<close>
 
-lemma hoare_conj_posc: 
+lemma hoare_weaken_preI: 
+  "\<^bold>{@p1\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> P = (@p1 \<and> @p2)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  by (auto simp: fun_eq_iff)
+
+lemma hoare_conj_pos: 
   "(\<^bold>{@P\<^bold>} X \<^bold>{@Q1 \<and> @Q2\<^bold>}) = (\<^bold>{@P\<^bold>} X \<^bold>{@Q1\<^bold>} \<and> \<^bold>{@P\<^bold>} X \<^bold>{@Q2\<^bold>})"
   by (auto simp: fbox_def)
-
-lemma hoare_conj: 
-  assumes "\<^bold>{p\<^bold>}Q\<^bold>{r\<^bold>}" "\<^bold>{p\<^bold>}Q\<^bold>{s\<^bold>}" 
-  shows "\<^bold>{p\<^bold>}Q\<^bold>{r \<and> s\<^bold>}"
-  using assms
-  by (simp add: hoare_conj_posc)
-
-lemma hoare_weaken_pre:
-  "\<^bold>{p\<^bold>}Q\<^bold>{r\<^bold>} \<Longrightarrow> \<^bold>{p \<and> q\<^bold>}Q\<^bold>{r\<^bold>}"
-  "\<^bold>{q\<^bold>}Q\<^bold>{r\<^bold>} \<Longrightarrow> \<^bold>{p \<and> q\<^bold>}Q\<^bold>{r\<^bold>}"
-  by (simp_all add: le_fun_def)
 
 lemma hoare_conseq: 
   assumes "\<^bold>{p\<^sub>2\<^bold>}S\<^bold>{q\<^sub>2\<^bold>}" "`p\<^sub>1 \<longrightarrow> p\<^sub>2`" "`q\<^sub>2 \<longrightarrow> q\<^sub>1`"
   shows "\<^bold>{p\<^sub>1\<^bold>}S\<^bold>{q\<^sub>1\<^bold>}"
-  using assms by (auto simp add: fbox_def expr_defs)
+  using assms 
+  by (auto simp add: fbox_def expr_defs)
 
 
 subsection \<open> Skip \<close>

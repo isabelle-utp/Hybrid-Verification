@@ -17,6 +17,7 @@ subsection \<open> Basic \<close>
 
 lit_vars \<comment> \<open> disable constants \<close>
 no_notation disj (infixr "|" 30)
+no_notation Lattice.meet (infixl "\<sqinter>\<index>" 70)
 hide_const Ferrack.T
 hide_const Ferrack.A
 hide_const Ferrack.E
@@ -1060,7 +1061,7 @@ dataspace dyn_param_switch =
     c :: real
     d :: real
 
-context dyn_param_switch (* current *)
+context dyn_param_switch
 begin
 
 (*     w>=0 & d>=0
@@ -1092,12 +1093,12 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
    apply (simp add: wp; expr_auto)[1]
     apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
          apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
-apply (expr_simp add: le_fun_def)
-          apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-          apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")?)
-    apply (expr_simp add: le_fun_def)
-   apply (rule_tac I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e" in fbox_diff_invI)
-     prefer 3 apply expr_simp
+  apply (expr_simp add: le_fun_def)
+    apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+    apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")?)
+   apply (expr_simp add: le_fun_def)
+  apply (rule_tac I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e" in fbox_diff_invI)
+    prefer 3 apply expr_simp
    prefer 2 apply (expr_simp add: le_fun_def)
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
   apply (diff_inv_on_single_ineq_intro "(2*w\<^sup>2*x*y+2*y*(-w\<^sup>2*x-2*d*w*y))\<^sup>e" "(0)\<^sup>e")
@@ -1694,16 +1695,7 @@ end
 
 subsubsection \<open> STTT Tutorial: Example 9b \<close> (*N 50 *)
 
-lemma kcomp_assoc: "a ; b ; c = a ; (b ; c)"
-  by (auto simp: kcomp_def)
-
-lemma split_conj_posc: "(P)\<^sub>e \<le> (Q1 \<and> Q2)\<^sub>e = ((P)\<^sub>e \<le> (Q1)\<^sub>e \<and> (P)\<^sub>e \<le> (Q2)\<^sub>e)"
-  by (expr_auto add: le_fun_def)
-
-lemma split_impl: "((P1)\<^sub>e  \<le> (P2 \<longrightarrow> Q)\<^sub>e) = ((P1 \<and> P2)\<^sub>e \<le> (Q)\<^sub>e)"
-  by (expr_auto add: le_fun_def)
-
-lemma STTT_9b_arith:
+lemma STTT_9b_arith1:
   assumes "0 \<le> (v::real)" and "xm \<le> x" and "xr * 2 = xm + S" 
     and "5 * (x - xr)\<^sup>2 / 4 + (x - xr) * v / 2 + v\<^sup>2 / 4 < ((S - xm) / 2)\<^sup>2" 
   shows "x \<le> S"
@@ -1776,35 +1768,60 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
       xr ::= (xm + S)/2;
       \<questiondown>5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2?) 
     \<sqinter> \<questiondown>True?);
-    {x` = v, v` = -Kp * (x-xr) - Kd * v}
+    {x` = v, v` = -Kp * (x-xr) - Kd * v | v \<ge> 0}
    INV (v \<ge> 0 \<and> xm \<le> x \<and> xr = (xm + S)/2 \<and> 5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)] 
   (x \<le> S)"
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> xm \<le> x \<and> xr = (xm + S)/2 \<and> Kp = 2 \<and> Kd = 3 
   \<and> 5/4*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e"])
   apply (rule hoare_loopI)
     prefer 3 subgoal
-    using STTT_9b_arith[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
+    using STTT_9b_arith1[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
     by expr_simp force
    prefer 2 apply expr_simp
   apply simp
-  apply (rule hoare_kcomp)
-  apply (simp only: kcomp_assoc le_fbox_choice_iff)
-  apply (rule hoare_kcomp)
-   apply (simp add: wp)
-  apply (expr_simp add: le_fun_def)
-  apply (rule hoare_fwd_assign)
-  apply (simp add: wp le_fbox_choice_iff del: fbox_choice)
-  apply (intro conjI)
-  apply (subst new_subst)
-  apply (expr_simp add: le_fun_def, clarsimp)
-  apply (hoare_wp_simp local_flow: local_flow_STTT_9b)
-  apply expr_simp
-  apply clarsimp
-  apply (intro conjI impI allI iffI)
-  oops
+  apply (rule_tac R="(v \<ge> 0 \<and> xm \<le> x \<and> x \<le> S \<and> xr = (xm + S)/2  
+  \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e" in hoare_kcomp)
+   apply (subst le_fbox_choice_iff)
+   apply (intro conjI[rotated])
+  subgoal
+    using STTT_9b_arith1[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
+    by (simp add: wp, expr_simp, force)
+  subgoal
+    using STTT_9b_arith1[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
+    by (simp add: wp, expr_simp, force)
+  apply (rule_tac C="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" in diff_cut_on_rule)
+  subgoal
+    apply (rule_tac ?p1.0="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" and ?p2.0="(v \<ge> 0 \<and> x \<le> S 
+  \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e" in hoare_weaken_preI)
+     prefer 2 apply (force simp: fun_eq_iff)
+    apply (rule fbox_invs)
+     apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+     apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(v)\<^sup>e"; expr_simp)
+    by (auto intro!: poly_derivatives)[1](diff_inv_on_eq)
+  apply simp
+  apply (rule_tac I="(5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sup>e" in fbox_diff_invI)
+    prefer 3 apply expr_auto
+   prefer 2 apply expr_auto
+    apply (simp add: field_class.power_divide add_divide_distrib sign_distrib_laws, bin_unfold?, distribute?)+
+    apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+    apply (diff_inv_on_single_ineq_intro "(10 * $x * ($v) - 10 * $v * $xr
+    + (2 * ((2 * $xr - 2 * $x - 3 * $v) * $x) + 2 * ($v)\<^sup>2
+    - 2 * ((2 * $xr - 2 * $x - 3 * $v) * $xr))
+    + 2 * ($v) * (2 * $xr - 2 * $x - 3 * $v))\<^sup>e" "(0)\<^sup>e"; expr_simp)
+   prefer 2 
+  subgoal for X s
+    apply (simp add: sign_distrib_laws, distribute?)
+    apply (intro poly_derivatives; (force | (rule poly_derivatives))?)
+    by (simp add: sign_distrib_laws, distribute?) 
+      (simp add: power2_eq_square[symmetric])
+    apply (clarsimp simp: field_class.power_divide add_divide_distrib, bin_unfold?, distribute?)
+  apply (clarsimp simp: field_class.power_divide add_divide_distrib power2_eq_square[symmetric])
+  by (smt (verit, ccfv_SIG) distrib_right realpow_square_minus_le sum_squares_bound)
+
 
 end
 
+(* verified with the help of a CAS *)
 value "2 \<noteq> 2"
 
 
@@ -2404,6 +2421,28 @@ lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 
   oops
 
 value "2 \<noteq> 2"
+
+end
+
+
+dataspace harmonic_osc =
+  constants
+    a :: real
+    b :: real
+  variables 
+    x :: real 
+    y :: real 
+
+context harmonic_osc
+begin
+
+lemma "\<^bold>{x=0\<^bold>} 
+  LOOP (
+    (x ::= ?);(y ::= 0); \<questiondown>x>0?;
+    {x` = y, y` = - a * x + b * y}
+  ) INV (x\<ge>0) 
+  \<^bold>{x\<ge>0\<^bold>}"
+  oops
 
 end
 
