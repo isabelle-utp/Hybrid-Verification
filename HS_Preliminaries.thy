@@ -69,6 +69,14 @@ unbundle power_no_notation
 unbundle derivative_notation
 unbundle power_notation \<comment> \<open> enable notation \<close>
 
+lemma nat_wf_induct[case_names zero induct]: 
+  assumes "P 0"
+    and "(\<And>n. (\<And>m. m \<le> n \<Longrightarrow> P m) \<Longrightarrow> P (Suc n))"
+  shows "P n"
+  using assms
+  apply (induct n rule: full_nat_induct)
+  by simp (metis Suc_le_mono not0_implies_Suc)
+
 
 subsection \<open> Real vector arithmetic \<close>
 
@@ -77,6 +85,16 @@ definition vec_upd :: "('a^'b) \<Rightarrow> 'b \<Rightarrow> 'a \<Rightarrow> '
 
 lemma vec_upd_eq: "vec_upd s i a = (\<chi> j. if j = i then a else s$j)"
   by (simp add: vec_upd_def)
+
+lemma nonneg_real_within_Suc: "r \<ge> 0 \<Longrightarrow> \<exists>n. Suc n > r \<and> r \<ge> n" for r::real
+  by (metis Groups.add_ac(2) Suc_n_not_le_n Suc_neq_Zero
+      less_add_one less_le_not_le linorder_le_cases linorder_not_less 
+      nat.inject nat_ceiling_le_eq of_nat_0_less_iff of_nat_Suc
+      old.nat.exhaust order_less_le_trans real_nat_ceiling_ge)
+
+lemma pos_real_within_Suc: "r > 0 \<Longrightarrow> \<exists>n. Suc n \<ge> r \<and> r > n" for r::real
+  by (metis gr0_implies_Suc lessI of_nat_0_less_iff of_nat_less_iff 
+      order_le_less nonneg_real_within_Suc)
 
 lemma abs_le_eq:
   shows "(r::real) > 0 \<Longrightarrow> (\<bar>x\<bar> < r) = (-r < x \<and> x < r)"
@@ -130,6 +148,7 @@ qed
 
 lemma triangle_norm_vec_le_sum: "\<parallel>x\<parallel> \<le> (\<Sum>i\<in>UNIV. \<parallel>x $ i\<parallel>)"
   by (simp add: L2_set_le_sum norm_vec_def)
+
 
 subsection \<open> Single variable derivatives \<close>
 

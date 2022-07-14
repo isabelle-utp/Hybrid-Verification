@@ -38,7 +38,10 @@ lemma clarify_fbox: "|F] P = fbox F P"
 lemma fbox_iso: "P \<le> Q \<Longrightarrow> |F] P \<le> |F] Q"
   unfolding fbox_def by auto
 
-lemma fbox_mono: "`P \<longrightarrow> Q` \<Longrightarrow> `|F] P` \<Longrightarrow> `|F] Q`"
+lemma fbox_mono: 
+  "( |F] P) s \<Longrightarrow> `P \<longrightarrow> Q` \<Longrightarrow> ( |F] Q) s"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `|F] P \<longrightarrow> |F] Q`"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `|F] P` \<Longrightarrow> `|F] Q`"
   by (auto simp: taut_def fbox_def)
 
 lemma fbox_anti: "\<forall>s. F\<^sub>1 s \<subseteq> F\<^sub>2 s \<Longrightarrow> |F\<^sub>2] P \<le> |F\<^sub>1] P"
@@ -68,7 +71,10 @@ lemma clarify_fdia: "|F\<rangle> P = fdia F P"
 lemma fdia_iso: "P \<le> Q \<Longrightarrow> |F\<rangle> P \<le> |F\<rangle> Q"
   unfolding fdia_def by auto
 
-lemma fdia_mono: "`P \<longrightarrow> Q` \<Longrightarrow> `|F\<rangle> P` \<Longrightarrow> `|F\<rangle> Q`"
+lemma fdia_mono: 
+  "( |F\<rangle> P) s \<Longrightarrow> `P \<longrightarrow> Q` \<Longrightarrow> ( |F\<rangle> Q) s"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `|F\<rangle> P \<longrightarrow> |F\<rangle> Q`"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `|F\<rangle> P` \<Longrightarrow> `|F\<rangle> Q`"
   by (auto simp: taut_def fdia_def) blast
 
 
@@ -310,7 +316,7 @@ lemma fdia_if_then_else:
 subsection \<open> Finite iteration \<close>
 
 definition kpower :: "('a \<Rightarrow> 'a set) \<Rightarrow> nat \<Rightarrow> ('a \<Rightarrow> 'a set)" 
-  where [prog_defs]: "kpower f n = (\<lambda>s. ((;) f ^^ n) skip s)"
+  where [prog_defs]: "kpower f n = (\<lambda>s. (((;) f ^^ n) skip) s)"
 
 lemma kpower_base:
   shows kpower_0: "kpower f 0 = (\<lambda>s. {s})" 
@@ -326,14 +332,14 @@ lemma kpower_Suc: "kpower f (Suc n) = (f ; kpower f n)"
    apply(force simp: subset_antisym)
   unfolding kpower_def kcomp_eq by simp
 
-lemma "kpower f 2 s = (\<Union> {f s' |s'. s' \<in> f s})"
-  by (subgoal_tac "2 = Suc (Suc 0)", erule ssubst)
-    (auto simp: kpower_Suc kpower_base kcomp_id kcomp_eq)
-
 lemma kpower_Suc': "kpower f (Suc n) = (kpower f n; f)"
   apply (induct n)
   by (simp add: kpower_base kcomp_def)
     (simp add: kpower_Suc kcomp_assoc[symmetric])
+
+lemma "kpower f 2 s = (\<Union> {f s' |s'. s' \<in> f s})"
+  by (subgoal_tac "2 = Suc (Suc 0)", erule ssubst)
+    (auto simp: kpower_Suc kpower_base kcomp_id kcomp_eq)
 
 lemma kpower_nil: "kpower (\<lambda>s. {}) (Suc n) = (\<lambda>s. {})"
   by (induct n) 
@@ -351,51 +357,51 @@ lemma kcomp_kpower: "(f ; kpower f n) = (kpower f n; f)"
   by (induct n, simp_all add: kpower_base kcomp_id 
       kpower_Suc kpower_Suc' kcomp_assoc[symmetric])
 
-definition kleene_star :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> 'a set)" ("(_\<^sup>*)" [1000] 999)
+definition kstar :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> 'a set)" ("(_\<^sup>*)" [1000] 999)
   where [prog_defs]: "(f\<^sup>*) s = \<Union> {kpower f n s |n. n \<in> UNIV}"
 
-lemma kleene_star_alt: "f\<^sup>* = (\<Sqinter>i\<in>UNIV. kpower f i)"
-  by (auto simp add: fun_eq_iff kleene_star_def Nondet_choice_def)
+lemma kstar_alt: "f\<^sup>* = (\<Sqinter>i\<in>UNIV. kpower f i)"
+  by (auto simp add: fun_eq_iff kstar_def Nondet_choice_def)
 
-lemma in_kleene_star_self: "s \<in> (f\<^sup>*) s"
-  unfolding kleene_star_def apply clarsimp
+lemma in_kstar_self: "s \<in> (f\<^sup>*) s"
+  unfolding kstar_def apply clarsimp
   by (rule_tac x="{s}" in exI, clarsimp)
     (rule_tac x=0 in exI, clarsimp simp: kpower_base)
 
-lemma kleene_star_nil: "(\<lambda>s. {})\<^sup>* = (\<lambda>s. {s})"
-  unfolding kleene_star_def apply (intro ext set_eqI iffI; clarsimp)
+lemma kstar_nil: "(\<lambda>s. {})\<^sup>* = (\<lambda>s. {s})"
+  unfolding kstar_def apply (intro ext set_eqI iffI; clarsimp)
   subgoal for s' s n by (induct n, simp_all add: kpower_id kpower_nil kpower_base)
   by (rule_tac x="{s}" in exI, clarsimp)
     (rule_tac x=0 in exI, clarsimp simp: kpower_base)
 
-lemmas kleene_star_abort = kleene_star_nil[unfolded abort_def[symmetric] skip_def[symmetric]]
+lemmas kstar_abort = kstar_nil[unfolded abort_def[symmetric] skip_def[symmetric]]
 
-lemma kleene_star_id: "(\<lambda>s. {s})\<^sup>* = (\<lambda>s. {s})"
-  unfolding kleene_star_def 
+lemma kstar_id: "(\<lambda>s. {s})\<^sup>* = (\<lambda>s. {s})"
+  unfolding kstar_def 
   by (auto simp: fun_eq_iff kpower_base kpower_id)
 
-lemmas kleene_star_skip = kleene_star_id[unfolded skip_def[symmetric]]
+lemmas kstar_skip = kstar_id[unfolded skip_def[symmetric]]
 
-lemma kcomp_kleene_star: "f ; f\<^sup>* = f\<^sup>* ; f"
+lemma kcomp_kstar: "f ; f\<^sup>* = f\<^sup>* ; f"
 proof(intro ext set_eqI iffI conjI impI, goal_cases "\<subseteq>" "\<supseteq>")
   case ("\<subseteq>" s s')
   then obtain n where "s' \<in> (f ; kpower f n) s"
-    unfolding kcomp_eq kleene_star_def 
+    unfolding kcomp_eq kstar_def 
     by auto
   hence "s' \<in> (kpower f n; f) s"
     unfolding kcomp_kpower by simp
   then show "s' \<in> (f\<^sup>*; f) s" 
-    unfolding kcomp_eq kleene_star_def 
+    unfolding kcomp_eq kstar_def 
     by auto
 next
   case ("\<supseteq>" s s')
   then obtain n where "s' \<in> (kpower f n; f) s"
-    unfolding kcomp_eq kleene_star_def 
+    unfolding kcomp_eq kstar_def 
     by auto
   hence "s' \<in> (f; kpower f n) s"
     unfolding kcomp_kpower by simp
   then show "s' \<in> (f; f\<^sup>*) s" 
-    unfolding kcomp_eq kleene_star_def 
+    unfolding kcomp_eq kstar_def 
     by auto
 qed
 
@@ -410,13 +416,13 @@ lemma kpower_inv:
   using assms by blast
 
 lemma kstar_inv: "I \<le> |F] I \<Longrightarrow> I \<le> |F\<^sup>*] I"
-  unfolding kleene_star_def fbox_def 
+  unfolding kstar_def fbox_def 
   apply clarsimp
   apply(unfold le_fun_def, subgoal_tac "\<forall>x. I x \<longrightarrow> (\<forall>s'. s' \<in> F x \<longrightarrow> I s')")
   using kpower_inv[of I F] by blast simp
 
 lemma fdia_kstar_inv: "I \<le> |F\<rangle> I \<Longrightarrow> I \<le> |F\<^sup>*\<rangle> I"
-  unfolding kleene_star_def fdia_def apply(clarsimp simp: le_fun_def)
+  unfolding kstar_def fdia_def apply(clarsimp simp: le_fun_def)
   apply(erule_tac x=x in allE, clarsimp, rule_tac x=s' in exI, simp)
   apply(rule_tac x="kpower F 1 x" in exI, simp add: kpower_base)
   by (rule_tac x=1 in exI, simp add: kpower_base)
@@ -440,7 +446,7 @@ qed
 lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} F\<^sup>* \<^bold>{Q\<^bold>}"
   by (rule fbox_kstarI) (auto simp: SEXP_def taut_def)
 
-lemma fdia_kstarI:
+lemma le_fdia_kstarI:
   assumes "P \<le> I" and "I \<le> Q" and "I \<le> |F\<rangle> I" 
   shows "P \<le> |F\<^sup>*\<rangle> Q"
 proof-
@@ -454,11 +460,11 @@ proof-
 qed
 
 lemma fdia_kpower_kstar: "( |kpower F n\<rangle> Q) s \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
-  by (clarsimp simp: kleene_star_def fdia_def) 
+  by (clarsimp simp: kstar_def fdia_def) 
     (rule_tac x=s' in exI, force)
 
 lemma fdia_kstar_kpower: "( |F\<^sup>*\<rangle> Q) s \<Longrightarrow> \<exists>n. ( |kpower F n\<rangle> Q) s"
-  by (auto simp: kleene_star_def fdia_def) 
+  by (auto simp: kstar_def fdia_def) 
 
 lemma fdia_unfoldI: "( |F\<rangle> Q) s \<or> ( |F\<rangle> |F\<^sup>*\<rangle> Q) s \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
 proof-
@@ -474,9 +480,9 @@ proof-
   {assume hyp: "( |F\<rangle> |F\<^sup>*\<rangle> Q) s"
     then obtain n s' \<sigma> where fst_step: "\<sigma> \<in> F s" 
       and end_step: "Q s'" and nth_step: "s' \<in> kpower F n \<sigma>"
-      by (clarsimp simp: kleene_star_def fdia_def)
+      by (clarsimp simp: kstar_def fdia_def)
     hence "( |F\<^sup>*\<rangle> Q) s"
-    proof (clarsimp simp: kleene_star_def fdia_def, cases "n=0")
+    proof (clarsimp simp: kstar_def fdia_def, cases "n=0")
       case True
       then show "\<exists>s'. (\<exists>x. (\<exists>m. x = kpower F m s) \<and> s' \<in> x) \<and> Q s'"
         using nth_step fst_step end_step
@@ -499,86 +505,99 @@ proof-
     by blast
 qed
 
-lemma nonneg_real_within_Suc: "r \<ge> 0 \<Longrightarrow> \<exists>n. Suc n > r \<and> r \<ge> n" for r::real
-  by (metis Groups.add_ac(2) Suc_n_not_le_n Suc_neq_Zero
-      less_add_one less_le_not_le linorder_le_cases linorder_not_less 
-      nat.inject nat_ceiling_le_eq of_nat_0_less_iff of_nat_Suc
-      old.nat.exhaust order_less_le_trans real_nat_ceiling_ge)
-
-lemma pos_real_within_Suc: "r > 0 \<Longrightarrow> \<exists>n. Suc n \<ge> r \<and> r > n" for r::real
-  by (metis gr0_implies_Suc lessI of_nat_0_less_iff of_nat_less_iff 
-      order_le_less nonneg_real_within_Suc)
-
-lemma "`P \<longrightarrow> |F\<rangle> Q` \<Longrightarrow> `Q \<longrightarrow> R` \<Longrightarrow> `P \<longrightarrow> |F\<rangle> R`"
-  by (auto simp: taut_def fdia_def)
-
-lemma nat_wf_induct[case_names zero induct]: 
-  assumes "P 0"
-    and "(\<And>n. (\<And>m. m \<le> n \<Longrightarrow> P m) \<Longrightarrow> P (Suc n))"
-  shows "P n"
-  using assms
-  apply (induct n rule: full_nat_induct)
-  by simp (metis Suc_le_mono not0_implies_Suc)
-
-lemma fdia_mono': "( |F\<rangle> P) s \<Longrightarrow> `P \<longrightarrow> Q` \<Longrightarrow> ( |F\<rangle> Q) s"
-  by (auto simp: fdia_def taut_def)
-
-lemma
+lemma fdia_kstar_convergence:
   fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
   defines "Q \<equiv> (\<lambda>s. \<exists>r::real\<le>0. P r s)"
-  assumes "\<exists>r. P r s"
-    and iter: "\<forall>r>0. P r s \<longrightarrow> ( |F\<rangle> @(P (r - 1))) s"
+  assumes init: "`\<exists>r. @(P r)`"
+    and iter: "`\<forall>r>0. @(P r) \<longrightarrow> ( |F\<rangle> @(P (r - 1)))`"
   shows "( |F\<^sup>*\<rangle> Q) s"
 proof-
-  obtain r where init: "P r s"
-    using assms by blast
+  have iter': "\<And>s. \<forall>r>0. P r s \<longrightarrow> ( |F\<rangle> @(P (r - 1))) s"
+    using iter by (auto simp: taut_def)
+  have init': "\<forall>\<s>. \<exists>r. P r \<s>"
+    using init by expr_simp
+  then obtain r where "P r s"
+    by blast
   hence "r \<le> 0 \<Longrightarrow> Q s"
     using assms by blast
-  hence "r \<le> 0 \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
+  hence case1: "r \<le> 0 \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
     by (clarsimp simp: fdia_def)
-      (rule_tac x=s in exI, simp add: in_kleene_star_self)
-  moreover have obs_induct: 
-    "r > 0 \<Longrightarrow> P r s \<Longrightarrow> ( |kpower F (Suc n)\<rangle> @(P (r - (Suc n)))) s" for n
-  proof (induct n arbitrary: r rule: nat_wf_induct)
-    case zero
+      (rule_tac x=s in exI, simp add: in_kstar_self)
+  have obs_induct: 
+    "`\<forall>t::real. t - \<guillemotleft>n\<guillemotright> > 0 \<longrightarrow> @(P t) \<longrightarrow> ( |kpower F n\<rangle> @(P (t - n)))`" for n::nat
+  proof (induct n )
+    case 0
     then show ?case 
-      using iter[rule_format, of r]
-      by (simp add: kpower_base fdia_def)
+      using iter'[rule_format]
+      by (simp add: kpower_base fdia_def taut_def)
   next
-    case (induct n)
-    {assume "r - 1 > 0"
-      moreover note iter[rule_format, OF induct(2,3)]
-      moreover note induct(1)[OF order.refl \<open>r - 1 > 0\<close>]
-      ultimately have "( |F\<rangle> |kpower F (Suc n)\<rangle> @(P (r - 1 - real (Suc n)))) s"
-        using induct(2,3) apply -
-        apply (rule fdia_mono', force)
-        apply (clarsimp simp: taut_def)
-        sorry
-    }
-    then show ?case 
-      apply (clarsimp simp only: kpower_Suc fdia_kcomp)
-      sorry
+    case (Suc n)
+    show ?case
+    proof(clarsimp simp only: taut_def, clarsimp)
+      fix s t
+      assume hyps: "1 + real n < t" "P t s"
+      hence "t > 0" "0 < t - real n"
+        by auto
+      hence induct': "\<And>m s t. 0 < t - real n \<Longrightarrow> P t s 
+        \<Longrightarrow> ( |kpower F n\<rangle> @(P (t - real n))) s"
+        using Suc
+        by expr_simp
+      hence case_eq0: "n = 0 \<Longrightarrow> ( |kpower F (Suc n)\<rangle> @(P (t - (1 + real n)))) s"
+        using iter'[rule_format, OF \<open>t > 0\<close> \<open>P t s\<close>]
+        by (subst kpower_Suc, subst fdia_kcomp[OF refl])
+          (simp add: kpower_base skip_def[symmetric] fdia_skip)
+      have "( |kpower F n\<rangle> @(P (t - real n))) s"
+        using hyps induct'[OF \<open>0 < t - real n\<close>]
+        by force
+      moreover note iter'[rule_format, OF \<open>0 < t - real n\<close>]
+      ultimately have "n \<noteq> 0 \<Longrightarrow> ( |kpower F (Suc n)\<rangle> @(P (t - (1 + real n)))) s"
+        apply -
+        apply (frule not0_implies_Suc, clarsimp)
+        apply (subst kpower_Suc, subst fdia_kcomp[OF refl])
+        apply (subst (asm) kpower_Suc, subst (asm) fdia_kcomp[OF refl])
+        apply (rule fdia_mono, force)
+        apply (subst kpower_Suc, subst kcomp_kpower, subst fdia_kcomp[OF refl])
+        by (rule fdia_mono) (auto simp: taut_def diff_add_eq_diff_diff_swap)
+      thus "( |kpower F (Suc n)\<rangle> @(P (t - (1 + real n)))) s"
+        using case_eq0 by blast
+    qed
   qed
   moreover
   {assume "r > 0"
-    then obtain n::nat where r_hyps: "Suc n \<ge> r" "r > n"
+    then obtain n::nat where r_hyps: "Suc n \<ge> r" "r - n > 0"
       using pos_real_within_Suc 
-      by blast
-    hence "( |kpower F (Suc n)\<rangle> @(P (r - (Suc n)))) s"
-      using obs_induct[rule_format, OF \<open>r > 0\<close> init]
+      by auto
+    hence "( |kpower F n\<rangle> @(P (r - n))) s"
+      using obs_induct[unfolded taut_def, rule_format, 
+          simplified, rule_format, OF _ \<open>P r s\<close>]
       by simp
-    hence "( |F\<^sup>*\<rangle> @(P (r - (Suc n)))) s"
-      using fdia_kpower_kstar[of F "Suc n"] 
+    hence "( |F\<^sup>*\<rangle> @(P (r - n))) s"
+      using fdia_kpower_kstar[of F "n"] 
       by force
+    hence "( |F\<^sup>*\<rangle> @(P (r - (Suc n)))) s"
+      apply (intro fdia_unfoldI disjI2)
+      apply (subst fdia_kcomp[OF refl, symmetric])
+      apply (subst kcomp_kstar, subst fdia_kcomp[OF refl])
+      apply (rule fdia_mono, force)
+      using iter'[rule_format, OF \<open>r - n > 0\<close>]
+      by (auto simp: taut_def diff_add_eq_diff_diff_swap)
     hence "( |F\<^sup>*\<rangle> @Q) s"
       unfolding assms 
-      apply (rule fdia_mono')
+      apply (rule fdia_mono)
       using r_hyps
       by (clarsimp simp: taut_def)
         (rule_tac x="r - Suc n" in exI, force)}
   ultimately show "( |F\<^sup>*\<rangle> @Q) s"
-    by linarith
-  oops
+    using case1 by linarith
+qed
+
+lemma fdia_kstarI:
+  fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
+  assumes init: "`\<exists>r. @(P r)`"
+    and iter: "`\<forall>r>0. @(P r) \<longrightarrow> ( |F\<rangle> @(P (r - 1)))`"
+    and "`(\<exists>r\<le>0. @(P r)) \<longrightarrow> Q`"
+  shows "( |F\<^sup>*\<rangle> Q) s"
+  by (rule fdia_mono(1)[OF fdia_kstar_convergence[OF assms(1,2)] assms(3)])
 
 
 subsection \<open> Loops with annotated invariants \<close>
@@ -655,7 +674,7 @@ lemma nmods_union [closure]:
   shows "P nmods (A ; B)"
   using assms
   by (auto simp add: not_modifies_def prog_defs)
-     (metis scene_equiv_def scene_override_union scene_union_incompat scene_union_unit)
+     (metis scene_equiv_def scene_override_union scene_union_incompat scene_union_unit(1))
 
 lemma nmods_skip [closure]: "idem_scene a \<Longrightarrow> skip nmods a"
   by (simp add: not_modifies_def prog_defs scene_equiv_def)
@@ -699,7 +718,7 @@ qed
 lemma nmods_star [closure]:
   assumes "idem_scene a" "P nmods a"
   shows "P\<^sup>* nmods a"
-  by (simp add: assms kleene_star_alt nmods_Choice nmods_kpower)
+  by (simp add: assms kstar_alt nmods_Choice nmods_kpower)
 
 lemma nmods_loop [closure]:
   assumes "idem_scene a" "P nmods a"
@@ -1210,7 +1229,6 @@ lemma hoare_diff_inv_on_post_inv:
   using assms(2) by (rule hoare_conseq; simp add: assms)
 
 
-
 subsection \<open> Derivation of the rules of dL \<close>
 
 text \<open> We derive rules of differential dynamic logic (dL). First we present a
@@ -1516,7 +1534,6 @@ lemma has_vderiv_put:
   by (rule bounded_linear_imp_has_derivative, auto)
 
 lemmas vderiv_putI = has_vderiv_put[THEN has_vderiv_on_eq_rhs]
-
 
 lemma darboux: 
   fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"

@@ -13,7 +13,7 @@ begin
 
 method hol_intros = (intro allI conjI impI iffI)
 
-method hol_clarsimp = (hol_intros; clarsimp?)
+method hol_clarsimp uses simp = (hol_intros; (clarsimp simp: simp)?)
 
 method move_left for x::"'a::{ab_semigroup_mult,power}" = (
     (simp only: mult.assoc[symmetric])?, (* prepare for main loop *)

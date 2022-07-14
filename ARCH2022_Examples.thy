@@ -1929,7 +1929,53 @@ subsubsection \<open> STTT Tutorial: Example 10 \<close> (*N 51 *)
         }
       }*@invariant(v >= 0 & dx^2+dy^2 = 1 & r != 0 & abs(y-ly) + v^2/(2*b) < lw)
     ] abs(y-ly) < lw *)
-value "2 \<noteq> 2"
+
+dataspace STTT_10 =
+  constants A::real B::real \<epsilon>::real
+  variables a::real v::real x::real dx::real y::real dy::real w::real r::real c::real
+
+definition annot_inv :: "'a \<Rightarrow> 'b \<Rightarrow> 'a" (infixr "@inv" 65)
+  where "x @inv i = x"
+
+lemma impl_eq_leq: "`@P \<longrightarrow> @Q` = (P \<le> Q)"
+  by (auto simp: taut_def)
+
+context STTT_10
+begin 
+
+lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> y = ly \<and> r \<noteq> 0 \<and> dx\<^sup>2 + dy\<^sup>2 = 1
+           \<and> \<bar>y-ly\<bar> + v\<^sup>2/(2*b) < lw)
+ \<longrightarrow> ( |LOOP
+      ( (   (\<questiondown>\<bar>y - ly\<bar> + v\<^sup>2/(2*b) + (A/b+1)*(A/2*\<epsilon>\<^sup>2+\<epsilon>* v) < lw?;
+            a ::= ?; \<questiondown>-B \<le> a \<and> a \<le> A?;
+            w ::= ?; r ::= ?; \<questiondown>r \<noteq> 0 \<and> w*r = v?)
+         \<sqinter> (\<questiondown>v=0?; a ::= 0; w ::= 0)
+         \<sqinter> (a ::= ?; \<questiondown>-B \<le> a \<and> a \<le> -b?)
+        );
+        c ::= 0;
+        (
+        {x` = v * dx, y` = v * dy, v` = a, dx` = -dy*w, dy` = dx*w, w` = a/r, c` = 1 | v >= 0 \<and> c \<le> \<epsilon>}
+        @inv (c \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2=1 \<and>
+          (v'=a \<longrightarrow> v = old(v)+a*c) \<and>
+          (v'=a \<longrightarrow> -c*(v-a/2*c) \<le> y - old(y) \<and> y - old(y) \<le> c*(v-a/2*c)) \<and>
+          (v'=0 \<longrightarrow> v = old(v)) \<and>
+          (v'=0 \<longrightarrow> -c * v \<le> y - old(y) \<and> y - old(y) \<le> c * v)
+        )\<^sub>e
+        )
+      ) INV (v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> r \<noteq> 0 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)
+    ] (\<bar>y - ly\<bar> < lw))`"
+  apply (subst impl_eq_leq)
+  apply (subst change_loopI[where I="(v \<ge> 0 \<and> b > 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> r \<noteq> 0 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)\<^sup>e"])
+  apply (rule fbox_loopI)
+    apply (clarsimp simp: le_fun_def)
+   apply (clarsimp simp: le_fun_def)
+  apply (smt (verit, best) divide_eq_0_iff divide_pos_pos zero_less_power zero_power2)
+  apply (clarsimp simp: wp)
+  oops
+
+end 
+
+value "2 \<noteq> 2" (* not enough time? *)
 
 
 subsubsection \<open> LICS: Example 1 Continuous car accelerates forward \<close>
@@ -2076,13 +2122,6 @@ end
 
 subsubsection \<open> LICS: Example 4b progress of time-triggered car \<close>  (*N 56 *)
 
-
-lemma "\<not> (a \<le> b) = (a > b)" for a::real
-  by auto
-
-lemma kpower_base2: "( |kpower f 0\<rangle> @Q) s = Q s"
-  by (simp add: fdia_def fun_eq_iff kpower_base)
-
 context LICS
 begin
 
@@ -2105,8 +2144,12 @@ lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0
   (x \<ge> p)))`"
   apply (clarsimp simp: taut_def)
   apply (rule_tac x=M in exI)
-  apply (rule_tac n=n in kpower_progress)
-  apply (cases "n=0")
+  apply (rule fdia_kstarI)
+    prefer 2
+  apply (clarsimp simp: taut_def fdia_skip fdia_abort fdia_test fdia_assign 
+      fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on
+      fdia_g_ode_frame_flow[OF local_flow_LICS2])
+  apply (hol_clarsimp)
   thm taut_def fdia_skip fdia_abort fdia_test fdia_assign 
       fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on
   thm fdia_g_ode_frame_flow[OF local_flow_LICS2]
@@ -2313,9 +2356,10 @@ lemma "`v \<ge> 0 \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0 \<long
   apply distribute
   apply (mon_simp_vars A \<epsilon>)
   apply (mon_simp_vars \<epsilon> b)
-  oops
+  sorry
 
-  value "2 \<noteq> 2"
+(* verified with the help of a CAS *)
+value "2 \<noteq> 2"
 
 end
 
@@ -2500,6 +2544,8 @@ subsection \<open> ETCS: Proposition 4 (Reactivity) \<close> (*N 63 *)
 (* Bool Controllable(Real m, Real z, Real v, Real d) <-> (v^2-d^2 <= 2*b*(m-z) & Assumptions(v, d)) *)
 abbreviation "Controllable d \<equiv> (v\<^sup>2 -d\<^sup>2 \<le> 2*b*(m-z) \<and> @(Assumptions d))\<^sub>e"
 
+
+
 (*
 em = 0 & d >= 0 & b > 0 & ep > 0 & A > 0 & v>=0
   -> ((\forall m \forall z (m-z>= sb & Controllable(m,z,v,d) -> [ a:=A; drive; ]Controllable(m,z,v,d)) )
@@ -2510,11 +2556,13 @@ em = 0 & d >= 0 & b > 0 & ep > 0 & A > 0 & v>=0
 lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 \<and> v \<ge> 0 
   \<longrightarrow> ((\<forall>m.\<forall>z. m - z \<ge> sb \<and> @(Controllable d) \<longrightarrow> |a ::= A; drive]@(Controllable d)) 
     \<longleftrightarrow> (sb \<ge> (v\<^sup>2 - d\<^sup>2)/(2*b) + (A/b + 1) * (A/2 * \<epsilon>\<^sup>2 + \<epsilon> * v)))`"
-  apply (clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS1], safe; expr_simp)
-  apply (metis diff_zero order.refl)
-  oops
+  apply (simp only: taut_def)
+  apply (hol_clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS1]; expr_simp)
+   apply (safe; clarsimp simp: dlo_simps)
+      apply (metis diff_zero)
+  sorry
 
-value "2 \<noteq> 2"
+value "2 \<noteq> 2" (* could not even prove it with KeYmaera X *)
 
 end
 
