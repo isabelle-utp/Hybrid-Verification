@@ -2077,6 +2077,12 @@ end
 subsubsection \<open> LICS: Example 4b progress of time-triggered car \<close>  (*N 56 *)
 
 
+lemma "\<not> (a \<le> b) = (a > b)" for a::real
+  by auto
+
+lemma kpower_base2: "( |kpower f 0\<rangle> @Q) s = Q s"
+  by (simp add: fdia_def fun_eq_iff kpower_base)
+
 context LICS
 begin
 
@@ -2092,23 +2098,21 @@ begin
   > (x >= p) *)
 lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0 
   \<longrightarrow> (\<forall>p. \<exists>M. 
-  ( |((\<questiondown>(2*b*(M-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
-  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}\<rangle> 
+  ( |(
+    ((\<questiondown>(2*b*(M-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
+    {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}
+    )\<^sup>*\<rangle>
   (x \<ge> p)))`"
-  apply (clarsimp simp: taut_def fdia_skip fdia_abort fdia_test fdia_assign 
-      fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on)
+  apply (clarsimp simp: taut_def)
+  apply (rule_tac x=M in exI)
+  apply (rule_tac n=n in kpower_progress)
+  apply (cases "n=0")
+  thm taut_def fdia_skip fdia_abort fdia_test fdia_assign 
+      fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on
+  thm fdia_g_ode_frame_flow[OF local_flow_LICS2]
   oops
 
-
-lemma "\<epsilon> > 0 \<Longrightarrow> A > 0 \<Longrightarrow> b > 0 
-  \<Longrightarrow> \<forall>p. \<exists>M. (
-  |((\<questiondown>(2*b*(M-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
-  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}\<rangle> 
-  (x \<ge> p)) s"
-  apply clarsimp
-  oops
-
-value "2 \<noteq> 2"
+value "2 \<noteq> 2" (* do not understand the test yet *)
 
 end
 

@@ -11,6 +11,9 @@ theory Real_Arith_Tactics
 
 begin
 
+method hol_intros = (intro allI conjI impI iffI)
+
+method hol_clarsimp = (hol_intros; clarsimp?)
 
 method move_left for x::"'a::{ab_semigroup_mult,power}" = (
     (simp only: mult.assoc[symmetric])?, (* prepare for main loop *)
