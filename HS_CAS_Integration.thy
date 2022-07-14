@@ -3,6 +3,9 @@ theory HS_CAS_Integration
   keywords "find_local_flow" :: diag
 begin
 
+method fbox_solve for \<phi> :: "real \<Rightarrow> 's \<Rightarrow> 's" =
+  (subst fbox_solve[where \<phi>="\<phi>"], local_flow_auto, expr_auto)
+
 ML \<open>
 fun match_term (top, _) = case top of
      Const ("HS_Lens_ODEs.g_orbital_on", _) => true
