@@ -17,6 +17,9 @@ no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
 
 notation Union ("\<mu>")
 
+lemma impl_eq_leq: "`@P \<longrightarrow> @Q` = (P \<le> Q)"
+  by (auto simp: taut_def)
+
 
 subsection \<open> Forward box operator \<close>
 

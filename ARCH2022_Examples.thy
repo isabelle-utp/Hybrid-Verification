@@ -1937,9 +1937,6 @@ dataspace STTT_10 =
 definition annot_inv :: "'a \<Rightarrow> 'b \<Rightarrow> 'a" (infixr "@inv" 65)
   where "x @inv i = x"
 
-lemma impl_eq_leq: "`@P \<longrightarrow> @Q` = (P \<le> Q)"
-  by (auto simp: taut_def)
-
 context STTT_10
 begin 
 
@@ -2367,6 +2364,25 @@ end
 
 subsubsection \<open> LICS: Example 7 Model-Predictive Control Design Car \<close>  (*N 60 *)
 
+lemma LICSexample7_arith: "\<forall>t\<in>{0..}. v * t - b * t\<^sup>2 / 2 + x \<le> m \<Longrightarrow>
+       0 \<le> A \<Longrightarrow>
+       0 < b \<Longrightarrow>
+       0 \<le> (t::real) \<Longrightarrow>
+       \<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> b * \<tau> \<le> v \<and> \<tau> \<le> \<epsilon> \<Longrightarrow>
+       0 \<le> \<tau> \<Longrightarrow> (v - b * t) * \<tau> - b * \<tau>\<^sup>2 / 2 + (v * t - b * t\<^sup>2 / 2 + x) \<le> m"
+  sorry
+
+
+context LICS
+begin
+
+lemma local_flow_LICS7: "local_flow_on [t \<leadsto> 1, v \<leadsto> a, x \<leadsto> $v] (x +\<^sub>L v +\<^sub>L t) UNIV UNIV 
+  (\<lambda>\<tau>. [x \<leadsto> a * \<tau>\<^sup>2 / 2 + $v * \<tau> + $x, v \<leadsto> a * \<tau> + $v, t \<leadsto> \<tau> + t])"
+  apply (clarsimp simp add: local_flow_on_def)
+  apply (unfold_locales; expr_simp)
+   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+
 (* [{x'=v, v'=-b}](x<=m)
    & v >= 0
    & A >= 0
@@ -2381,8 +2397,33 @@ subsubsection \<open> LICS: Example 7 Model-Predictive Control Design Car \<clos
       {x'=v, v'=a, t'=1 & v>=0 & t<=ep}
     }*@invariant([{x'=v, v'=-b}](x<=m))
   ] (x <= m) *)
+lemma "`(( |{x` = v, v` = -b}](x \<le> m))
+   \<and> v \<ge> 0
+   \<and> A \<ge> 0
+   \<and> b > 0)
+\<longrightarrow>
+  ( | LOOP (
+    ((\<questiondown> |t::=0; {x `= v, v `= A, t `= 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}] |{x `= v, v `= -b}] (x \<le> m)?; 
+        a ::= A) \<sqinter> a ::= -b);
+    t ::= 0;
+    {x `= v, v `= a, t `= 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}
+    ) INV ( |{x `= v, v `= -b}](x \<le> m))
+  ] (x \<le> m))`"
+  apply (subst impl_eq_leq)
+  apply (subst change_loopI[where I="( |{x `= v, v `= -b}](x \<le> m) \<and> A \<ge> 0 \<and> b > 0)\<^sup>e"])
+  apply (rule fbox_loopI)
+    apply (clarsimp)
+   apply (clarsimp simp: fbox_g_dL_easiest[OF local_flow_LICS3] wp)
+   apply (erule_tac x=0 in ballE, expr_simp, force)
+  apply (clarsimp simp: fbox_g_dL_easiest[OF local_flow_LICS7] 
+      fbox_g_dL_easiest[OF local_flow_LICS3] wp fbox_g_dL_easiest[OF local_flow_LICS4],
+      safe; expr_simp?, clarsimp?)
+  using LICSexample7_arith[of "get\<^bsub>v\<^esub> _" b] by auto
 
-value "2 \<noteq> 2"
+end
+
+value "2 \<noteq> 2" (* verified with the help of a CAS *)
+
 
 
 subsection \<open>Advanced\<close>
@@ -2589,14 +2630,17 @@ lemma "\<^bold>{x=0\<^bold>}
 end
 
 (*
-% 10 unsolved problems
-% 3 basic need sorry in arithmetic
-% 1 advanced need sorry in arithmetic
-% 1 basic has been solved with evol
-% 1 advanced does not match Isabelle syntax
-% 2 basic did not even try
-% 1 basic is diamond
-% 1 basic requires change of interval
+
+% Unsolved problems
+% 1. Requires darboux rule
+% 2. verified with the help of a CAS
+% 3. verified with the help of a CAS
+% 4. not solved yet (not dedicated enough time)
+% 5. not solved yet (existential)
+% 6. verified with the help of a CAS
+% 7. verified with the help of a CAS
+% 8. not solved yet (not dedicated enough time)
+
 *)
 
 end
