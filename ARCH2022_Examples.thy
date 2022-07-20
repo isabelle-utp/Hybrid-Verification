@@ -17,7 +17,7 @@ begin
 subsection \<open> Basic \<close>
 
 lit_vars \<comment> \<open> disable constants \<close>
-no_notation disj (infixr "|" 30)
+no_notation (ASCII) disj (infixr "|" 30)
 no_notation Lattice.meet (infixl "\<sqinter>\<index>" 70)
 hide_const Ferrack.T
 hide_const Ferrack.A
@@ -763,7 +763,7 @@ context three_vars
 begin
 
 (* x>=1 & y=10 & z=-2 -> [{x'=y, y'=z+y^2-y & y>=0}](x>=1 & y>=0) *)
-lemma "(x \<ge> 1 \<and> y = 10 \<and> z = - 2)\<^sub>e \<le> |{x` = y, y` = z + y\<^sup>2 - y | y \<ge> 0}] (x \<ge> 1 \<and> y \<ge> 0)"
+lemma "(x \<ge> 1 \<and> y = 10 \<and> z = - 2)\<^sub>e \<le> |{x` = y, y` =$z + y\<^sup>2 - y | y \<ge> 0}] (x \<ge> 1 \<and> y \<ge> 0)"
   apply (rule fbox_diff_invI[where I="(x \<ge> 1 \<and> y \<ge> 0)\<^sup>e"]; force?)
     apply (rule fbox_invs(1))
      apply expr_simp
@@ -1870,8 +1870,8 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
     by (simp add: wp, expr_simp, force)
   apply (rule_tac C="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" in diff_cut_on_rule)
   subgoal
-    apply (rule_tac ?p1.0="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" and ?p2.0="(v \<ge> 0 \<and> x \<le> S 
-  \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e" in hoare_weaken_preI)
+    apply (rule_tac a="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" and b="(v \<ge> 0 \<and> x \<le> S 
+  \<and> (5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < ((S - xm)/2)\<^sup>2)\<^sup>e" in hoare_conj_preI)
      prefer 2 apply (force simp: fun_eq_iff)
     apply (rule fbox_invs)
      apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
@@ -1906,6 +1906,209 @@ value "2 \<noteq> 2"
 
 subsubsection \<open> STTT Tutorial: Example 10 \<close> (*N 51 *)
 
+dataspace STTT_10 =
+  constants A::real B::real \<epsilon>::real
+  variables a::real v::real x::real dx::real y::real dy::real w::real r::real c::real
+
+definition annot_inv :: "'a \<Rightarrow> 'b \<Rightarrow> 'a" (infixr "@inv" 65)
+  where "x @inv i = x"
+
+lemma subst_fbox: "\<sigma> \<dagger> ( |X] Q) = ( |\<sigma> \<dagger> X] (\<sigma> \<dagger> Q))"
+  by (expr_simp add: fbox_def)
+
+lemma fbox_kcompI: "P \<le> |X1] (@R) \<Longrightarrow> R \<le> |X2] (@Q) \<Longrightarrow> P \<le> |X1 ; X2] (@Q)"
+  by (simp add: fbox_kcomp) (auto simp: fbox_def)
+
+lemma new_varI: 
+  "(\<And>k. (@P \<and> $x = k)\<^sub>e \<le> |X] (@Q)) \<Longrightarrow> (@P)\<^sub>e \<le> |X] (@Q)"
+  "(\<And>k. (@P \<and> $x = k)\<^sub>e \<le> |X] (@Q)) \<Longrightarrow> (\<lambda>s. P s) \<le> |X] (@Q)"
+  by (expr_auto add: fbox_def)+
+
+lemma circumf_within_square:
+  fixes x::real
+  assumes "x\<^sup>2 + y\<^sup>2 = r\<^sup>2" and "0 < r"
+  shows "-r \<le> x" and "x \<le> r"
+    and "-r \<le> y" and "y \<le> r"
+proof-
+  have "x\<^sup>2 \<ge> 0" and "y\<^sup>2 \<ge> 0"
+    by force+
+  hence "x\<^sup>2 \<le> r\<^sup>2" and "y\<^sup>2 \<le> r\<^sup>2"
+    using assms by linarith+
+  hence "\<bar>x\<bar> \<le> r" and "\<bar>y\<bar> \<le> r"
+    using real_le_rsqrt assms
+    by (meson less_eq_real_def power2_le_iff_abs_le)+
+  thus "-r \<le> x" and "x \<le> r"
+    and "-r \<le> y" and "y \<le> r"
+    by linarith+
+qed
+
+lemma STTT_10_arith1:
+  assumes v_ge0: "0 \<le> (v::real)"
+    and v_eq: "v = a * c + v0"
+    and circumf: "(dx)\<^sup>2 + (dy)\<^sup>2 = 1" 
+  shows "- (a * c) - v0 \<le> (a * c + v0) * dy" 
+    and "(a * c + v0) * dy \<le> (a * c) + v0"
+  using assms circumf_within_square[where r=1, simplified]
+proof-
+  have in_square: "-1 \<le> dy \<and> dy \<le> 1"
+    using circumf_within_square[where r=1] 
+      circumf by auto
+  hence "- v \<le> v * dy \<and> v * dy \<le> v"
+  proof(cases "dy \<ge> 0")
+    case True
+    hence "- v \<le> v * dy"
+      using v_ge0
+      by (meson mult_nonneg_nonneg neg_le_0_iff_le order_trans)
+    moreover have "v * dy \<le> v"
+      using in_square True
+        mult_left_le v_ge0 by blast
+    ultimately show ?thesis 
+      by simp
+  next
+    case False
+    hence "- v \<le> v * dy"
+      using v_ge0 in_square
+      by (metis minus_le_iff mult.commute mult_left_le 
+          vector_space_over_itself.scale_minus_left)
+    moreover have "v * dy \<le> v"
+      using in_square False
+        mult_left_le v_ge0 by blast
+    ultimately show ?thesis 
+      by simp
+  qed
+  thus "- (a * c) - v0 \<le> (a * c + v0) * dy" 
+    and "(a * c + v0) * dy \<le> (a * c) + v0"
+    using v_eq 
+    by auto
+qed
+
+lemma STTT_10_arith2:
+  assumes "t \<le> \<epsilon>" and "v = a * t + v0" and "0 \<le> (t::real)" 
+    and v_ge: "0 \<le> a * t + v0" 
+    and "0 < A" and "0 < b" and "a \<le> A" and "0 \<le> v0" 
+    and delta_hyps: "a * t\<^sup>2 / 2 - t * (a * t + v0) \<le> y - y0"
+    "y - y0 \<le> t * (a * t + v0) - a * t\<^sup>2 / 2" 
+    and abs_hyp: "\<bar>y0 - ly\<bar> + v0\<^sup>2 / (2 * b) + (A / b + 1) * (A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * v0) < lw"
+  shows "\<bar>y - ly\<bar> + (a * t + v0)\<^sup>2 / (2 * b) < lw"
+proof-
+  have fact1: "v0\<^sup>2 / (2 * b) \<ge> 0"
+    using \<open>0 \<le> v0\<close> \<open>0 < b\<close> by auto
+  have fact2: "A / b + 1 > 1"
+    using \<open>0 < A\<close> \<open>0 < b\<close>
+    by (simp add: add_pos_pos)
+  have "a * t + v0 \<le> A * t + v0"
+    using \<open>a \<le> A\<close> \<open>0 \<le> t\<close> \<open>0 \<le> v0\<close>
+    by (simp add: mult_right_mono) 
+  hence fact3: "(a * t + v0)\<^sup>2 / (2 * b) \<le> (A * t + v0)\<^sup>2 / (2 * b)"
+    using \<open>0 < b\<close> apply -
+    by (frule power_mono[OF _ v_ge, of "A * t + v0" 2])
+      (rule divide_right_mono, auto)
+  have fact4: "a * t\<^sup>2 / 2 \<le> A * t\<^sup>2 / 2"
+    using \<open>a \<le> A\<close>
+    by (simp add: mult_right_mono)
+  have fact5: "A\<^sup>2 * t\<^sup>2 / (2 * b) + A * t * v0 / b + v0\<^sup>2 / (2 * b) = (A*t + v0)\<^sup>2/(2*b)"
+    by (bin_unfold, simp add: add_divide_distrib)
+  have "A * t\<^sup>2 / 2 \<le> A * \<epsilon>\<^sup>2 / 2" (* here we start the proof *)
+    using \<open>t \<le> \<epsilon>\<close> \<open>0 < A\<close> \<open>0 \<le> v0\<close> \<open>0 \<le> t\<close>
+    by auto
+  moreover have "t * v0 \<le> \<epsilon> * v0"
+    using \<open>t \<le> \<epsilon>\<close> \<open>0 < A\<close> \<open>0 \<le> v0\<close> \<open>0 \<le> t\<close>
+    by (simp add: mult_right_mono)
+  ultimately have "A * t\<^sup>2 / 2 + t * v0 \<le> A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * v0"
+    by linarith
+  hence "(A / b + 1) * (A * t\<^sup>2 / 2 + t * v0) \<le> (A / b + 1) * (A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * v0)"
+    using fact2
+    by (simp add: mult_left_mono)
+  hence key: "\<bar>y0 - ly\<bar> < lw - v0\<^sup>2 / (2 * b) - (A / b + 1) * (A * t\<^sup>2 / 2 + t * v0)" (is "_ < ?J")
+    using abs_hyp by linarith
+  have J_eqK: 
+    "?J = lw - v0\<^sup>2 / (2 * b) - A\<^sup>2 * t\<^sup>2 / (2 * b) - A * t * v0 / b - A * t\<^sup>2 / 2 - t * v0" (is "_ = ?K")
+    by (auto simp: field_simps)
+  hence "y0 - ly < ?J"
+    using key by linarith
+  moreover have "y - y0 \<le> a * t\<^sup>2 / 2 + t * v0"
+    using delta_hyps(2) 
+    by (auto simp: field_simps)
+  ultimately have "y - ly < ?J + a * t\<^sup>2 / 2 + t * v0"
+    by linarith
+  also have "... \<le> lw - (A * t + v0)\<^sup>2 / (2 * b)"
+    using J_eqK fact4 fact5 by linarith
+  also have "... \<le> lw - (a * t + v0)\<^sup>2 / (2 * b)"
+    using fact1 fact3 by linarith
+  finally have result1: "y - ly < lw - (a * t + v0)\<^sup>2 / (2 * b)" .
+  have "- ?J < y0 - ly"
+    using key by linarith
+  moreover have "- a * t\<^sup>2 / 2 - t * v0 \<le> y - y0"
+    using delta_hyps(1) 
+    by (auto simp: field_simps)
+  ultimately have "y - ly > - ?J - a * t\<^sup>2 / 2 - t * v0"
+    by linarith
+  moreover have "- ?J - a * t\<^sup>2 / 2 - t * v0 \<ge> - lw + (A * t + v0)\<^sup>2 / (2 * b)"
+    using J_eqK fact1 fact4 fact5 by linarith
+  moreover have "- lw + (A * t + v0)\<^sup>2 / (2 * b) \<ge> - lw + (a * t + v0)\<^sup>2 / (2 * b)"
+    using fact1 fact3 by linarith
+  ultimately have result2: "-lw + (a * t + v0)\<^sup>2 / (2 * b) < y - ly" 
+    by linarith
+  show "\<bar>y - ly\<bar> + (a * t + v0)\<^sup>2 / (2 * b) < lw"
+    using result1 result2 by linarith
+qed
+
+lemma STTT_10_arith3:
+  assumes v_eq: "v = a * t + v0" 
+    and "0 \<le> (t::real)" and v_ge0: "0 \<le> a * t + v0" 
+    and "0 < b" and "0 \<le> v0" and "a \<le> - b" 
+    and delta_hyps: "a * (t)\<^sup>2 / 2 - t * (a * t + v0) \<le> y - y0" 
+    "y - y0 \<le> t * (a * t + v0) - a * (t)\<^sup>2 / 2" 
+    and abs_hyp: "\<bar>y0 - ly\<bar> + v0\<^sup>2 / (2 * b) < lw"
+  shows "\<bar>y - ly\<bar> + (a * t + v0)\<^sup>2 / (2 * b) < lw"
+proof-
+  have "a < 0" "(v + v0)*t \<ge> 0" "b \<le> - a"
+    using \<open>0 < b\<close> \<open>a \<le> - b\<close> \<open>0 \<le> v0\<close> 
+      v_eq v_ge0 \<open>0 \<le> t\<close>
+    by auto
+  hence "b*(v + v0)*t \<le> - a*(v + v0)*t"
+    using mult_right_mono[OF \<open>b \<le> - a\<close> \<open>(v + v0)*t \<ge> 0\<close>]
+    by auto
+  hence "b*(v + v0)*t/(2*b) \<le> - a*(v + v0)*t/(2*b)"
+    using \<open>0 < b\<close>
+    by (simp add: mult_left_mono)
+      (auto simp: field_simps)
+  hence fact1: "(v + v0)*t/2 \<le> - a*(v + v0)*t/(2*b)"
+    using \<open>0 < b\<close>
+    by auto
+  have fact2: "(a * t + v0)\<^sup>2 / (2 * b) = v0\<^sup>2 / (2 * b) + a*(v + v0)*t/ (2 * b)"
+    by (auto simp add: add_divide_distrib v_eq field_simps)
+  have "a * t\<^sup>2/2 + v0 * t = (a * t\<^sup>2 + v0 * t + v0 * t)/2"
+    by (simp add: add_divide_distrib)
+  also have "... = (v + v0)*t/2"
+    using v_eq 
+    by (auto simp: field_simps)
+  finally have fact3: "a * t\<^sup>2/2 + v0 * t = (v + v0)*t/2" .
+  hence "y - y0 \<le> (v + v0)*t/2"
+    using delta_hyps(2)
+    by (auto simp: field_simps)
+  moreover have "y0 - ly < lw - v0\<^sup>2 / (2 * b)"
+    using abs_hyp by linarith
+  ultimately have "y - ly < lw - v0\<^sup>2 / (2 * b) + (v + v0)*t/2"
+    by linarith
+  hence result1: "y - ly < lw - (a * t + v0)\<^sup>2 / (2 * b)"
+    using fact1 fact2 by linarith
+  have "- (v + v0)*t/2 \<le> y - y0"
+    using delta_hyps(1) fact3
+    by (auto simp: field_simps)
+  moreover have "- lw + v0\<^sup>2 / (2 * b) < y0 - ly"
+    using abs_hyp by linarith
+  ultimately have "- lw + v0\<^sup>2 / (2 * b) - (v + v0)*t/2 < y - ly"
+    by linarith
+  hence result2: "- (lw - (a * t + v0)\<^sup>2 / (2 * b)) < y - ly"
+    using fact1 fact2 by linarith
+  show "\<bar>y - ly\<bar> + (a * t + v0)\<^sup>2 / (2 * b) < lw"
+    using result1 result2 by linarith
+qed
+
+context STTT_10
+begin 
+
 (*
  v >= 0 & A > 0 & B >= b & b > 0 & ep > 0 & lw > 0 & y = ly & r != 0 & dx^2 + dy^2 = 1
            & abs(y-ly) + v^2/(2*b) < lw
@@ -1929,17 +2132,6 @@ subsubsection \<open> STTT Tutorial: Example 10 \<close> (*N 51 *)
         }
       }*@invariant(v >= 0 & dx^2+dy^2 = 1 & r != 0 & abs(y-ly) + v^2/(2*b) < lw)
     ] abs(y-ly) < lw *)
-
-dataspace STTT_10 =
-  constants A::real B::real \<epsilon>::real
-  variables a::real v::real x::real dx::real y::real dy::real w::real r::real c::real
-
-definition annot_inv :: "'a \<Rightarrow> 'b \<Rightarrow> 'a" (infixr "@inv" 65)
-  where "x @inv i = x"
-
-context STTT_10
-begin 
-
 lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> y = ly \<and> r \<noteq> 0 \<and> dx\<^sup>2 + dy\<^sup>2 = 1
            \<and> \<bar>y-ly\<bar> + v\<^sup>2/(2*b) < lw)
  \<longrightarrow> ( |LOOP
@@ -1962,20 +2154,108 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
       ) INV (v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> r \<noteq> 0 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)
     ] (\<bar>y - ly\<bar> < lw))`"
   apply (subst impl_eq_leq)
-  apply (subst change_loopI[where I="(v \<ge> 0 \<and> b > 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> r \<noteq> 0 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)\<^sup>e"])
+  apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0 
+  \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)\<^sup>e"])
   apply (rule fbox_loopI)
     apply (clarsimp simp: le_fun_def)
    apply (clarsimp simp: le_fun_def)
-  apply (smt (verit, best) divide_eq_0_iff divide_pos_pos zero_less_power zero_power2)
-  apply (clarsimp simp: wp)
-  oops
+   apply (smt (verit, best) divide_eq_0_iff divide_pos_pos zero_less_power zero_power2)
+  apply (rule_tac R="(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 
+    \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw \<and> c=0
+    \<and> ((\<bar>y - ly\<bar> + v\<^sup>2/(2*b) + (A/b+1)*(A/2*\<epsilon>\<^sup>2+\<epsilon>* v) < lw \<and> -B \<le> a \<and> a \<le> A \<and> w*r = v)
+      \<or> (v = 0 \<and> a = 0 \<and> w = 0)
+      \<or> (-B \<le> a \<and> a \<le> -b)))\<^sup>e" in fbox_kcompI)
+   apply (clarsimp simp: wp, expr_simp, hol_clarsimp)
+  apply (rule_tac x=v in new_varI(2))
+  apply (rule_tac x=y in new_varI(2))
+  apply (rename_tac v0 y0)
+  apply (simp only: annot_inv_def)
+  apply (rule_tac C="(v = a * c + v0)\<^sup>e" in diff_cut_on_rule)
+  subgoal for v0 y0
+    apply (rule_tac I="(v = a * c + v0)\<^sup>e" in fbox_diff_invI)
+    by (diff_inv_on_eq) (clarsimp simp: le_fun_def)+
+  apply (rule_tac C="(c \<ge> 0 \<and> v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0)\<^sup>e" in diff_cut_on_rule)
+  subgoal for v0 y0
+    apply (rule_tac I="(c \<ge> 0 \<and> v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0)\<^sup>e" in fbox_diff_invI)
+      apply (intro fbox_invs)
+              apply (simp only: fbox_diff_inv_on)
+              apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(1)\<^sup>e"; (force | vderiv))
+             apply (rule diff_weak_on_rule, expr_simp)
+    by (diff_inv_on_eq | (rule nmods_invariant[OF nmods_g_orbital_on_discrete']; expr_simp))+
+      (clarsimp simp: le_fun_def)+
+  apply (rule_tac C="(-c * v + a*c\<^sup>2/2 \<le> y - y0 \<and> y - y0 \<le> c * v - a*c\<^sup>2/2)\<^sup>e" in diff_cut_on_rule)
+  subgoal for v0 y0
+    apply (rule_tac I="(-c * v + a*c\<^sup>2/2 \<le> y - y0 \<and> y - y0 \<le> c * v - a*c\<^sup>2/2)\<^sup>e" in fbox_diff_invI)
+      apply (intro fbox_invs)
+       apply (simp only: fbox_diff_inv_on)
+       apply (diff_inv_on_single_ineq_intro "(- v)\<^sup>e" "(v * dy)\<^sup>e"; (force | vderiv)?)
+       apply (simp add: expr_simps, clarify)
+       apply (rule STTT_10_arith1[of "get\<^bsub>v\<^esub> (put\<^bsub>x +\<^sub>L y +\<^sub>L v +\<^sub>L dx +\<^sub>L dy +\<^sub>L w +\<^sub>L c\<^esub> _ _)"]; assumption)
+      apply (simp only: fbox_diff_inv_on)
+      apply (diff_inv_on_single_ineq_intro "(v * dy)\<^sup>e" "(v)\<^sup>e" ; (force | vderiv)?)
+    apply (simp add: expr_simps, clarify)
+      apply (rule STTT_10_arith1[of "get\<^bsub>v\<^esub> (put\<^bsub>x +\<^sub>L y +\<^sub>L v +\<^sub>L dx +\<^sub>L dy +\<^sub>L w +\<^sub>L c\<^esub> _ _)"]; assumption)
+    by (clarsimp simp: le_fun_def)+
+  apply (rule_tac b="(\<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) < lw)\<^sup>e" and
+      a="(0 \<le> $v \<and> 0 < A \<and> b \<le> B \<and> 0 < b \<and> 0 < \<epsilon> \<and> 0 < lw \<and> $r \<noteq> 0 \<and> ($dx)\<^sup>2 + ($dy)\<^sup>2 = 1)\<^sup>e" in hoare_conj_posI)
+    apply (rule diff_weak_on_rule, expr_simp)
+   prefer 2 apply expr_simp
+  apply (rule_tac a="(0 \<le> $v \<and> 0 < A \<and> b \<le> B \<and> 0 < b \<and> 0 < \<epsilon> \<and> 0 < lw \<and> $r \<noteq> 0 \<and> $c = 0
+    \<and> v = v0 \<and> y = y0
+    \<and> ($dx)\<^sup>2 + ($dy)\<^sup>2 = 1 \<and> \<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) < lw)\<^sup>e" 
+      and b="(\<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) + (A / b + 1) * (A / 2 * \<epsilon>\<^sup>2 + \<epsilon> * $v) < lw 
+    \<and> - B \<le> $a \<and> $a \<le> A \<and> $w * $r = $v)\<^sup>e"
+      and c="($v = 0 \<and> $a = 0 \<and> $w = 0 \<or> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in hoare_disj_preI[rotated])
+    apply (rule_tac a="(0 \<le> $v \<and> 0 < A \<and> b \<le> B \<and> 0 < b \<and> 0 < \<epsilon> \<and> 0 < lw \<and> $r \<noteq> 0 \<and> $c = 0
+      \<and> v = v0 \<and> y = y0
+      \<and> ($dx)\<^sup>2 + ($dy)\<^sup>2 = 1 \<and> \<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) < lw)\<^sup>e" 
+      and b="($v = 0 \<and> $a = 0 \<and> $w = 0)\<^sup>e"
+      and c="(- B \<le> $a \<and> $a \<le> - b)\<^sup>e" in hoare_disj_preI[rotated, rotated], expr_simp)
+     prefer 3 subgoal by expr_auto
+  subgoal for v0 y0 (* SUBGOAL 1*)
+    apply (rule_tac C="(a=0)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(a=0)\<^sup>e" in fbox_diff_invI)
+      by (diff_inv_on_eq) (clarsimp simp: le_fun_def)+
+    apply (rule_tac C="(v0=0)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(v0=0)\<^sup>e" in fbox_diff_invI)
+      by (diff_inv_on_eq) (clarsimp simp: le_fun_def)+
+    apply (rule_tac C="(\<bar>y0 - ly\<bar> < lw)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(\<bar>y0 - ly\<bar> < lw)\<^sup>e" in fbox_diff_invI)
+      by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e") (clarsimp simp: le_fun_def)+
+    by (rule diff_weak_on_rule) expr_auto
+   prefer 2 subgoal for v0 y0 (* SUBGOAL 2*)
+    apply (rule_tac C="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) + (A / b + 1) * (A / 2 * \<epsilon>\<^sup>2 + \<epsilon> * v0) < lw)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) + (A / b + 1) * (A / 2 * \<epsilon>\<^sup>2 + \<epsilon> * v0) < lw)\<^sup>e" in fbox_diff_invI)
+      by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e") (clarsimp simp: le_fun_def)+
+    apply (rule_tac C="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> A)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> A)\<^sup>e" in fbox_diff_invI)
+      apply (intro fbox_invs)
+      by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
+    apply (rule diff_weak_on_rule)
+    by expr_auto (rule STTT_10_arith2[of _ \<epsilon> "get\<^bsub>v\<^esub> _"]; assumption)
+  subgoal for v0 y0 (* SUBGOAL 3 *)
+    apply (rule_tac C="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in fbox_diff_invI)
+        apply (intro fbox_invs)
+      by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
+    apply (rule_tac C="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) < lw)\<^sup>e" in diff_cut_on_rule)
+    subgoal
+      apply (rule_tac I="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) < lw)\<^sup>e" in fbox_diff_invI)
+      by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
+    apply (rule diff_weak_on_rule)
+    by expr_auto (rule STTT_10_arith3[of "get\<^bsub>v\<^esub> _"]; assumption)
+  done
 
 end 
 
-value "2 \<noteq> 2" (* not enough time? *)
 
-
-subsubsection \<open> LICS: Example 1 Continuous car accelerates forward \<close>
+subsubsection \<open> LICS: Example 1 Continuous car accelertes forward \<close>
 
 dataspace LICS =
   constants A::real B::real b::real m::real \<epsilon>::real
@@ -2623,7 +2903,7 @@ lemma "\<^bold>{x=0\<^bold>}
   LOOP (
     (x ::= ?);(y ::= 0); \<questiondown>x>0?;
     {x` = y, y` = - a * x + b * y}
-  ) INV (x\<ge>0) 
+  ) INV (x\<ge>0)
   \<^bold>{x\<ge>0\<^bold>}"
   oops
 
@@ -2635,11 +2915,10 @@ end
 % 1. Requires darboux rule
 % 2. verified with the help of a CAS
 % 3. verified with the help of a CAS
-% 4. not solved yet (not dedicated enough time)
-% 5. not solved yet (existential)
+% 4. not solved yet (existential)
+% 5. verified with the help of a CAS
 % 6. verified with the help of a CAS
-% 7. verified with the help of a CAS
-% 8. not solved yet (not dedicated enough time)
+% 7. not solved yet (not dedicated enough time)
 
 *)
 

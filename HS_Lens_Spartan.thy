@@ -100,13 +100,25 @@ lemma hoare_invs:
 
 text \<open> Need to generalise these laws \<close>
 
-lemma hoare_weaken_preI: 
-  "\<^bold>{@p1\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> P = (@p1 \<and> @p2)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+lemma hoare_conj_preI: 
+  "\<^bold>{@a\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> P = (@a \<and> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
   by (auto simp: fun_eq_iff)
+
+lemma hoare_conj_posI: 
+  "\<^bold>{@P\<^bold>}X\<^bold>{@a\<^bold>} \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@b\<^bold>} \<Longrightarrow> Q = (@a \<and> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  by (auto simp: fun_eq_iff fbox_def)
 
 lemma hoare_conj_pos: 
   "(\<^bold>{@P\<^bold>} X \<^bold>{@Q1 \<and> @Q2\<^bold>}) = (\<^bold>{@P\<^bold>} X \<^bold>{@Q1\<^bold>} \<and> \<^bold>{@P\<^bold>} X \<^bold>{@Q2\<^bold>})"
   by (auto simp: fbox_def)
+
+lemma hoare_disj_preI:
+  "\<^bold>{@a \<and> @b\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> \<^bold>{@a \<and> @c\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> P = (@a \<and> (@b \<or> @c))\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  by (auto simp: le_fun_def fbox_def)
+
+lemma hoare_disj_posI: 
+  "\<^bold>{@P\<^bold>}X\<^bold>{@a\<^bold>} \<Longrightarrow> Q = (@a \<or> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  by (auto simp: le_fun_def fbox_def)
 
 lemma hoare_conseq: 
   assumes "\<^bold>{p\<^sub>2\<^bold>}S\<^bold>{q\<^sub>2\<^bold>}" "`p\<^sub>1 \<longrightarrow> p\<^sub>2`" "`q\<^sub>2 \<longrightarrow> q\<^sub>1`"
@@ -1009,7 +1021,7 @@ translations
   "_ode_ng \<sigma>" == "_ode \<sigma> (CONST True)"
 
 term "{x` = 1}"
-term "{x` = 1, y` = $x | True}"
+term "{x` = $y, y` =$z + ($y)\<^sup>2 - $y | $y \<ge> 0}"
 term "{(x, y)` = (1, 2*$x)}"
 term "(x, y, z):{x` = 1, y` = 2*$x}"
 term "(x,y):{(x, y)` = (1, 2*$x), z` = $y}"
