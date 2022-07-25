@@ -686,7 +686,7 @@ named_theorems closure
 
 lemma nmods_union [closure]:
   assumes "P nmods A" "P nmods B"
-  shows "P nmods (A ; B)"
+  shows "P nmods (A \<union> B)"
   using assms
   by (auto simp add: not_modifies_def prog_defs)
      (metis scene_equiv_def scene_override_union scene_union_incompat scene_union_unit(1))
