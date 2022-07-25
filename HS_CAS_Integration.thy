@@ -4,7 +4,7 @@ theory HS_CAS_Integration
 begin
 
 method fbox_solve for \<phi> :: "real \<Rightarrow> 's \<Rightarrow> 's" =
-  (subst fbox_solve[where \<phi>="\<phi>"], local_flow_auto, expr_auto)
+  ((subst fbox_solve[where \<phi>="\<phi>"]; simp?), (local_flow_auto)[1])
 
 ML \<open>
 fun match_term (top, _) = case top of
@@ -42,7 +42,7 @@ fun find_local_flow_cmd state =
       val tm = Solve_Subst_ODE.solve_subst_ode ctx sode
     in
     "try this: " ^ Active.sendback_markup_command
-     ("apply (subst fbox_solve[where \<phi>=\"" ^ Syntax.string_of_term ctx tm ^ "\"])") |> writeln
+     ("apply (fbox_solve \"" ^ Syntax.string_of_term ctx tm ^ "\")") |> writeln
    end
 ;
 
