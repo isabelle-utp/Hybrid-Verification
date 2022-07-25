@@ -7,9 +7,10 @@ theory ARCH2022_Examples
   imports 
     HS_Lie_Derivatives
     Real_Arith_Tactics
+    HS_CAS_Integration
+    "Matrices/MTX_Flows"
     "HOL-Decision_Procs.Ferrack"
     "HOL-Decision_Procs.Reflective_Field"
-    HS_CAS_Integration
 
 begin
 
@@ -2898,6 +2899,143 @@ dataspace harmonic_osc =
 
 context harmonic_osc
 begin
+
+abbreviation mtx_hosc :: "2 sq_mtx" ("A")
+  where "A \<equiv> mtx  
+   ([0, 1] # 
+    [a, b] # [])"
+
+lemma mtx_hosc_nths:
+  "A $$ 1 = (\<chi> i. if i=1 then 0 else 1)"
+  "A $$ 2 = (\<chi> i. if i=1 then a else b)"
+  "A $$ 1 $ 1 = 0" "A $$ 1 $ 2 = 1"
+  "A $$ 2 $ 1 = a" "A $$ 2 $ 2 = b"
+  using exhaust_2
+  by (auto simp: vec_eq_iff)
+
+lemma A_vec_mult_eq: "A *\<^sub>V s = vector [s$2, a * s$1 + b * s$2]"
+  using exhaust_2
+  by (clarsimp simp: vec_eq_iff vector_nth_eq 
+      sq_mtx_vec_mult_eq UNIV_2)
+
+definition "discr \<equiv> sqrt (b\<^sup>2 + 4 * a)"
+
+definition  iota1 :: "real" ("\<iota>\<^sub>1")
+  where "\<iota>\<^sub>1 \<equiv> (b - discr)/2"
+
+definition iota2 :: "real" ("\<iota>\<^sub>2")
+  where "\<iota>\<^sub>2 \<equiv> (b + discr)/2"
+
+abbreviation "x_sol t x1 y1 \<equiv> 
+    (1/discr) * x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) - (1/discr) * x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2)
+  + (1/discr) * y1 * exp (t * \<iota>\<^sub>2) - (1/discr) * y1 * exp (t * \<iota>\<^sub>1)"
+
+abbreviation "y_sol t x1 y1 \<equiv> 
+    (1/discr) * x1 * a * exp (t * \<iota>\<^sub>2) - (1/discr) * x1 * a * exp (t * \<iota>\<^sub>1)
+  + (1/discr) * y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) - (1/discr) * y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1)"
+
+abbreviation "\<Phi> t \<equiv> mtx (
+   [\<iota>\<^sub>2*exp(t*\<iota>\<^sub>1) - \<iota>\<^sub>1*exp(t*\<iota>\<^sub>2),     exp(t*\<iota>\<^sub>2)-exp(t*\<iota>\<^sub>1)]#
+   [a*exp(t*\<iota>\<^sub>2) - a*exp(t*\<iota>\<^sub>1), \<iota>\<^sub>2*exp(t*\<iota>\<^sub>2)-\<iota>\<^sub>1*exp(t*\<iota>\<^sub>1)]#[])"
+
+lemma x_sol_eq: "x_sol t x1 y1 = (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1])) $ (1::2)"
+  apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
+  by distribute (simp add: mult.commute diff_divide_distrib)
+
+lemma y_sol_eq: "y_sol t x1 y1 = (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1])) $ (2::2)"
+  apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
+  by distribute (simp add: mult.commute mult.left_commute diff_divide_distrib)
+
+abbreviation chB_hosc :: "real \<Rightarrow> real \<Rightarrow> 2 sq_mtx" ("P")
+  where "P a1 a2 \<equiv> mtx
+   ([a1, a2] # 
+    [1, 1] # [])"
+
+lemma inv_mtx_chB_hosc: 
+  "a1 \<noteq> a2 \<Longrightarrow> (P a1 a2)\<^sup>-\<^sup>1 = (1/(a1 - a2)) *\<^sub>R mtx 
+   ([ 1, -a2] # 
+    [-1,  a1] # [])"
+  apply(rule sq_mtx_inv_unique, unfold scaleR_mtx2 times_mtx2)
+  by (simp add: diff_divide_distrib[symmetric] one_mtx2)+
+
+lemma invertible_mtx_chB_hosc: "a1 \<noteq> a2 \<Longrightarrow> mtx_invertible (P a1 a2)"
+  apply(rule mtx_invertibleI[of _ "(P a1 a2)\<^sup>-\<^sup>1"])
+   apply(unfold inv_mtx_chB_hosc scaleR_mtx2 times_mtx2 one_mtx2)
+  by (subst sq_mtx_eq_iff, simp add: vector_def frac_diff_eq1)+
+
+lemma mtx_hosc_diagonalizable:
+  assumes "b\<^sup>2 + a * 4 > 0" and "a \<noteq> 0"
+  shows "A = P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a) * (\<d>\<i>\<a>\<g> i. if i = 1 then \<iota>\<^sub>1 else \<iota>\<^sub>2) * (P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a))\<^sup>-\<^sup>1"
+  unfolding assms apply(subst inv_mtx_chB_hosc)
+  using assms apply(simp_all add: diag2_eq[symmetric])
+  apply (simp add: iota1_def discr_def iota2_def)
+  unfolding sq_mtx_times_eq sq_mtx_scaleR_eq UNIV_2 apply(subst sq_mtx_eq_iff)
+  using exhaust_2 assms 
+  by (auto simp: field_simps) 
+    (auto simp: iota1_def iota2_def discr_def field_simps)
+
+lemma mtx_hosc_solution_eq:
+  assumes "b\<^sup>2 + a * 4 > 0" and "a \<noteq> 0"
+  shows "P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a) * (\<d>\<i>\<a>\<g> i. exp (t * (if i=1 then \<iota>\<^sub>1 else \<iota>\<^sub>2))) * (P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a))\<^sup>-\<^sup>1 
+  = (1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R (\<Phi> t)"
+  unfolding assms apply(subst inv_mtx_chB_hosc)
+  using assms apply (simp add: iota1_def discr_def iota2_def)
+  using assms apply(simp_all add: mtx_times_scaleR_commute, subst sq_mtx_eq_iff)
+  unfolding UNIV_2 sq_mtx_times_eq sq_mtx_scaleR_eq sq_mtx_uminus_eq apply(simp_all add: axis_def)
+  by (auto simp: field_simps) 
+    (auto simp: iota1_def iota2_def discr_def field_simps)
+
+lemma "c \<noteq> 0 \<Longrightarrow> c * u = c * v \<Longrightarrow> u = v" for c::real
+  by (auto simp: field_simps)
+
+lemma my_subst: "[x \<leadsto> y, y \<leadsto> a * x + b * y] = 
+  (\<lambda>\<s>. put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> \<s> ((A *\<^sub>V (vector [$x, $y])) $ 1)) ((A *\<^sub>V (vector [$x, $y])) $ 2))"
+  by (expr_auto add: A_vec_mult_eq)
+
+lemma local_lipschitz_hosc: 
+  "local_lipschitz UNIV UNIV (loc_subst (x +\<^sub>L y) (\<lambda>t::real. [x \<leadsto> y, y \<leadsto> a * x + b * y]) s)"
+  apply expr_simp
+  by (rule_tac \<DD>="(\<lambda>c. (snd c, a * fst c + b * snd c))" in c1_local_lipschitz)
+    (auto intro!: derivative_eq_intros continuous_intros)
+
+lemma "(x1 * (b + sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2) -
+               x1 * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2) +
+               y1 * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a) -
+               y1 * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a),
+               x1 * a * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a) -
+               x1 * a * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a) +
+               y1 * (b + sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2) -
+               y1 * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2)) = 
+  (((1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]) $ (1::2), ((1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]) $ (2::2))"
+  apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
+  oops
+
+lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 
+  \<Longrightarrow> local_flow_on [x \<leadsto> y, y \<leadsto> a * x + b * y] (x +\<^sub>L y) UNIV UNIV
+  (\<lambda>t. [x \<leadsto> x_sol t x y, y \<leadsto> y_sol t x y])"
+  unfolding local_flow_on_def 
+  unfolding local_flow_def local_flow_axioms_def apply safe
+  using local_lipschitz_hosc
+     apply (unfold_locales; clarsimp?)
+    apply (expr_simp add: x_sol_eq y_sol_eq)
+  apply (rename_tac x1 y1)
+    apply (rule poly_derivatives)
+  apply simp
+  apply (rule poly_derivatives)
+
+  apply (rename_tac x1 y1)
+    apply (intro poly_derivatives; (force | (rule poly_derivatives))?)
+       apply (clarsimp simp: fun_eq_iff)
+  subgoal for x1 s0
+    apply (rule_tac a="8*(b\<^sup>2 + 4 * a)" in scale_left_imp_eq, simp)
+    apply (rule_tac a="sqrt (b\<^sup>2 + 4 * a)" in scale_left_imp_eq, simp)
+    apply simp
+    apply (clarsimp simp: field_simps)
+
+  apply (clarsimp simp: fun_eq_iff, distribute, clarsimp simp: power2_eq_square[symmetric])
+  by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+
 
 lemma "\<^bold>{x=0\<^bold>} 
   LOOP (
