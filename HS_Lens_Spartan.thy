@@ -1343,12 +1343,12 @@ lemma diff_cut_on_split:
   assumes "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{P\<^bold>}" "\<^bold>{Q\<^bold>} g_orbital_on a f (G \<and> P)\<^sub>e (U)\<^sub>e S t\<^sub>0\<^bold>{Q\<^bold>}"
   shows "\<^bold>{P \<and> Q\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{P \<and> Q\<^bold>}"
   apply (rule diff_cut_on_rule[where C="P"])
-  using assms(1) apply (force intro!: hoare_weaken_preI)
+  using assms(1) apply (force intro!: hoare_conj_preI)
   apply (clarsimp simp: hoare_conj_pos)
   apply (intro conjI)
    apply (rule diff_weak_on_rule, simp)
   using assms(2) 
-  by (force intro!: hoare_weaken_preI)
+  by (force intro!: hoare_conj_preI)
 
 lemma diff_cut_on_split':
   assumes "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{P\<^bold>}" "\<^bold>{Q\<^bold>} g_orbital_on a f (G \<and> P)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
