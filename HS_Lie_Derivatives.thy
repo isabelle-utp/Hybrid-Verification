@@ -274,39 +274,6 @@ proof (unfold local_lipschitz_on_def, clarify)
     by (clarsimp simp: prod.case_eq_if)
 qed
 
-lemma c1_local_lipschitz_on:
-  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
-  assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV"
-    "\<exists> f. \<forall> x s. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at x) = f" 
-  shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"
-proof (unfold local_lipschitz_on_def, clarify)
-  fix s
-  from assms 
-  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
-    by (simp add: differentiable_subst_def frechet_derivative_works)
-
-  obtain f where f: "\<And> x s. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at x) = f" "bounded_linear f"
-    using "1" assms(4) by force
-
-  have 2:"\<And> c'. bounded_linear (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c'))"
-    using "1" by blast
-
-  hence 3: "\<And> S c'. continuous_on S (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c'))"
-    by (simp add: linear_continuous_on)
-
-  show "local_lipschitz UNIV UNIV (\<lambda>t::real. \<lambda> c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c)))"
-    apply(rule c1_implies_local_lipschitz[where (* second attempt *)
-          f'="\<lambda>(t, c'). Blinfun (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c'))"])
-       apply simp_all
-     apply(subst Blinfun_inverse)
-    using "1" apply blast
-    using 1 apply blast
-    apply(rule continuous_on_blinfun_componentwise)
-    apply (simp add: prod.case_eq_if bounded_linear_Blinfun_apply 2 f)
-    done
-qed
-
-
 
 subsection \<open> Lie Derivative Invariants \<close>
 
@@ -490,67 +457,6 @@ method dInduct_mega' uses facts =
 text \<open> First attempt at a system level prover \<close>
 
 method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
-
-lemma darboux: 
-  fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
-    and e e' :: "'a \<Rightarrow> real"
-    and g :: real
-  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
-    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
-    and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
-    and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
-    and dbx_hyp: "\<L>\<^bsub>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> * $y)\<^esub> e on (a +\<^sub>L y) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
-    and deriv: "\<forall>t. D e \<mapsto> e' (at t)"
-  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
-  apply (rule diff_ghost_rule_very_simple[where k="-g", OF vwbs(2) indeps(1) yGhost])
-  apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
-  using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
-  apply (subst SEXP_def[symmetric, of G])
-  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
-   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
-  using indeps apply (expr_simp) 
-  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF vwbs(3) _ zGhost])
-  using indeps apply expr_simp
-  apply (subst hoare_diff_inv_on)
-  apply (rule diff_inv_on_raw_eqI; clarsimp?)
-  using vwbs indeps
-    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
-  using vwbs indeps apply expr_simp
-   apply (intro poly_derivatives; force?)
-   apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
-   apply expr_simp
-   apply (subst get_put_put_indep; (clarsimp simp: power2_eq_square))
-  apply (rule_tac I="(0 < $y \<and> 0 \<le> e * $y)\<^sup>e" in diff_inv_on_rule)
-    apply expr_simp
-   prefer 2 apply expr_simp
-   apply (rule diff_inv_on_raw_conjI)
-   apply (simp add: diff_inv_on_eq)
-  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
-   apply (erule ssubst)
-  prefer 2 apply clarsimp
-  apply (subgoal_tac "(\<lambda>\<s>. 0 \<le> e \<s> * get\<^bsub>y\<^esub> \<s>) = (0 \<le> e * $y)\<^sub>e")
-   apply (erule ssubst)
-   prefer 2 apply expr_simp
-  apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
-  prefer 2 using vwbs indeps apply expr_simp
-   apply (metis lens_indep_sym lens_plus_def plus_vwb_lens)
-  apply (subgoal_tac "differentiable\<^sub>e e on a +\<^sub>L y when True")
-   prefer 2
-  subgoal
-    using dbx_hyp apply (expr_simp add: le_fun_def)
-    sorry
-  using vwbs indeps apply -
-  apply(rule lie_deriv_le_rule; clarsimp?)
-    apply (rule differentiable_times; clarsimp?)
-     apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-  using vwbs indeps apply expr_simp
-   apply (subst lie_deriv_zero)
-   apply (subst lie_deriv_times; clarsimp?)
-     apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-  apply (subst lie_deriv_cont_var; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-  using yGhost(1,2) indeps vwbs dbx_hyp apply expr_simp
-  by (clarsimp simp: lie_deriv closure usubst unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
-
 
 
 end
