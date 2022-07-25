@@ -239,7 +239,7 @@ term "(\<lambda>s. (P \\ $x) s) = (\<lambda>s. \<exists>s'. P (s \<triangleleft>
 lemma diff_ghost:
   fixes a::"'a::real_normed_vector \<Longrightarrow> 'c"
     and y::"'b::real_normed_vector \<Longrightarrow> 'c"
-  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s f" "$y \<sharp> G" "k \<noteq> 0"
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "k \<noteq> 0"
     and inv_hyp: "diff_inv_on (I)\<^sub>e (a +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y + \<guillemotleft>c\<guillemotright>)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
   shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. f) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
   using inv_hyp
@@ -250,6 +250,7 @@ lemma diff_ghost:
   apply (drule_tac x="\<lambda> t. (X t, (- c + exp (k * t) *\<^sub>R (c + k *\<^sub>R get\<^bsub>y\<^esub> s'))/\<^sub>R k)" in bspec)
    prefer 2 subgoal
     using assms(1-4)
+    apply (simp add: unrest_subst_lens)
     apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
     by (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
   apply (clarsimp simp only: ivp_sols_def)
@@ -262,12 +263,13 @@ lemma diff_ghost:
   using assms(5) by linarith
   apply (auto intro!: poly_derivatives)
   using assms(1-4) 
+  apply (simp add: unrest_subst_lens)
   apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
   by (smt (verit, best) assms(5) divideR_right lens_indep.lens_put_irr2 lens_indep_comm 
       real_vector_eq_affinity scaleR_right_diff_distrib scaleR_scaleR)
 
 lemma diff_ghost_very_simple:
-  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s f" "$y \<sharp> G"
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G"
     and inv_hyp: "diff_inv_on (I)\<^sub>e (a +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
   shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. f) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
   using inv_hyp
@@ -286,31 +288,8 @@ lemma diff_ghost_very_simple:
     using assms(1-4)
     by (simp add: lens_defs lens_indep.lens_put_irr2)
   using assms(1-4) 
+  apply (simp add: unrest_subst_lens)
   apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
   by (metis lens_indep_def)
-
-lemma
-  assumes 
-    "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s f" "$y \<sharp> G"
-    "diff_inv_on (I)\<^sub>e (a +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
-  shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. f) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
-  using assms(5)
-  apply (clarsimp simp add: expr_defs diff_inv_on_eq)
-  apply (erule_tac x="s \<triangleleft>\<^bsub>y\<^esub> s'" in allE)
-  apply (erule impE)
-  using assms(1) apply auto[1]
-  apply (drule_tac x="\<lambda> t. (X t, exp (k * t) *\<^sub>R get\<^bsub>y\<^esub> s')" in bspec)
-   apply (simp add: ivp_sols_def)
-   apply (auto simp add: lens_defs has_vderiv_on_def)[1]
-     apply (rule derivative_intros)
-  using assms(1-4) apply (simp add: expr_defs)
-      apply (metis lens_indep.lens_put_irr2 lens_indep_comm)
-     apply (rule has_vector_derivative_eq_rhs)
-      apply (force intro: derivative_intros)
-     apply (simp)
-  using assms(1-4)
-     apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
-  apply (metis assms(1) assms(2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
-  done
 
 end
