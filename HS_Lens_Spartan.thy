@@ -1407,14 +1407,14 @@ lemma diff_inv_on_rule:
   by (metis (mono_tags, lifting) SEXP_def fbox_iso order.trans)
 
 lemma diff_ghost_rule:
-  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B" 
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B" 
     "\<^bold>{G\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (\<sigma>(y \<leadsto> \<eta>)) B \<^bold>{G\<^bold>}"
   shows "\<^bold>{G \\ $y\<^bold>} g_dl_ode_frame a \<sigma> B \<^bold>{G \\ $y\<^bold>}"
   oops (* generalise and finish proof *)
 
 lemma diff_ghost_rule:
   fixes y :: "real \<Longrightarrow> _"
-  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s f" "$y \<sharp> G" "k \<noteq> 0" "(I)\<^sub>e = J \\ $y"
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "k \<noteq> 0" "(I)\<^sub>e = J \\ $y"
     and hyp: "\<^bold>{J\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y + \<guillemotleft>c\<guillemotright>)) G \<^bold>{J\<^bold>}"
   shows "\<^bold>{I\<^bold>} g_dl_ode_frame a f G \<^bold>{I\<^bold>}"
   apply (subst hoare_diff_inv_on)
@@ -1424,7 +1424,7 @@ lemma diff_ghost_rule:
 
 lemma diff_ghost_rule_very_simple:
   fixes y :: "real \<Longrightarrow> _"
-  assumes "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(I)\<^sub>e = J \\ $y"
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(I)\<^sub>e = J \\ $y"
     "\<^bold>{J\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) G \<^bold>{J\<^bold>}"
   shows "\<^bold>{I\<^bold>} g_dl_ode_frame a f G \<^bold>{I\<^bold>}"
   using assms
@@ -1556,8 +1556,8 @@ lemma darboux:
     and g :: real
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
     and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
-    and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
-    and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
+    and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
+    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
     and dbx_hyp: "e' \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
     and deriv: "\<forall>t. D e \<mapsto> e' (at t)"
   shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
