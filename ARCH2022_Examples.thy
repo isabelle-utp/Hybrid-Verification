@@ -7,10 +7,6 @@ theory ARCH2022_Examples
   imports 
     HS_Lie_Derivatives
     Real_Arith_Tactics
-    HS_CAS_Integration
-    "Matrices/MTX_Flows"
-    "HOL-Decision_Procs.Ferrack"
-    "HOL-Decision_Procs.Reflective_Field"
 
 begin
 
@@ -19,10 +15,6 @@ subsection \<open> Basic \<close>
 
 lit_vars \<comment> \<open> disable constants \<close>
 no_notation (ASCII) disj (infixr "|" 30)
-no_notation Lattice.meet (infixl "\<sqinter>\<index>" 70)
-hide_const Ferrack.T
-hide_const Ferrack.A
-hide_const Ferrack.E
 
 subsubsection \<open> Basic assignment \<close> 
 
@@ -714,11 +706,6 @@ end
 
 subsubsection \<open> Dynamics: Conserved quantity \<close>
 
-lemma "(36::real) * (x1\<^sup>2 * (x1 * x2\<^sup>3)) - 
-  (- (24 * (x1\<^sup>2 * x2) * x1 ^ 3 * (x2)\<^sup>2) - 12 * (x1\<^sup>2 * x2) * x1 * x2\<^sup>4) - 
-  36 * (x1\<^sup>2 * (x2 * x1)) * (x2)\<^sup>2 - 12 * (x1\<^sup>2 * (x1 * x2\<^sup>5)) = 24 * (x1\<^sup>5 * x2\<^sup>3)" 
-  by (mon_simp_vars x1 x2)
-
 dataspace conserved_quantity =
   constants c::real
   variables x1::real x2::real
@@ -874,14 +861,6 @@ locale darboux_ineq =
     "x \<equiv> vec_lens 1"
     "z \<equiv> vec_lens 2"
 begin
-
-lemma indeps: "x \<bowtie> z"
-  unfolding var_defs
-  by expr_auto+
-
-lemma induct_2: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P (i::2)"
-  using exhaust_2[of i]
-  by auto
 
 (* x+z>=0 -> [{x'=x^2, z' = z*x+y & y = x^2}] x+z>=0 *)
 abbreviation (input) darboux_ineq_f2 :: "real ^ 2 \<Rightarrow> real ^ 2" ("f")
@@ -1127,10 +1106,6 @@ subsubsection \<open> Dynamics: Nonlinear differential cut \<close>
 context two_vars
 begin
 
-(* apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> x * exp t]"]; clarsimp?) *)
-term "\<lambda>t. [y \<leadsto> y/(1 - y * t)]"
-term "(x\<^sup>4 - 12 * x\<^sup>3 + 54 * x\<^sup>2 - 108 * x + 81)\<^sub>e"
-
 (* x^3 >= -1 & y^5 >= 0 -> [{x'=(x-3)^4+y^5, y'=y^2}] (x^3 >= -1 & y^5 >= 0) *)
 lemma "(x\<^sup>3 \<ge> -1 \<and> y\<^sup>5 \<ge> 0)\<^sub>e \<le> |{x` = (x-3)\<^sup>4+y\<^sup>5, y` = y\<^sup>2}] (x\<^sup>3 \<ge> -1 \<and> y\<^sup>5 \<ge> 0)"
   apply (diff_cut_ineq "(0 \<le> y\<^sup>5)\<^sup>e" "(0)\<^sup>e" "(5*y\<^sup>4*y\<^sup>2)\<^sup>e")
@@ -1165,33 +1140,6 @@ subsubsection \<open> STTT Tutorial: Example 2 \<close>
 
 context STTT
 begin
-
-lemma "local_flow_on [x \<leadsto> v, v \<leadsto> a, a \<leadsto> 0] (x +\<^sub>L v +\<^sub>L a) UNIV UNIV 
-  (\<lambda>t. [x \<leadsto> a * t\<^sup>2 / 2 + v * t + x, v \<leadsto> a * t + v, a \<leadsto> a])"
-  apply (clarsimp simp add: local_flow_on_def)
-  apply (unfold_locales; clarsimp?)
-  subgoal for s
-    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _
-      "(\<lambda>(t,c). Blinfun (\<lambda>c. get\<^bsub>x +\<^sub>L v +\<^sub>L a\<^esub> ([x \<leadsto> $v, v \<leadsto> $a, a \<leadsto> 0] (put\<^bsub>x +\<^sub>L v +\<^sub>L a\<^esub> s c))))"])
-    by expr_simp (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_on_continuous_on
-        fun_eq_iff continuous_intros split: prod.splits)
-  apply expr_simp
-  by (auto intro!: poly_derivatives) expr_simp
-
-lemma "local_flow_on [x \<leadsto> v, v \<leadsto> a, a \<leadsto> 0] (x +\<^sub>L v +\<^sub>L a) UNIV UNIV 
-  (\<lambda>t. [x \<leadsto> a * t\<^sup>2 / 2 + v * t + x, v \<leadsto> a * t + v, a \<leadsto> a])"
-  apply (clarsimp simp add: local_flow_on_def)
-  apply (unfold_locales; expr_simp)
-   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ 
-        "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((fst (snd c)), (snd (snd c)), 0)))"]; expr_simp)
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
-
-lemma "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v) UNIV UNIV 
-  (\<lambda>t. [x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])"
-  apply (clarsimp simp add: local_flow_on_def)
-  apply (unfold_locales; expr_simp)
-   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
 
 lemma local_flow_STTT: "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v) UNIV UNIV 
   (\<lambda>t. [x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])"
@@ -1743,9 +1691,6 @@ dataspace STTT_10 =
 
 definition annot_inv :: "'a \<Rightarrow> 'b \<Rightarrow> 'a" (infixr "@inv" 65)
   where "x @inv i = x"
-
-lemma subst_fbox: "\<sigma> \<dagger> ( |X] Q) = ( |\<sigma> \<dagger> X] (\<sigma> \<dagger> Q))"
-  by (expr_simp add: fbox_def)
 
 lemma fbox_kcompI: "P \<le> |X1] (@R) \<Longrightarrow> R \<le> |X2] (@Q) \<Longrightarrow> P \<le> |X1 ; X2] (@Q)"
   by (simp add: fbox_kcomp) (auto simp: fbox_def)
@@ -2698,144 +2643,5 @@ lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 
 
 end
 
-
-subsection \<open> Harmonic Oscillator \<close>
-
-dataspace harmonic_osc =
-  constants
-    a :: real
-    b :: real
-  variables 
-    x :: real 
-    y :: real 
-
-context harmonic_osc
-begin
-
-abbreviation mtx_hosc :: "2 sq_mtx" ("A")
-  where "A \<equiv> mtx  
-   ([0, 1] # 
-    [a, b] # [])"
-
-lemma mtx_hosc_nths:
-  "A $$ 1 = (\<chi> i. if i=1 then 0 else 1)"
-  "A $$ 2 = (\<chi> i. if i=1 then a else b)"
-  "A $$ 1 $ 1 = 0" "A $$ 1 $ 2 = 1"
-  "A $$ 2 $ 1 = a" "A $$ 2 $ 2 = b"
-  using exhaust_2
-  by (auto simp: vec_eq_iff)
-
-lemma A_vec_mult_eq: "A *\<^sub>V s = vector [s$2, a * s$1 + b * s$2]"
-  using exhaust_2
-  by (clarsimp simp: vec_eq_iff vector_nth_eq 
-      sq_mtx_vec_mult_eq UNIV_2)
-
-definition "discr \<equiv> sqrt (b\<^sup>2 + 4 * a)"
-
-definition  iota1 :: "real" ("\<iota>\<^sub>1")
-  where "\<iota>\<^sub>1 \<equiv> (b - discr)/2"
-
-definition iota2 :: "real" ("\<iota>\<^sub>2")
-  where "\<iota>\<^sub>2 \<equiv> (b + discr)/2"
-
-abbreviation "x_sol t x1 y1 \<equiv> 
-    (1/discr) * x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) - (1/discr) * x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2)
-  + (1/discr) * y1 * exp (t * \<iota>\<^sub>2) - (1/discr) * y1 * exp (t * \<iota>\<^sub>1)"
-
-abbreviation "y_sol t x1 y1 \<equiv> 
-    (1/discr) * x1 * a * exp (t * \<iota>\<^sub>2) - (1/discr) * x1 * a * exp (t * \<iota>\<^sub>1)
-  + (1/discr) * y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) - (1/discr) * y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1)"
-
-abbreviation "\<Phi> t \<equiv> mtx (
-   [\<iota>\<^sub>2*exp(t*\<iota>\<^sub>1) - \<iota>\<^sub>1*exp(t*\<iota>\<^sub>2),     exp(t*\<iota>\<^sub>2)-exp(t*\<iota>\<^sub>1)]#
-   [a*exp(t*\<iota>\<^sub>2) - a*exp(t*\<iota>\<^sub>1), \<iota>\<^sub>2*exp(t*\<iota>\<^sub>2)-\<iota>\<^sub>1*exp(t*\<iota>\<^sub>1)]#[])"
-
-lemma x_sol_eq: "x_sol t x1 y1 = (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1])) $ (1::2)"
-  apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
-  by distribute (simp add: mult.commute diff_divide_distrib)
-
-lemma y_sol_eq: "y_sol t x1 y1 = (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1])) $ (2::2)"
-  apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
-  by distribute (simp add: mult.commute mult.left_commute diff_divide_distrib)
-
-abbreviation chB_hosc :: "real \<Rightarrow> real \<Rightarrow> 2 sq_mtx" ("P")
-  where "P a1 a2 \<equiv> mtx
-   ([a1, a2] # 
-    [1, 1] # [])"
-
-lemma inv_mtx_chB_hosc: 
-  "a1 \<noteq> a2 \<Longrightarrow> (P a1 a2)\<^sup>-\<^sup>1 = (1/(a1 - a2)) *\<^sub>R mtx 
-   ([ 1, -a2] # 
-    [-1,  a1] # [])"
-  apply(rule sq_mtx_inv_unique, unfold scaleR_mtx2 times_mtx2)
-  by (simp add: diff_divide_distrib[symmetric] one_mtx2)+
-
-lemma invertible_mtx_chB_hosc: "a1 \<noteq> a2 \<Longrightarrow> mtx_invertible (P a1 a2)"
-  apply(rule mtx_invertibleI[of _ "(P a1 a2)\<^sup>-\<^sup>1"])
-   apply(unfold inv_mtx_chB_hosc scaleR_mtx2 times_mtx2 one_mtx2)
-  by (subst sq_mtx_eq_iff, simp add: vector_def frac_diff_eq1)+
-
-lemma mtx_hosc_diagonalizable:
-  assumes "b\<^sup>2 + a * 4 > 0" and "a \<noteq> 0"
-  shows "A = P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a) * (\<d>\<i>\<a>\<g> i. if i = 1 then \<iota>\<^sub>1 else \<iota>\<^sub>2) * (P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a))\<^sup>-\<^sup>1"
-  unfolding assms apply(subst inv_mtx_chB_hosc)
-  using assms apply(simp_all add: diag2_eq[symmetric])
-  apply (simp add: iota1_def discr_def iota2_def)
-  unfolding sq_mtx_times_eq sq_mtx_scaleR_eq UNIV_2 apply(subst sq_mtx_eq_iff)
-  using exhaust_2 assms 
-  by (auto simp: field_simps) 
-    (auto simp: iota1_def iota2_def discr_def field_simps)
-
-lemma mtx_hosc_solution_eq:
-  assumes "b\<^sup>2 + a * 4 > 0" and "a \<noteq> 0"
-  shows "P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a) * (\<d>\<i>\<a>\<g> i. exp (t * (if i=1 then \<iota>\<^sub>1 else \<iota>\<^sub>2))) * (P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a))\<^sup>-\<^sup>1 
-  = (1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R (\<Phi> t)"
-  unfolding assms apply(subst inv_mtx_chB_hosc)
-  using assms apply (simp add: iota1_def discr_def iota2_def)
-  using assms apply(simp_all add: mtx_times_scaleR_commute, subst sq_mtx_eq_iff)
-  unfolding UNIV_2 sq_mtx_times_eq sq_mtx_scaleR_eq sq_mtx_uminus_eq apply(simp_all add: axis_def)
-  by (auto simp: field_simps) 
-    (auto simp: iota1_def iota2_def discr_def field_simps)
-
-lemma my_subst: "[x \<leadsto> y, y \<leadsto> a * x + b * y] = 
-  (\<lambda>\<s>. put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> \<s> ((A *\<^sub>V (vector [$x, $y])) $ 1)) ((A *\<^sub>V (vector [$x, $y])) $ 2))"
-  by (expr_auto add: A_vec_mult_eq)
-
-lemma local_lipschitz_hosc: 
-  "local_lipschitz UNIV UNIV (loc_subst (x +\<^sub>L y) (\<lambda>t::real. [x \<leadsto> y, y \<leadsto> a * x + b * y]) s)"
-  apply expr_simp
-  by (rule_tac \<DD>="(\<lambda>c. (snd c, a * fst c + b * snd c))" in c1_local_lipschitz)
-    (auto intro!: derivative_eq_intros continuous_intros)
-
-lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 
-  \<Longrightarrow> local_flow_on [x \<leadsto> y, y \<leadsto> a * x + b * y] (x +\<^sub>L y) UNIV UNIV
-  (\<lambda>t. [x \<leadsto> x_sol t x y, y \<leadsto> y_sol t x y])"
-  oops
-
-
-lemma "\<^bold>{x=0\<^bold>} 
-  LOOP (
-    (x ::= ?);(y ::= 0); \<questiondown>x>0?;
-    {x` = y, y` = - a * x + b * y}
-  ) INV (x\<ge>0)
-  \<^bold>{x\<ge>0\<^bold>}"
-  oops
-
-end
-
-(*
-
-% Unsolved problems
-% 1. Requires darboux rule: Fractional Darboux equality
-% 2. verified with the help of a CAS: dyn_param_switch_arith1
-% 3. verified with the help of a CAS: STTT_9b_arith1
-% 4. not solved yet (not dedicated enough time): LICS: Example 4b
-% 5. verified with the help of a CAS: LICSexample6
-% 6. verified with the help of a CAS: LICSexample
-% 7. verified with the help of a CAS: ETCS_Prop1_arith1
-% 8. not solved yet (not dedicated enough time): ETCS: Proposition 4
-% 9. not solved yet (not dedicated enough time): Harmonic Oscillator
-
-*)
 
 end
