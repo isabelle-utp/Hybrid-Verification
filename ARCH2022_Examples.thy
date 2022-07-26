@@ -2566,7 +2566,7 @@ abbreviation "ctrl \<equiv> (\<questiondown>m - z \<le> SB(v)?; a ::= -b) \<sqin
 \<comment> \<open> train controller \<close>
 
 
-subsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
+subsubsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
 
 (* HP drive ::= {t := 0;{z'=v, v'=a, t'=1  & v >= 0 & t <= ep} *)
 abbreviation "drive \<equiv> (t ::= 0);{z` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}"
@@ -2618,7 +2618,7 @@ lemma "`@(Assumptions d) \<and> z \<le> m \<longrightarrow>
   using ETCS_Prop1_arith2 by (force simp: closed_segment_eq_real_ivl)
 
 
-subsection \<open> ETCS: Proposition 4 (Reactivity) \<close> (*N 63 *)
+subsubsection \<open> ETCS: Proposition 4 (Reactivity) \<close> (*N 63 *)
 
 (* Bool Controllable(Real m, Real z, Real v, Real d) <-> (v^2-d^2 <= 2*b*(m-z) & Assumptions(v, d)) *)
 abbreviation "Controllable d \<equiv> (v\<^sup>2 -d\<^sup>2 \<le> 2*b*(m-z) \<and> @(Assumptions d))\<^sub>e"

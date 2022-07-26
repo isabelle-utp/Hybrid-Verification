@@ -20,7 +20,7 @@ session "Hybrid-Verification" = Ordinary_Differential_Equations +
     "Matrices/SQ_MTX"
     "Matrices/MTX_Flows"
   theories
-    "Matrices/MTX_Examples"
     ARCH2022_Examples
+    "Matrices/MTX_Examples"
   document_files
     "root.tex"

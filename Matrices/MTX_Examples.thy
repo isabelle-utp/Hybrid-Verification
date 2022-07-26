@@ -13,41 +13,11 @@ theory MTX_Examples
 
 begin
 
-
-subsection \<open> Examples \<close>
+subsubsection \<open> Harmonic oscillator \<close>
 
 abbreviation hoareT :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
   ("PRE_ HP _ POST _" [85,85]85) where "PRE P HP X POST Q \<equiv> (P \<le> |X]Q)"
 
-
-subsubsection \<open> Verification by uniqueness. \<close>
-
-abbreviation mtx_circ :: "2 sq_mtx" ("A")
-  where "A \<equiv> mtx  
-   ([0,  1] # 
-    [-1, 0] # [])"
-
-abbreviation mtx_circ_flow :: "real \<Rightarrow> real^2 \<Rightarrow> real^2" ("\<phi>")
-  where "\<phi> t s \<equiv> (\<chi> i. if i = 1 then s$1 * cos t + s$2 * sin t else - s$1 * sin t + s$2 * cos t)"
-
-lemma mtx_circ_flow_eq: "exp (t *\<^sub>R A) *\<^sub>V s = \<phi> t s"
-  apply(rule local_flow.eq_solution[OF local_flow_sq_mtx_linear, symmetric, of _ "\<lambda>s. UNIV"], simp_all)
-    apply(rule ivp_solsI, simp_all add: sq_mtx_vec_mult_eq vec_eq_iff)
-  unfolding UNIV_2 using exhaust_2
-  by (force intro!: poly_derivatives simp: matrix_vector_mult_def)+
-
-lemma mtx_circ: 
-  "PRE(\<lambda>s. r\<^sup>2 = (s $ 1)\<^sup>2 + (s $ 2)\<^sup>2) 
-  HP x\<acute>=(*\<^sub>V) A & G 
-  POST (\<lambda>s. r\<^sup>2 = (s $ 1)\<^sup>2 + (s $ 2)\<^sup>2)"
-  apply(subst local_flow.fbox_g_ode_subset[OF local_flow_sq_mtx_linear])
-  unfolding mtx_circ_flow_eq by auto
-
-no_notation mtx_circ ("A")
-        and mtx_circ_flow ("\<phi>")
-
-
-subsubsection \<open> Flow of diagonalisable matrix. \<close>
 
 abbreviation mtx_hOsc :: "real \<Rightarrow> real \<Rightarrow> 2 sq_mtx" ("A")
   where "A a b \<equiv> mtx  
