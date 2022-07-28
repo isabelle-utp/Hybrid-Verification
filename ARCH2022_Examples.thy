@@ -9,8 +9,6 @@ theory ARCH2022_Examples
     Real_Arith_Tactics
     HS_CAS_Integration
     "Matrices/MTX_Flows"
-    "HOL-Decision_Procs.Ferrack"
-    "HOL-Decision_Procs.Reflective_Field"
 
 begin
 
@@ -19,10 +17,6 @@ subsection \<open> Basic \<close>
 
 lit_vars \<comment> \<open> disable constants \<close>
 no_notation (ASCII) disj (infixr "|" 30)
-no_notation Lattice.meet (infixl "\<sqinter>\<index>" 70)
-hide_const Ferrack.T
-hide_const Ferrack.A
-hide_const Ferrack.E
 
 subsubsection \<open> Basic assignment \<close> 
 
