@@ -2717,8 +2717,7 @@ value "2 \<noteq> 2" (* verified with the help of a CAS *)
 
 subsection \<open>Advanced\<close>
 
-
-subsubsection \<open> ETCS: Essentials \<close>
+subsubsection \<open> ETCS \<close>
 
 lemma ETCS_arith1: 
   assumes "0 < b" "0 \<le> A" "0 \<le> v" "0 \<le> (t::real)"
@@ -2816,8 +2815,7 @@ abbreviation "loopInv \<equiv> (v \<ge> 0 \<and> m - z \<ge> stopDist v)\<^sub>e
 abbreviation "ctrl \<equiv> (\<questiondown>m - z \<le> SB(v)?; a ::= -b) \<sqinter> (\<questiondown>m - z \<ge> SB(v)?; a ::= A)"
 \<comment> \<open> train controller \<close>
 
-
-subsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
+subsubsection \<open> ETCS: Essentials (safety) \<close>
 
 (* HP drive ::= {t := 0;{z'=v, v'=a, t'=1  & v >= 0 & t <= ep} *)
 abbreviation "drive \<equiv> (t ::= 0);{z` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}"
@@ -2843,6 +2841,9 @@ lemma "initial \<le> |LOOP ctrl;drive INV @loopInv] (z \<le> m)"
   by (auto simp: unrest_ssubst var_alpha_combine wp usubst usubst_eval 
       fbox_g_dL_easiest[OF local_flow_LICS1] field_simps taut_def)
     (smt (verit, best) mult_left_le_imp_le zero_le_square)
+
+
+subsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
 
 (* Bool Assumptions(Real v, Real d) <-> ( v>=0 & d>=0 & b>0 ) *)
 abbreviation "Assumptions d \<equiv> (v \<ge> 0 \<and> d \<ge> 0 \<and> b > 0)\<^sub>e"
@@ -2896,6 +2897,31 @@ value "2 \<noteq> 2" (* could not even prove it with KeYmaera X *)
 
 end
 
+lemma simple_transform: "a \<le> b \<longleftrightarrow> 0 \<le> b - a" for a::real
+  by auto
+
+lemma overdamped_door_arith:
+  assumes "b\<^sup>2 + a * 4 > 0" and "a < 0" and "b \<le> 0" and "t \<ge> 0" and "s1 \<ge> 0"
+  shows "0 \<le> ((b + sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / 2 - 
+(b - sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / 2) * s1 / sqrt (b\<^sup>2 + a * 4)"
+proof(subst diff_divide_distrib[symmetric], simp)
+  have f0: "s1 / (2 * sqrt (b\<^sup>2 + a * 4)) \<ge> 0"  (is "s1/?c3 \<ge> 0")
+    using assms(1,5) by simp
+  have f1: "(b - sqrt (b\<^sup>2 + 4 * a)) < (b + sqrt (b\<^sup>2 + 4 * a))" (is "?c2 < ?c1") 
+    and f2: "(b + sqrt (b\<^sup>2 + 4 * a)) < 0"
+    using sqrt_ge_absD[of b "b\<^sup>2 + 4 * a"] assms by (force, linarith)
+  hence f3: "exp (t * ?c2 / 2) \<le> exp (t * ?c1 / 2)" (is "exp ?t1 \<le> exp ?t2")
+    unfolding exp_le_cancel_iff 
+    using assms(4) by (case_tac "t=0", simp_all)
+  hence "?c2 * exp ?t2 \<le> ?c2 * exp ?t1"
+    using f1 f2 mult_le_cancel_iff2[of "-?c2" "exp ?t1" "exp ?t2"] by linarith 
+  also have "... < ?c1 * exp ?t1"
+    using f1 by auto
+  also have"... \<le> ?c1 * exp ?t1"
+    using f1 f2 by auto
+  ultimately show "0 \<le> (?c1 * exp ?t1 - ?c2 * exp ?t2) * s1 / ?c3"
+    using f0 f1 assms(5) by auto
+qed
 
 dataspace harmonic_osc =
   constants
@@ -2927,6 +2953,9 @@ lemma A_vec_mult_eq: "A *\<^sub>V s = vector [s$2, a * s$1 + b * s$2]"
       sq_mtx_vec_mult_eq UNIV_2)
 
 definition "discr \<equiv> sqrt (b\<^sup>2 + 4 * a)"
+
+lemma discr_alt: "discr = sqrt (b\<^sup>2 + a * 4)"
+  by (clarsimp simp: discr_def)
 
 definition  iota1 :: "real" ("\<iota>\<^sub>1")
   where "\<iota>\<^sub>1 \<equiv> (b - discr)/2"
@@ -2985,7 +3014,7 @@ lemma mtx_hosc_diagonalizable:
 lemma mtx_hosc_solution_eq:
   assumes "b\<^sup>2 + a * 4 > 0" and "a \<noteq> 0"
   shows "P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a) * (\<d>\<i>\<a>\<g> i. exp (t * (if i=1 then \<iota>\<^sub>1 else \<iota>\<^sub>2))) * (P (-\<iota>\<^sub>2/a) (-\<iota>\<^sub>1/a))\<^sup>-\<^sup>1 
-  = (1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R (\<Phi> t)"
+  = (1/discr) *\<^sub>R (\<Phi> t)"
   unfolding assms apply(subst inv_mtx_chB_hosc)
   using assms apply (simp add: iota1_def discr_def iota2_def)
   using assms apply(simp_all add: mtx_times_scaleR_commute, subst sq_mtx_eq_iff)
@@ -3006,19 +3035,50 @@ lemma local_lipschitz_hosc:
   by (rule_tac \<DD>="(\<lambda>c. (snd c, a * fst c + b * snd c))" in c1_local_lipschitz)
     (auto intro!: derivative_eq_intros continuous_intros)
 
-lemma "(x1 * (b + sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2) -
-               x1 * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2) +
-               y1 * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a) -
-               y1 * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a),
-               x1 * a * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a) -
-               x1 * a * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / sqrt (b\<^sup>2 + 4 * a) +
-               y1 * (b + sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2) -
-               y1 * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (s * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / (sqrt (b\<^sup>2 + 4 * a) * 2)) = 
-  (((1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]) $ (1::2), ((1/sqrt (b\<^sup>2 + a * 4)) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]) $ (2::2))"
+lemma sols_to_Phi: "(x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) / discr - x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2) / discr 
+      + y1 * exp (t * \<iota>\<^sub>2) / discr - y1 * exp (t * \<iota>\<^sub>1) / discr,
+        x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
+      + y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) / discr - y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1) / discr) = 
+  (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]) $ (1::2), 
+  ((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]) $ (2::2))"
   apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
-  oops
+  apply distribute
+  by (clarsimp simp: add_divide_distrib diff_divide_distrib mult.commute)
+    (simp add: mult.left_commute)
 
-lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 
+lemma vecf_to_A: "(
+        x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
+      + y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) / discr - y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1) / discr,
+   a * (x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) / discr - x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2) / discr 
+      + y1 * exp (t * \<iota>\<^sub>2) / discr - y1 * exp (t * \<iota>\<^sub>1) / discr) 
+ + b * (x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
+      + y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) / discr - y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1) / discr)
+    ) = 
+    (
+      (A *\<^sub>V (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]))) $ (1::2), 
+      (A *\<^sub>V (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]))) $ (2::2)
+    )"
+  apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
+  apply distribute
+  apply (clarsimp simp: add_divide_distrib diff_divide_distrib mult.commute)
+  apply (simp add: mult.left_commute)
+  apply distribute
+  by (clarsimp simp: add_divide_distrib diff_divide_distrib mult.commute)
+
+lemma local_flow_mtx_hosc:
+  assumes "b\<^sup>2 + a * 4 > 0" and "a \<noteq> 0"
+  shows "local_flow ((*\<^sub>V) A) UNIV UNIV (\<lambda>t. (*\<^sub>V) ((1/discr) *\<^sub>R \<Phi> t))"
+  unfolding assms using local_flow_sq_mtx_linear[of "A"] assms
+  apply(subst (asm) exp_scaleR_diagonal2[OF invertible_mtx_chB_hosc mtx_hosc_diagonalizable])
+     apply(simp add: iota1_def iota2_def discr_def, simp, simp)
+  by (subst (asm) mtx_hosc_solution_eq) simp_all
+
+lemma has_vderiv_Phi_A: "0 < b\<^sup>2 + a * 4 \<Longrightarrow> a \<noteq> 0 
+  \<Longrightarrow> ((\<lambda>t. ((1 / discr) *\<^sub>R \<Phi> t) *\<^sub>V s) has_vderiv_on (\<lambda>t. A *\<^sub>V (((1 / discr) *\<^sub>R \<Phi> t) *\<^sub>V s))) {0--t}"
+  using conjunct1[OF conjunct2[OF local_flow_mtx_hosc[unfolded local_flow_def local_flow_axioms_def]]] 
+  by clarsimp
+
+lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   \<Longrightarrow> local_flow_on [x \<leadsto> y, y \<leadsto> a * x + b * y] (x +\<^sub>L y) UNIV UNIV
   (\<lambda>t. [x \<leadsto> x_sol t x y, y \<leadsto> y_sol t x y])"
   unfolding local_flow_on_def 
@@ -3026,34 +3086,46 @@ lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   using local_lipschitz_hosc
      apply (unfold_locales; clarsimp?)
     apply (expr_simp add: x_sol_eq y_sol_eq)
+    apply (subst sols_to_Phi)
+    apply (subst vecf_to_A)
+    prefer 3 subgoal by expr_simp
+   prefer 2 subgoal 
+    apply (expr_simp add: iota1_def iota2_def)
+    by distribute (clarsimp simp: add_divide_distrib diff_divide_distrib discr_def)
   apply (rename_tac x1 y1)
-    apply (rule poly_derivatives)
-  apply simp
   apply (rule poly_derivatives)
-
-  apply (rename_tac x1 y1)
-    apply (intro poly_derivatives; (force | (rule poly_derivatives))?)
-       apply (clarsimp simp: fun_eq_iff)
-  subgoal for x1 s0
-    apply (rule_tac a="8*(b\<^sup>2 + 4 * a)" in scale_left_imp_eq, simp)
-    apply (rule_tac a="sqrt (b\<^sup>2 + 4 * a)" in scale_left_imp_eq, simp)
-    apply simp
-    apply (clarsimp simp: field_simps)
-
-  apply (clarsimp simp: fun_eq_iff, distribute, clarsimp simp: power2_eq_square[symmetric])
-  by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
-    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+    prefer 3 apply force
+  apply (rule iffD1[OF has_vderiv_on_component, rule_format]) (* name this lemma *)
+   apply (rule has_vderiv_Phi_A, simp, simp)
+  apply (rule iffD1[OF has_vderiv_on_component, rule_format]) (* name this lemma *)
+  by (rule has_vderiv_Phi_A, simp, simp)
 
 
-lemma "\<^bold>{x=0\<^bold>} 
+lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 \<Longrightarrow> \<^bold>{x=0\<^bold>} 
   LOOP (
     (x ::= ?);(y ::= 0); \<questiondown>x>0?;
-    {x` = y, y` = - a * x + b * y}
+    {x` = y, y` = a * x + b * y}
   ) INV (x\<ge>0)
   \<^bold>{x\<ge>0\<^bold>}"
-  oops
+  apply (rule hoare_loopI)
+    prefer 3 apply expr_simp
+   prefer 2 apply expr_simp
+  apply (clarsimp simp add: wp fbox_g_dL_easiest[OF local_flow_hosc])
+  apply expr_simp
+  apply (clarsimp simp: iota1_def iota2_def)
+  apply (subst simple_transform)
+  apply (subgoal_tac "discr > 0")
+  subgoal for s k t
+    using overdamped_door_arith[of b a t "get\<^bsub>x\<^esub> s", unfolded discr_def[symmetric] discr_alt[symmetric]]
+    apply (auto simp: field_simps)
+    apply distribute
+    apply (mon_simp_vars discr "k s")
+
+    oops
+
 
 end
+
 
 (*
 
