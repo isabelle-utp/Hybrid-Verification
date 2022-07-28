@@ -1255,7 +1255,6 @@ lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^
     apply (intro poly_derivatives; (force | rule poly_derivatives)?)
     oops
 
-
 end
 
 
