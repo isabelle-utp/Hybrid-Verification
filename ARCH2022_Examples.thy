@@ -2644,7 +2644,11 @@ lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 
 
 end
 
-lemma overdamped_door_arith:
+
+subsubsection \<open> Harmonic Oscillator \<close> (*N 62 *)
+
+
+lemma hosc_arith:
   assumes "b\<^sup>2 + 4 * a > 0" and "a < 0" and "b \<le> 0" and "t \<ge> 0" and "k > 0"
   shows "k * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (2 * sqrt (b\<^sup>2 + 4 * a))
        \<le> k * (b + sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / (2 * sqrt (b\<^sup>2 + 4 * a))"
@@ -2855,7 +2859,7 @@ lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   apply (clarsimp simp add: wp fbox_g_dL_easiest[OF local_flow_hosc])
   apply expr_simp
   apply (clarsimp simp: iota1_def iota2_def discr_def)
-  using overdamped_door_arith[of b a] by force
+  using hosc_arith[of b a] by force
 
 
 end
