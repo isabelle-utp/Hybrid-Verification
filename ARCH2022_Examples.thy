@@ -852,7 +852,7 @@ lemma picard_lindeloef_first_order_linear: "t\<^sub>0 \<in> T \<Longrightarrow> 
 
 dataspace darboux =
   constants A::real B::real
-  variables x::real y::real z::real
+  variables x::real y::real z::real w::real
 
 context darboux
 begin
@@ -907,6 +907,26 @@ subsubsection \<open> Dynamics: Fractional Darboux equality \<close> (*N 30 *)
 
 context darboux
 begin
+
+thm diff_ghost_rule_very_simple
+
+lemma "(a + b)*c = a*c+b*c" for c::real
+
+(* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
+lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
+  apply (dGhost)
+  apply (rule diff_ghost_rule_very_simple[where y="w" and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w + z*w = 0 \<and> w \<noteq> 0)\<^sup>e"])
+       apply expr_simp
+  apply expr_simp
+  using lens_indep_comm[of w z] lens_indep_comm[of w x] indeps  apply expr_auto
+    apply expr_simp
+   apply expr_auto
+  apply(subst cross3_simps(23)[symmetric, of "get\<^bsub>x\<^esub> _" "get\<^bsub>w\<^esub> _" "get\<^bsub>z\<^esub> _"])
+    apply (auto simp: field_simps)[1]
+  apply (metis (full_types) bgauge_existence_lemma get_put_put_indep indeps(11) mem_Collect_eq verit_comp_simplify1(1) vwbs(4))
+   apply (clarsimp simp: field_simps, simp add: factorR(1))
+  oops
+(* apply (dGhost "y" "(x*y\<^sup>2 = 1 \<or> x=0)\<^sub>e" "1/2") *)
 
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"

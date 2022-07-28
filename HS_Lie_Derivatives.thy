@@ -497,8 +497,8 @@ lemma darboux:
     and g :: real
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
     and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
-    and yGhost: "y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
-    and zGhost: "z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
+    and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
+    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
     and dbx_hyp: "\<L>\<^bsub>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> * $y)\<^esub> e on (a +\<^sub>L y) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
     and deriv: "\<forall>t. D e \<mapsto> e' (at t)"
   shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
