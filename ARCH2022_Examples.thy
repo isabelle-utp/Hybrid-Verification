@@ -908,13 +908,8 @@ subsubsection \<open> Dynamics: Fractional Darboux equality \<close> (*N 30 *)
 context darboux
 begin
 
-thm diff_ghost_rule_very_simple
-
-lemma "(a + b)*c = a*c+b*c" for c::real
-
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
-  apply (dGhost)
   apply (rule diff_ghost_rule_very_simple[where y="w" and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w + z*w = 0 \<and> w \<noteq> 0)\<^sup>e"])
        apply expr_simp
   apply expr_simp
