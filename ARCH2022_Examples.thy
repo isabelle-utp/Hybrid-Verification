@@ -2897,15 +2897,12 @@ value "2 \<noteq> 2" (* could not even prove it with KeYmaera X *)
 
 end
 
-lemma simple_transform: "a \<le> b \<longleftrightarrow> 0 \<le> b - a" for a::real
-  by auto
-
 lemma overdamped_door_arith:
-  assumes "b\<^sup>2 + a * 4 > 0" and "a < 0" and "b \<le> 0" and "t \<ge> 0" and "s1 \<ge> 0"
-  shows "0 \<le> ((b + sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / 2 - 
-(b - sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / 2) * s1 / sqrt (b\<^sup>2 + a * 4)"
-proof(subst diff_divide_distrib[symmetric], simp)
-  have f0: "s1 / (2 * sqrt (b\<^sup>2 + a * 4)) \<ge> 0"  (is "s1/?c3 \<ge> 0")
+  assumes "b\<^sup>2 + 4 * a > 0" and "a < 0" and "b \<le> 0" and "t \<ge> 0" and "k > 0"
+  shows "k * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (2 * sqrt (b\<^sup>2 + 4 * a))
+       \<le> k * (b + sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b - sqrt (b\<^sup>2 + 4 * a)) / 2) / (2 * sqrt (b\<^sup>2 + 4 * a))"
+proof-
+  have f0: "k / (2 * sqrt (b\<^sup>2 + a * 4)) \<ge> 0"  (is "k/?c3 \<ge> 0")
     using assms(1,5) by simp
   have f1: "(b - sqrt (b\<^sup>2 + 4 * a)) < (b + sqrt (b\<^sup>2 + 4 * a))" (is "?c2 < ?c1") 
     and f2: "(b + sqrt (b\<^sup>2 + 4 * a)) < 0"
@@ -2919,8 +2916,12 @@ proof(subst diff_divide_distrib[symmetric], simp)
     using f1 by auto
   also have"... \<le> ?c1 * exp ?t1"
     using f1 f2 by auto
-  ultimately show "0 \<le> (?c1 * exp ?t1 - ?c2 * exp ?t2) * s1 / ?c3"
-    using f0 f1 assms(5) by auto
+  ultimately have "?c2 * exp ?t2 \<le> ?c1 * exp ?t1"
+    using f1 assms(5) by auto
+  hence "(?c2 * exp ?t2) * (k / ?c3) \<le> (?c1 * exp ?t1) * (k / ?c3)"
+    using f0 mult_right_mono by blast
+  thus ?thesis
+    by (auto simp: field_simps)
 qed
 
 dataspace harmonic_osc =
@@ -3101,7 +3102,8 @@ lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   by (rule has_vderiv_Phi_A, simp, simp)
 
 
-lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 \<Longrightarrow> \<^bold>{x=0\<^bold>} 
+lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 \<Longrightarrow>
+  \<^bold>{x=0\<^bold>} 
   LOOP (
     (x ::= ?);(y ::= 0); \<questiondown>x>0?;
     {x` = y, y` = a * x + b * y}
@@ -3112,16 +3114,8 @@ lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
    prefer 2 apply expr_simp
   apply (clarsimp simp add: wp fbox_g_dL_easiest[OF local_flow_hosc])
   apply expr_simp
-  apply (clarsimp simp: iota1_def iota2_def)
-  apply (subst simple_transform)
-  apply (subgoal_tac "discr > 0")
-  subgoal for s k t
-    using overdamped_door_arith[of b a t "get\<^bsub>x\<^esub> s", unfolded discr_def[symmetric] discr_alt[symmetric]]
-    apply (auto simp: field_simps)
-    apply distribute
-    apply (mon_simp_vars discr "k s")
-
-    oops
+  apply (clarsimp simp: iota1_def iota2_def discr_def)
+  using overdamped_door_arith[of b a] by force
 
 
 end
