@@ -4,6 +4,7 @@ session "Hybrid-Verification" = Ordinary_Differential_Equations +
     "Shallow-Expressions"
     "Hybrid-Library"
     Optics
+    CAS_Integration
   directories
     Matrices
   (*theories [document = false]
