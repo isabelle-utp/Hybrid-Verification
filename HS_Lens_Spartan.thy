@@ -1406,6 +1406,91 @@ lemma diff_inv_on_rule:
   using assms unfolding fbox_diff_inv_on[THEN sym] refine_iff_implies[THEN sym]
   by (metis (mono_tags, lifting) SEXP_def fbox_iso order.trans)
 
+
+subsubsection \<open> Differential ghosts \<close>
+
+term "(\<lambda>s. (P \\ $x) s) = (\<lambda>s. \<exists>s'. P (s \<triangleleft>\<^bsub>x\<^esub> s'))"
+find_theorems name: gronw
+thm derivative_quotient_bound
+  derivative_quotient_bound_left
+thm gronwall_general
+  gronwall_general_left
+
+lemma 
+  fixes a::"'a::real_normed_vector \<Longrightarrow> 'c"
+  assumes "vwb_lens y" "y \<bowtie> X" "$y \<sharp>\<^sub>s f" "$X \<sharp> g"
+    and "\<exists>y. `|{x` = f(y \<leadsto> g ($y)) | G on U S @ t\<^sub>0}] Q`"
+  shows "`|{x` = f | G on U S @ t\<^sub>0}] Q`"
+  using assms(5) apply clarify
+  apply (unfold fbox_g_ode_on)
+  unfolding fbox_g_orbital_on_orbital
+  apply (clarsimp simp: taut_def)
+  apply expr_simp
+  apply (erule_tac x=s in allE)
+  apply (erule_tac x=X in ballE, clarsimp)
+  using assms(1-4)
+  apply expr_simp
+  thm fbox_g_orbital_guard
+  find_theorems name: g_orbital_on
+
+  apply (unfold fbox_g_orbital_on_eq)
+
+lemma diff_ghost:
+  fixes a::"'a::real_normed_vector \<Longrightarrow> 'c"
+    and y::"'b::real_normed_vector \<Longrightarrow> 'c"
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "k \<noteq> 0"
+    and inv_hyp: "diff_inv_on (I)\<^sub>e (a +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y + \<guillemotleft>c\<guillemotright>)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
+  shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. f) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
+  using inv_hyp
+  apply (clarsimp simp add: expr_defs diff_inv_on_eq)
+  apply (erule_tac x="s \<triangleleft>\<^bsub>y\<^esub> s'" in allE)
+  apply (erule impE)
+  using assms(1) apply force
+  apply (drule_tac x="\<lambda> t. (X t, (- c + exp (k * t) *\<^sub>R (c + k *\<^sub>R get\<^bsub>y\<^esub> s'))/\<^sub>R k)" in bspec)
+   prefer 2 subgoal
+    using assms(1-4)
+    apply (simp add: unrest_subst_lens)
+    apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
+    by (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
+  apply (clarsimp simp only: ivp_sols_def)
+  apply (intro conjI)
+  subgoal by (simp add: lens_defs lens_indep.lens_put_irr2)
+    prefer 2 subgoal for s X s' t
+  using assms(1-4)
+  apply (simp add: lens_defs lens_indep.lens_put_irr2)
+  apply (auto simp: field_simps)
+  using assms(5) by linarith
+  apply (auto intro!: poly_derivatives)
+  using assms(1-4) 
+  apply (simp add: unrest_subst_lens)
+  apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
+  by (smt (verit, best) assms(5) divideR_right lens_indep.lens_put_irr2 lens_indep_comm 
+      real_vector_eq_affinity scaleR_right_diff_distrib scaleR_scaleR)
+
+lemma diff_ghost_very_simple:
+  assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G"
+    and inv_hyp: "diff_inv_on (I)\<^sub>e (a +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
+  shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. f) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
+  using inv_hyp
+  apply (clarsimp simp add: expr_defs diff_inv_on_eq)
+  apply (erule_tac x="s \<triangleleft>\<^bsub>y\<^esub> s'" in allE)
+  apply (erule impE)
+  using assms(1) apply force
+  apply (drule_tac x="\<lambda> t. (X t, exp (k * t) *\<^sub>R get\<^bsub>y\<^esub> s')" in bspec)
+   prefer 2 subgoal
+    using assms(1-4)
+    apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
+    by (metis assms(1,2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
+  apply (clarsimp simp only: ivp_sols_def)
+  apply (auto intro!: poly_derivatives)
+   prefer 2 subgoal
+    using assms(1-4)
+    by (simp add: lens_defs lens_indep.lens_put_irr2)
+  using assms(1-4) 
+  apply (simp add: unrest_subst_lens)
+  apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
+  by (metis lens_indep_def)
+
 lemma diff_ghost_rule:
   assumes "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B" 
     "\<^bold>{G\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (\<sigma>(y \<leadsto> \<eta>)) B \<^bold>{G\<^bold>}"
