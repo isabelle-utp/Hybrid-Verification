@@ -8,7 +8,6 @@ theory ARCH2022_Examples
     HS_Lie_Derivatives
     Real_Arith_Tactics
     HS_CAS_Integration
-    "Matrices/MTX_Flows"
 
 begin
 

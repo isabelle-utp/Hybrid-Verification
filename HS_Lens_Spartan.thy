@@ -6,7 +6,9 @@ text \<open> We use shallow expressions to rephrase hybrid systems properties. E
 includes lemmas for verification condition generation. \<close>
 
 theory HS_Lens_Spartan
-  imports "HS_Lens_ODEs"
+  imports 
+    "HS_Lens_ODEs"
+    "Matrices/MTX_Flows"
 
 begin
 
@@ -1416,24 +1418,49 @@ thm derivative_quotient_bound
 thm gronwall_general
   gronwall_general_left
 
+thm subst_nil_def subst_bop
+thm subst_basic_ops
+thm subst_lookup_def subst_app_def lens_update_def
+thm local_flow.has_vderiv_on_domain[OF local_flow_sq_mtx_affine] 
+  autonomous_affine_sol_is_exp_plus_int
+thm fbox_solve fbox_g_dL_easiest
+(* most used solution theorems in arch2022:
+  * fbox_g_ode_frame_flow
+  * fbox_solve (which is essentially the one above)
+  * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
+*)
+lemma lens_upd_eq: "f (x \<leadsto> e) = (\<lambda>s. put\<^bsub>x\<^esub> (f s) (e s))"
+  by expr_simp
+lemma "f (x \<leadsto> e1, y \<leadsto> e2) = (\<lambda>s. put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> (f s) (e1 s)) (e2 s))"
+  by (simp only: lens_upd_eq)
+lemma "[x \<leadsto> f(y \<leadsto> g ($y))] = (\<lambda>s. put\<^bsub>x\<^esub> (id s) (put\<^bsub>y\<^esub> (f s) (g s (get\<^bsub>y\<^esub> s))))"
+  by expr_simp
+
+term "{x` = f(y \<leadsto> a *\<^sub>V $y + b) | G on U S @ t\<^sub>0}"
+term "A *\<^sub>V ($y) + b"
+
 lemma 
-  fixes a::"'a::real_normed_vector \<Longrightarrow> 'c"
-  assumes "vwb_lens y" "y \<bowtie> X" "$y \<sharp>\<^sub>s f" "$X \<sharp> g"
-    and "\<exists>y. `|{x` = f(y \<leadsto> g ($y)) | G on U S @ t\<^sub>0}] Q`"
+  assumes "vwb_lens y" "y \<bowtie> x" "$y \<sharp>\<^sub>s f" "$x \<sharp> g"
+    and "\<exists>y. `|{x` = f(y \<leadsto> (A s *\<^sub>V ($y) + b)) | G on U S @ t\<^sub>0}] Q`"
   shows "`|{x` = f | G on U S @ t\<^sub>0}] Q`"
   using assms(5) apply clarify
   apply (unfold fbox_g_ode_on)
-  unfolding fbox_g_orbital_on_orbital
-  apply (clarsimp simp: taut_def)
-  apply expr_simp
-  apply (erule_tac x=s in allE)
-  apply (erule_tac x=X in ballE, clarsimp)
-  using assms(1-4)
-  apply expr_simp
-  thm fbox_g_orbital_guard
+proof (clarsimp simp: taut_def) (*, expr_simp add: assms*)
+  fix y s X t
+  assume hyp1: "\<forall>s. \<forall>X\<in>Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f(y \<leadsto> a *\<^sub>V $y + b)] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s).
+              \<forall>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>x\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>x\<^esub> s (X \<tau>))) \<longrightarrow> Q (put\<^bsub>x\<^esub> s (X t))"
+    and hyp2: "X \<in> Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s)"
+    and hyp3: "t \<in> U (get\<^bsub>x\<^esub> s)"
+    and hyp4: "\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>x\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>x\<^esub> s (X \<tau>))"
+  term a
+  let "?gen_sol t" = "exp (t *\<^sub>R a) *\<^sub>V ($y) + exp (t *\<^sub>R a) *\<^sub>V (\<integral>\<^sub>t\<^sub>0\<^sup>t(exp (- \<tau> *\<^sub>R a) *\<^sub>V b)\<partial>\<tau>)"
+  have "(X,"
+    using hyp1 apply (expr_simp add: ivp_sols_def)
+  show "Q (put\<^bsub>x\<^esub> s (X t))"
+    using hyp1[rule_format, OF _ hyp3] 
+  thm fbox_g_orbital_guard fbox_g_orbital_on_orbital
   find_theorems name: g_orbital_on
-
-  apply (unfold fbox_g_orbital_on_eq)
+  oops
 
 lemma diff_ghost:
   fixes a::"'a::real_normed_vector \<Longrightarrow> 'c"
