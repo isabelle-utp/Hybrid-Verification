@@ -1439,23 +1439,126 @@ lemma "[x \<leadsto> f(y \<leadsto> g ($y))] = (\<lambda>s. put\<^bsub>x\<^esub>
 term "{x` = f(y \<leadsto> a *\<^sub>V $y + b) | G on U S @ t\<^sub>0}"
 term "A *\<^sub>V ($y) + b"
 
+
+lemma "g_ode_on x (f(y \<leadsto> A *\<^sub>V $y + b))\<^sub>e (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 = 
+  g_orbital_on x (\<lambda>t s. put\<^bsub>x\<^esub> s ((subst_upd f y (\<lambda>\<s>. A \<s> *\<^sub>V get\<^bsub>y\<^esub> \<s> + b \<s>)) s)) G U S t\<^sub>0"
+  by (simp add: SEXP_def taut_def subst_upd_def subst_id_def)
+
+term "g_orbital_on x (\<lambda>t s. put\<^bsub>x\<^esub> s ((subst_upd (f t) y (\<lambda>\<s>. A \<s> *\<^sub>V get\<^bsub>y\<^esub> \<s> + b \<s>)) s)) G U S t\<^sub>0"
+
+term "fg = (\<lambda>t. (f t, g t))"
+
+lemma "\<forall>x\<in>S. ((\<lambda>y. (1 / \<bar>y - x\<bar>) *\<^sub>R (f y - (f x + (y - x) *\<^sub>R f' x))) \<longlongrightarrow> 0) (at x within S)
+  \<Longrightarrow> \<forall>x. (\<lambda>y. (1 / \<bar>y - x\<bar>) *\<^sub>R (g y - (g x + (y - x) *\<^sub>R g' x))) \<midarrow>x\<rightarrow> 0
+  \<Longrightarrow> x \<in> S
+  \<Longrightarrow> ((\<lambda>ya. (1 / \<bar>ya - x\<bar>) *\<^sub>R (put\<^bsub>y\<^esub> (f ya) (g ya) - (put\<^bsub>y\<^esub> (f x) (g x) + (ya - x) *\<^sub>R put\<^bsub>y\<^esub> (f' x) (g' x)))) \<longlongrightarrow> 0) (at x within S)"
+  oops
+
+lemma lets_see:
+  assumes "D f = f' on S" and "D g = g' on UNIV" and "h = (\<lambda>t. put\<^bsub>y\<^esub> (f' t) (g' t))"
+  shows "D (\<lambda>t. put\<^bsub>y\<^esub> (f t) (g t)) = h on S"
+  using assms
+  apply (clarsimp simp: has_vderiv_on_def has_vector_derivative_def)
+  subgoal for x
+    using bounded_linear_scaleR_left[of "put\<^bsub>y\<^esub> (f' x) (g' x)"]
+  apply (clarsimp simp: has_derivative_within)
+  using has_derivative_in_compose2 has_derivative_in_compose[of g "\<lambda>\<tau>. \<tau> *\<^sub>R g' _"]
+  sorry
+  done
+
+thm unrest_usubst_def subst_upd_def[of f z]
+term "$x \<sharp> A"
+term "unrest_usubst x \<sigma>"
+
+lemma "$y \<sharp>\<^sub>s f \<Longrightarrow> vwb_lens x \<Longrightarrow> vwb_lens y \<Longrightarrow> x \<bowtie> y 
+  \<Longrightarrow> [x \<leadsto> f(y \<leadsto> A *\<^sub>V $y + b)] = [x \<leadsto> f, y \<leadsto> A *\<^sub>V $y + b]"
+  apply expr_simp
+  apply clarsimp
+  apply (rename_tac s)
+  apply (subst lens_indep_comm[of x y _ _ "f _", symmetric], simp)
+  apply expr_simp
+  apply (erule_tac x=s in allE)
+  apply (erule_tac x="A s *\<^sub>V get\<^bsub>y\<^esub> s + b s" in allE)
+  apply (drule sym, simp)
+  using weak_lens.put_get wb_lens.get_put wb_lens.put_twice mwb_lens.put_put
+  using lens_indep_comm lens_indep_get lens_indep.lens_put_irr2 subst_upd_def
+  oops
+
 lemma 
-  assumes "vwb_lens y" "y \<bowtie> x" "$y \<sharp>\<^sub>s f" "$x \<sharp> g"
-    and "\<exists>y. `|{x` = f(y \<leadsto> (A s *\<^sub>V ($y) + b)) | G on U S @ t\<^sub>0}] Q`"
-  shows "`|{x` = f | G on U S @ t\<^sub>0}] Q`"
-  using assms(5) apply clarify
-  apply (unfold fbox_g_ode_on)
-proof (clarsimp simp: taut_def) (*, expr_simp add: assms*)
+(*   fixes A :: "'a :: banach \<Rightarrow> ('n::finite) sq_mtx"
+ *)  
+  assumes "\<exists>y. vwb_lens y \<and> y \<bowtie> x \<and> ($y \<sharp>\<^sub>s f) \<and> `|{x` = f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>)) | G on U UNIV @ 0}] Q`"
+    and x_hyps: "vwb_lens x" (* "$x \<sharp> A" "$x \<sharp> b" *)
+  shows "`|{x` = f | G on U S @ 0}] Q`"
+  using assms(1)
+proof (clarsimp simp: taut_def fbox_g_ode_on, simp add: SEXP_def[of U]) (*, expr_simp add: assms*)
   fix y s X t
-  assume hyp1: "\<forall>s. \<forall>X\<in>Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f(y \<leadsto> a *\<^sub>V $y + b)] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s).
+  assume hyp1: "\<forall>s. \<forall>X\<in>Sols U UNIV (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))] (put\<^bsub>x\<^esub> s c))) 0 (get\<^bsub>x\<^esub> s).
               \<forall>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>x\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>x\<^esub> s (X \<tau>))) \<longrightarrow> Q (put\<^bsub>x\<^esub> s (X t))"
-    and hyp2: "X \<in> Sols (U)\<^sub>e S (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s)"
+    and y_hyps: "vwb_lens y" "y \<bowtie> x" "$y \<sharp>\<^sub>s f"
+    and X_ivp: "X \<in> Sols U UNIV (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s c))) 0 (get\<^bsub>x\<^esub> s)"
     and hyp3: "t \<in> U (get\<^bsub>x\<^esub> s)"
     and hyp4: "\<forall>\<tau>. \<tau> \<in> U (get\<^bsub>x\<^esub> s) \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>x\<^esub> s (X \<tau>))"
-  term a
-  let "?gen_sol t" = "exp (t *\<^sub>R a) *\<^sub>V ($y) + exp (t *\<^sub>R a) *\<^sub>V (\<integral>\<^sub>t\<^sub>0\<^sup>t(exp (- \<tau> *\<^sub>R a) *\<^sub>V b)\<partial>\<tau>)"
-  have "(X,"
-    using hyp1 apply (expr_simp add: ivp_sols_def)
+  have fy_commute: "f (put\<^bsub>y\<^esub> \<s> v) = put\<^bsub>y\<^esub> (f \<s>) v" for \<s> v
+    using y_hyps by expr_simp
+  (* have A_putx: "A (put\<^bsub>x\<^esub> \<s> v) = A \<s>"  *)
+    (* and b_putx: "b (put\<^bsub>x\<^esub> \<s> v) = b \<s>"for \<s> v *)
+    (* using x_hyps by expr_simp+ *)
+  have dX: "D X = (\<lambda>t. get\<^bsub>x\<^esub> ([x \<leadsto> f] (put\<^bsub>x\<^esub> s (X t)))) on (U (get\<^bsub>x\<^esub> s))"
+    and X_init: "X 0 = get\<^bsub>x\<^esub> s" and "0 \<in> U (get\<^bsub>x\<^esub> s)"
+    using X_ivp
+    by (clarsimp simp: ivp_sols_def)+
+  define gen_sol 
+    where "gen_sol \<equiv> (\<lambda>\<tau> \<s>. exp (\<tau> *\<^sub>R A) *\<^sub>V get\<^bsub>y\<^esub> \<s> 
+      + exp (\<tau> *\<^sub>R A) *\<^sub>V (\<integral>\<^sub>0\<^sup>\<tau>(exp (- r *\<^sub>R A) *\<^sub>V b)\<partial>r))"
+  have dsol: "D (\<lambda>t. gen_sol t \<s>) = (\<lambda>t. A *\<^sub>V (gen_sol t \<s>) + b) on UNIV" for \<s>
+    using local_flow.has_vderiv_on_domain[OF local_flow_sq_mtx_affine, of "get\<^bsub>y\<^esub> \<s>" "A" "b"]
+    unfolding gen_sol_def by simp
+  have "Y \<in> Sols U UNIV (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f(y \<leadsto> \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>)] (put\<^bsub>x\<^esub> s c))) 0 (get\<^bsub>x\<^esub> s)"
+    using \<open>0 \<in> U (get\<^bsub>x\<^esub> s)\<close>
+    apply (clarsimp simp: ivp_sols_def)
+    apply (intro conjI)
+     prefer 2 subgoal using wb_lens.get_put[of y "get\<^bsub>x\<^esub> s"] sorry
+     apply (clarsimp simp: subst_upd_def subst_id_def)
+    using x_hyps(1) y_hyps(1,2) apply expr_simp
+    apply (rule lets_see)
+
+
+      using lens_indep_comm[of y x] lens_indep_get[of y x] lens_indep.lens_put_irr2
+
+    term "Y :: real \<Rightarrow> 'a"
+    term "put\<^bsub>y\<^esub> :: 'a \<Rightarrow> real ^ 'n \<Rightarrow> 'a"
+    term "get\<^bsub>y\<^esub> :: 'a \<Rightarrow> real ^ 'n"
+    term "get\<^bsub>x\<^esub> :: 'a \<Rightarrow> 'a"
+    term "put\<^bsub>x\<^esub> :: 'a \<Rightarrow> 'a \<Rightarrow> 'a"
+    sorry
+  have "(\<lambda>t. put\<^bsub>y\<^esub> (X t) (gen_sol t (X 0))) \<in> Sols U UNIV (\<lambda>t c. get\<^bsub>x\<^esub> ([x \<leadsto> f(y \<leadsto> A *\<^sub>V $y + b)] (put\<^bsub>x\<^esub> s c))) 0 (get\<^bsub>x\<^esub> s)"
+    apply (clarsimp simp: ivp_sols_def)
+    apply (intro conjI)
+      prefer 3 using X_ivp apply (clarsimp simp: ivp_sols_def)
+     prefer 2 using y_hyps(1,2) apply (simp add: gen_sol_def X_init)
+     apply (clarsimp simp: gen_sol_def)
+     apply (clarsimp simp: subst_upd_def A_putx b_putx  subst_id_def)
+    using x_hyps(1) y_hyps(1,2) apply expr_simp
+    apply (rule lets_see)
+    apply (rule dX)
+     apply (rule dsol)
+    using y_hyps x_hyps(1)
+    apply (expr_simp add: fy_commute[symmetric] A_putx b_putx)
+    apply clarsimp
+    apply (rule_tac f=f in arg_cong)
+    unfolding gen_sol_def
+    using lens_indep_comm[of x y]
+    apply(subst lens_indep_comm[of x y])
+    using y_hyps(2)
+    subgoal for \<tau>
+      term "put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> s (put\<^bsub>y\<^esub> (X \<tau>) (gen_sol \<tau> (X 0)))) (A s *\<^sub>V get\<^bsub>y\<^esub> s + b s) 
+          = put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> s (X \<tau>)) (A (X 0) *\<^sub>V gen_sol \<tau> (X 0) + b (X 0))"
+      using lens_indep_comm lens_indep_get lens_indep.lens_put_irr2 subst_upd_def
+      using weak_lens.put_get wb_lens.get_put wb_lens.put_twice mwb_lens.put_put
+      using vderiv_on_composeI[of ] has_vderiv_on_subset[OF dsol subset_UNIV, of "X _"]
+
+
   show "Q (put\<^bsub>x\<^esub> s (X t))"
     using hyp1[rule_format, OF _ hyp3] 
   thm fbox_g_orbital_guard fbox_g_orbital_on_orbital
@@ -1470,6 +1573,7 @@ lemma diff_ghost:
   shows "diff_inv_on (I \\ $y)\<^sub>e a (\<lambda>t. f) (Collect ((\<le>) 0))\<^sub>e UNIV 0 G"
   using inv_hyp
   apply (clarsimp simp add: expr_defs diff_inv_on_eq)
+  thm lens_override_def unrest_subst_lens
   apply (erule_tac x="s \<triangleleft>\<^bsub>y\<^esub> s'" in allE)
   apply (erule impE)
   using assms(1) apply force
