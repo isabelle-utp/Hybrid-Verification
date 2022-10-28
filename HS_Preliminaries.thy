@@ -254,16 +254,63 @@ lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrig
   unfolding  has_vderiv_on_def has_vector_derivative_def
   by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
 
+lemma vderiv_on_exp_scaleRlI:
+  assumes "D f = f' on T" and "g' = (\<lambda>x. f' x *\<^sub>R exp (f x *\<^sub>R A) * A)"
+  shows "D (\<lambda>x. exp (f x *\<^sub>R A)) = g' on T"
+  using assms unfolding has_vderiv_on_def has_vector_derivative_def
+  by (auto intro!: exp_scaleR_has_derivative_right simp: fun_eq_iff)
+
 lemmas has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs, poly_derivatives]
 thm has_vderiv_on_scaleR
 thm has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs] has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs]
 thm derivative_intros(33,39,45,46,50,60)
 
-lemma vderiv_on_exp_scaleRlI:
-  assumes "D f = f' on T" and "g' = (\<lambda>x. f' x *\<^sub>R exp (f x *\<^sub>R A) * A)"
-  shows "D (\<lambda>x. exp (f x *\<^sub>R A)) = g' on T"
-  using assms unfolding has_vderiv_on_def has_vector_derivative_def apply clarsimp
-  by (rule exp_scaleR_has_derivative_right, auto simp: fun_eq_iff)
+(********************** bounded linear and bounded bilinear *********************)
+
+thm bounded_bilinear.bounded_linear_prod_right 
+  bounded_bilinear.bounded_linear_left
+  bounded_bilinear.bounded_linear_right
+thm linear_iff bounded_linear.bounded bounded_linear_def bounded_bilinear_def
+thm bounded_bilinear.diff_left
+thm bounded_bilinear.has_vector_derivative
+
+lemma bdd_linear_iff_has_derivative:
+  "bounded_linear f \<longleftrightarrow> D f \<mapsto> f F"
+  using bounded_linear_imp_has_derivative
+  has_derivative_bounded_linear
+  by blast
+
+lemma bdd_bilinear_derivativeL:
+  "bounded_bilinear f \<Longrightarrow> D (\<lambda>x. f x y) \<mapsto> (\<lambda>x. f x y) F"
+  by (subst  bdd_linear_iff_has_derivative[symmetric])
+    (rule bounded_bilinear.bounded_linear_left)
+
+lemma bdd_bilinear_derivativeR: 
+  "bounded_bilinear f \<Longrightarrow> D (f x) \<mapsto> (f x) F"
+  by (subst  bdd_linear_iff_has_derivative[symmetric])
+    (rule bounded_bilinear.bounded_linear_right)
+
+lemma has_derivative_bdd_bilinear:
+  assumes "bounded_bilinear op" 
+    and "D f \<mapsto> (\<lambda>t. t *\<^sub>R f') at x within S"
+    and "D g \<mapsto> (\<lambda>t. t *\<^sub>R g') at x within S"
+  shows "D (\<lambda>x. op (f x) (g x)) \<mapsto> (\<lambda>t. t *\<^sub>R op (f x) g' + t *\<^sub>R op f' (g x)) at x within S"
+  using bounded_bilinear.has_vector_derivative[OF assms(1)] assms
+  unfolding has_vector_derivative_def
+  by (clarsimp simp: scaleR_add_right)
+
+lemma vderiv_bdd_bilinearI:
+  assumes "bounded_bilinear op" 
+    and h_eq: "h = (\<lambda>t. op (f t) (g' t) + op (f' t) (g t))"
+    and df: "D f = f' on S" and dg: "D g = g' on S'" and "S \<subseteq> S'"
+  shows "D (\<lambda>t. op (f t) (g t)) = h on S"
+  unfolding has_vderiv_on_def 
+  by (auto simp: h_eq intro!: bounded_bilinear.has_vector_derivative[OF assms(1)] 
+      has_vderiv_on_subset[OF dg \<open>S \<subseteq> S'\<close>, unfolded has_vderiv_on_def, rule_format]
+      df[unfolded has_vderiv_on_def, rule_format])
+
+(****************** end of bounded linear and bounded bilinear ******************)
+
 
 \<comment> \<open>Examples for checking derivatives\<close>
 
@@ -571,7 +618,7 @@ subsection \<open> Differentiability implies Lipschitz \<close>
 thm filter_eq_iff eventually_at eventually_at_topological \<comment> \<open> filters \<close>
 thm at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> at within \<close>
 thm has_derivative_at_within Lim_ident_at \<comment> \<open> derivative at within \<close>
-thm has_field_derivative_iff_has_vector_derivative \<comment> \<open> real vs vector derivative \<close>
+thm has_real_derivative_iff_has_vector_derivative \<comment> \<open> real vs vector derivative \<close>
 thm Rolle_deriv mvt mvt_simple mvt_very_simple mvt_general \<comment> \<open> mean value theorem \<close>
 thm banach_fix banach_fix_type \<comment> \<open> banach fixpoint theorems \<close>
 thm has_derivative_componentwise_within tendsto_componentwise_iff bounded_linear_compose
