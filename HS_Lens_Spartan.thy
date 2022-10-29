@@ -1477,7 +1477,6 @@ term "s \<oplus>\<^sub>L s' on x \<equiv> s \<triangleleft>\<^bsub>x\<^esub> s'"
 term "s \<oplus>\<^sub>S s' on x"
 term "- (X :: 'a scene)"
 
-
 lemma "vwb_lens x \<Longrightarrow> vwb_lens y \<Longrightarrow> y \<subseteq>\<^sub>L x \<Longrightarrow> \<not> x \<bowtie> y"
   apply expr_simp
   unfolding lens_indep_def
@@ -1492,12 +1491,29 @@ lemma "$y \<sharp>\<^sub>s f \<Longrightarrow> vwb_lens x \<Longrightarrow> vwb_
   apply (rename_tac s)
   oops
 
-lemma "vwb_lens y \<Longrightarrow> y \<bowtie> x \<Longrightarrow> {x` = f, y` = \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright> | G on U UNIV @ 0} 
-  = g_ode_on (y +\<^sub>L x) [x \<leadsto> f, y \<leadsto> \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>] (G)\<^sub>e (U)\<^sub>e UNIV 0"
+lemma "vwb_lens y \<Longrightarrow> y \<bowtie> x \<Longrightarrow> (x,y):{x` = f, y` = \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright> | G on U UNIV @ 0} 
+  = g_ode_on (x +\<^sub>L y) [x \<leadsto> f, y \<leadsto> \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>] (G)\<^sub>e (U)\<^sub>e UNIV 0"
   apply expr_simp
   oops
 
-term "(x,y):{x` = f(y \<leadsto> \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>) | G on U UNIV @ 0}"
+lemma 
+  shows "(x,y):{x` = f, y` = \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright> | G on U UNIV @ 0} 
+  = g_ode_frame (x +\<^sub>L y) [x \<leadsto> f, y \<leadsto> \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>] (G)\<^sub>e (U)\<^sub>e UNIV 0"
+    and "((x,y):{x` = f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>)) | G on U UNIV @ 0})
+  = g_ode_frame (x +\<^sub>L y) [x \<leadsto> f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))] G U UNIV 0"
+  by expr_simp+
+
+lemma "g_ode_frame ((x::('a::banach) \<Longrightarrow> 'a) +\<^sub>L y) [x \<leadsto> f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))] G U UNIV 0
+  = g_ode_frame (x +\<^sub>L y) (\<lambda>s. put\<^bsub>x\<^esub> s (put\<^bsub>y\<^esub> (f s) (A *\<^sub>V get\<^bsub>y\<^esub> s + b))) G U UNIV 0"
+  by (simp add: lens_upd_eq subst_id_def)
+
+term "g_ode_frame (x +\<^sub>L y) (\<lambda>c. get\<^bsub>(x::('a::banach) \<Longrightarrow> 'a) +\<^sub>L y\<^esub> ((f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) (put\<^bsub>x +\<^sub>L y\<^esub> s c))) G U UNIV 0"
+term "g_ode_frame (x +\<^sub>L y) (loc_subst (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) s t) G U UNIV 0"
+
+lemma "(\<lambda>c. get\<^bsub>x +\<^sub>L y\<^esub> ((f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) (put\<^bsub>x +\<^sub>L y\<^esub> s c)))
+  = loc_subst (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) s t"
+  by simp
+
 
 (* expr_ctr liberate (0) *)
 
@@ -1505,9 +1521,8 @@ lemma diff_ghost_more_general:
   fixes A :: "('n::finite) sq_mtx" and f::"'a \<Rightarrow> 'a::banach"
     and b :: "real ^ 'n" and y :: "real ^ 'n \<Longrightarrow> 'a"
   defines "gen_sol \<equiv> (\<lambda>\<tau> \<s>. exp (\<tau> *\<^sub>R A) *\<^sub>V  \<s> + exp (\<tau> *\<^sub>R A) *\<^sub>V (\<integral>\<^sub>0\<^sup>\<tau>(exp (- r *\<^sub>R A) *\<^sub>V b)\<partial>r))"
-  assumes "`|(x,y):{x` = f, y` = \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright> | G on U UNIV @ 0}] Q`"
-  (* assumes "`|g_ode_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>)) (G)\<^sub>e (U)\<^sub>e UNIV 0] Q`" *)
-  (* assumes "`|{x` = f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>)) | G on U UNIV @ 0}] Q`" *)
+  assumes "`|(x,y):{x` = f, y ` = (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>) | G on U UNIV @ 0}] Q`"
+  (* assumes "`|(x,y):{x` = f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>)) | G on U UNIV @ 0}] Q`" *)
     and x_hyps: "vwb_lens x"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
     and U_eq: "U = W \<circ> fst"
@@ -1516,6 +1531,8 @@ lemma diff_ghost_more_general:
   apply (clarsimp simp: fbox_g_orbital_on taut_def)
   apply (simp add: liberate_lens'[OF vwb_lens_mwb[OF y_hyps(1)]])
   apply (erule_tac x="s" in allE)
+  (* apply (drule_tac x="(\<lambda>t. (X t, Y2 t))" in bspec) *)
+  (* apply (drule_tac x="(\<lambda>t. (put\<^bsub>y\<^esub> (X t) (exp (t *\<^sub>R A) *\<^sub>V (get\<^bsub>y\<^esub> s) - t *\<^sub>R b), gen_sol t (get\<^bsub>y\<^esub> s)))" in bspec) *)
   apply (drule_tac x="(\<lambda>t. (X t, gen_sol t (get\<^bsub>y\<^esub> s)))" in bspec)
    prefer 2 subgoal for s X t
     apply (clarsimp simp: U_eq)
@@ -1528,19 +1545,26 @@ lemma diff_ghost_more_general:
   apply (intro conjI)
   subgoal by simp
     prefer 3 subgoal by (simp add: U_eq lens_plus_def)
-   prefer 2 subgoal by (simp add: gen_sol_def lens_plus_def)
+   prefer 2 subgoal for s X t by (simp add: gen_sol_def lens_plus_def)
   apply (clarsimp simp add: lens_plus_def)
   using x_hyps y_hyps apply expr_simp
+  apply (subst lens_indep_get[of x y, OF lens_indep_sym], simp)+
+  apply (subst weak_lens.put_get, expr_simp)
+  apply (subst lens_indep_comm[of x y, OF lens_indep_sym]; expr_simp)
   apply (rule poly_derivatives)
   unfolding U_eq apply force
+   apply (subgoal_tac "D (\<lambda>t. gen_sol t (get\<^bsub>y\<^esub> s)) = (\<lambda>t. A *\<^sub>V (gen_sol t (get\<^bsub>y\<^esub> s)) + b) on ((W \<circ> fst) (get\<^bsub>x\<^esub> s, get\<^bsub>y\<^esub> s))")
+  apply assumption
+  subgoal for s X t
   unfolding gen_sol_def
-   apply (rule has_vderiv_on_subset[OF 
+  by (rule has_vderiv_on_subset[OF 
         local_flow.has_vderiv_on_domain[OF 
           local_flow_sq_mtx_affine, of _ "A" "b"]]; expr_simp)
   apply expr_simp
   apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
-  apply (subst lens_indep_get[of x y, OF lens_indep_sym], simp)+
+  (* apply (subst lens_indep_get[of x y, OF lens_indep_sym], simp)+
   apply (subst weak_lens.put_get, expr_simp)
+  apply (subst lens_indep_comm[of x y, OF lens_indep_sym]; expr_simp) *)
   using lens_indep_comm lens_indep_get
   using weak_lens.put_get wb_lens.get_put wb_lens.put_twice mwb_lens.put_put
   oops
@@ -1587,6 +1611,12 @@ lemma diff_ghost:
       apply (simp add: unrest_subst_lens)
       apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
       by (metis lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
+    term "(\<lambda>t. (X t, sol s v t))
+    \<in> Sols (Collect ((\<le>) 0))\<^sub>e UNIV (\<lambda>t ca. get\<^bsub>x +\<^sub>L y\<^esub> ((f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y + \<guillemotleft>c\<guillemotright>)) (put\<^bsub>x +\<^sub>L y\<^esub> (s \<triangleleft>\<^bsub>y\<^esub> put\<^bsub>y\<^esub> s v) ca))) 0
+        (get\<^bsub>x +\<^sub>L y\<^esub> (s \<triangleleft>\<^bsub>y\<^esub> put\<^bsub>y\<^esub> s v))"
+    term "((\<lambda>x. (X x, sol s v x)) has_vderiv_on 
+      (\<lambda>xa. (get\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>x\<^esub> s (X xa))) (k *\<^sub>R sol s v xa + c)), k *\<^sub>R sol s v xa + c)))
+     (Collect ((\<le>) 0))"
     apply (clarsimp simp only: ivp_sols_def)
     apply (intro conjI)
     subgoal by (simp add: lens_defs lens_indep.lens_put_irr2)
@@ -1603,8 +1633,6 @@ lemma diff_ghost:
     apply expr_simp
     apply (clarsimp simp: lens_defs expr_defs fun_eq_iff)
     apply (subst lens_indep_get[of x y, OF lens_indep_sym], simp)+
-    term "get\<^bsub>x\<^esub> (f (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s ((exp (k * xa) *\<^sub>R (c + k *\<^sub>R v) - c) /\<^sub>R k)) (X xa))) 
-      = get\<^bsub>x\<^esub> (f (put\<^bsub>x\<^esub> s (X xa)))"
     by (metis lens_indep.lens_put_comm lens_indep.lens_put_irr2)
   done
 
@@ -1812,14 +1840,13 @@ lemma darboux:
      apply (rule_tac f=e' in arg_cong)
      apply force
     using vwbs indeps yGhost(1,2) apply expr_simp
-
-(*      apply (subst comp_def[where g=X, symmetric])
+    (* apply (subst comp_def[where g=X, symmetric])
     apply (rule_tac has_vderiv_on_chain, force)
      apply clarify
      apply (rule bounded_linear_imp_has_derivative)
     subgoal sorry
     using vwbs indeps yGhost(1,2) apply expr_simp
-    oops*)
+    oops *)
      apply (subgoal_tac "(\<lambda>x. (get\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> (f (put\<^bsub>a\<^esub> (put\<^bsub>y\<^esub> s (snd (X x))) (fst (X x)))) (- (g * snd (X x)))), - (g * snd (X x)))) 
   = (\<lambda>x. (get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (fst (X x)))), - (g * snd (X x))))")
      prefer 2 apply (clarsimp simp: fun_eq_iff)[1]
