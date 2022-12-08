@@ -83,7 +83,7 @@ lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^s
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   apply(simp add: dInduct_hoare_diff_inv_on)
   apply(rule diff_inv_on_eqI)
-  by clarsimp+ (expr_auto, auto intro!: poly_derivatives simp: case_prod_beta)
+  by clarsimp+ (expr_auto, auto intro!: vderiv_intros simp: case_prod_beta)
 
 end
 
@@ -101,7 +101,7 @@ abbreviation fpend :: "real^2 \<Rightarrow> real^2" ("f")
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   by (simp add: hoare_diff_inv, expr_auto) 
-    (auto intro!: diff_inv_rules poly_derivatives)
+    (auto intro!: diff_inv_rules vderiv_intros)
 
 \<comment> \<open>Verified with the flow in @{text "\<real>\<^sup>2"} \<close>
 
@@ -114,14 +114,14 @@ lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
   apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff, clarsimp)
     apply(rule_tac x="1" in exI, clarsimp, rule_tac x=1 in exI)
     apply(clarsimp, expr_auto, simp add: dist_norm norm_vec_def L2_set_def power2_commute UNIV_2)
-   apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
+   apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by force expr_auto+
 
 lemma "local_flow f UNIV UNIV \<phi>"
   apply (unfold_locales; expr_auto)
   apply ((rule_tac \<DD>=f in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros, 
    fastforce intro: num2I continuous_intros)
-   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
+   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by (auto simp: vec_eq_iff)
 
 lemma pendulum_flow: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
@@ -174,7 +174,7 @@ lemma ball_diff_inv: "\<^bold>{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotr
   apply(subst hoare_diff_inv)
    apply(rule_tac \<mu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" and \<nu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" in diff_inv_leq_law)
       apply (simp_all add: is_interval_def)
-  by expr_auto (auto intro!: poly_derivatives)
+  by expr_auto (auto intro!: vderiv_intros)
 
 lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall_dinv \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
   apply(rule hoare_loopI, simp only: wp fbox_if_then_else)
@@ -229,7 +229,7 @@ lemma local_flow_ball: "local_flow f UNIV UNIV \<phi>"
   apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff, expr_auto)
     apply(rule_tac x="1/2" in exI, clarsimp, rule_tac x=1 in exI)
     apply(simp add: dist_norm norm_vec_def L2_set_def UNIV_2)
-  apply (expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2 intro!: poly_derivatives )
+  apply (expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2 intro!: vderiv_intros )
   using exhaust_2 by force expr_auto+
 
 abbreviation dfball :: "real ^ 2 \<Rightarrow> real ^ 2" ("df")
@@ -239,7 +239,7 @@ lemma "local_flow f UNIV UNIV \<phi>"
   apply (unfold_locales; expr_auto)
   apply ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros, 
    fastforce intro: num2I continuous_intros)
-   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: poly_derivatives)
+   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by (auto simp: vec_eq_iff)
 
 lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
@@ -369,7 +369,7 @@ lemma local_flow_therm: "local_flow (f c) UNIV UNIV (\<phi> c)"
   using a_ge0 apply unfold_locales
   prefer 6 apply(rule local_lipschitz_therm_dyn)
   apply (simp_all add: forall_4 vec_eq_iff, expr_auto)
-  by (auto intro!: poly_derivatives) expr_auto+
+  by (auto intro!: vderiv_intros) expr_auto+
 
 abbreviation dftherm :: "real \<Rightarrow> real ^ 4 \<Rightarrow> real ^ 4" ("df")
   where "dftherm c \<equiv> [T \<leadsto> - a * T, t \<leadsto> 0, \<theta> \<leadsto> 0, T\<^sub>0 \<leadsto> 0]"
@@ -377,13 +377,13 @@ abbreviation dftherm :: "real \<Rightarrow> real ^ 4 \<Rightarrow> real ^ 4" ("d
 lemma "local_flow (f c) UNIV UNIV (\<phi> c)"
   apply (unfold_locales)
   prefer 6
-    apply (rule_tac \<DD>="df c" in c1_local_lipschitz; expr_auto)
+    apply (rule_tac \<DD>="df c" in c1_local_lipschitz; expr_auto add: has_derivative_coordinate)
   subgoal for s i
     using exhaust_4[of i] apply safe
     by (auto intro!: derivative_eq_intros)
           apply(fastforce intro: num4I continuous_intros)
          apply (simp_all add: forall_4 vec_eq_iff, expr_auto)
-  by (auto intro!: poly_derivatives) expr_auto+
+  by (auto intro!: vderiv_intros) expr_auto+
 
 abbreviation "therm_ctrl \<equiv> ((t ::= 0);(T\<^sub>0 ::= T);
     (IF \<theta> = 0 \<and> T\<^sub>0 \<le> T\<^sub>m + 1 THEN (\<theta> ::= 1) ELSE
@@ -510,13 +510,13 @@ abbreviation f9 :: "real ^ 3 \<Rightarrow> real ^ 3"
 
 lemma local_lipschitz_f9: "local_lipschitz UNIV UNIV (\<lambda>t::real. f9)"
   apply(rule_tac \<DD>=f9 in c1_local_lipschitz; clarsimp)
-  apply expr_auto
+  apply (expr_auto add: has_derivative_coordinate)
   subgoal for s i
     using exhaust_3[of i]
     by (auto intro!: derivative_eq_intros)
   apply expr_auto
   apply(rule_tac f'="\<lambda>t. f9" in has_derivative_continuous_on)
-  apply expr_auto
+  apply (expr_auto add: has_derivative_coordinate)
   subgoal for s i
     using exhaust_3[of i]
     by (auto intro!: derivative_eq_intros)
@@ -531,10 +531,10 @@ lemma "local_flow f9 UNIV UNIV flow9"
   apply(unfold_locales; (rule local_lipschitz_f9)?; clarsimp simp: vec_eq_iff; expr_auto)
   subgoal for t s i
     using exhaust_3[of i] apply (safe; clarsimp simp: kp_def kd_def)
-      apply(auto intro!: poly_derivatives)[1]
+      apply(auto intro!: vderiv_intros)[1]
          apply(force simp: field_simps)+
-     prefer 2 apply(rule poly_derivatives)
-      apply(auto intro!: poly_derivatives)[1]
+     prefer 2 apply(rule vderiv_intros)
+      apply(auto intro!: vderiv_intros)[1]
     by (auto simp: field_simps exp_minus_inverse)
   done
 
