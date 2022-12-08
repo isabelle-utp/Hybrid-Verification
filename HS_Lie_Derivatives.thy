@@ -516,7 +516,7 @@ lemma darboux:
   using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps apply expr_simp
-   apply (intro poly_derivatives; force?)
+   apply (intro vderiv_intros; force?)
    apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
    apply expr_simp
    apply (subst get_put_put_indep; (clarsimp simp: power2_eq_square))

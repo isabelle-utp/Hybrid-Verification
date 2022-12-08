@@ -694,9 +694,9 @@ lemma ivp_sols_collapse:
 lemma additive_in_ivp_sols:
   assumes "s \<in> S" and "\<P> (\<lambda>\<tau>. \<tau> + t) T \<subseteq> T"
   shows "(\<lambda>\<tau>. \<phi> (\<tau> + t) s) \<in> Sols (\<lambda>s. T) S (\<lambda>t. f) 0 (\<phi> (0 + t) s)"
-  apply(rule ivp_solsI[OF vderiv_on_composeI])
+  apply(rule ivp_solsI[OF vderiv_composeI])
        apply(rule has_vderiv_on_subset[OF has_vderiv_on_domain])
-  using in_domain assms init_time by (auto intro!: poly_derivatives)
+  using in_domain assms init_time by (auto intro!: vderiv_intros)
 
 lemma is_monoid_action:
   assumes "s \<in> S" and "T = UNIV"

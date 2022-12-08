@@ -13,7 +13,7 @@ theory HS_Preliminaries
     "Hybrid-Library.Matrix_Syntax"
 begin
 
-\<comment> \<open> Notation \<close>
+subsection \<open> Notation \<close>
 
 bundle derivative_notation
 begin
@@ -152,126 +152,181 @@ lemma triangle_norm_vec_le_sum: "\<parallel>x\<parallel> \<le> (\<Sum>i\<in>UNIV
 
 subsection \<open> Single variable derivatives \<close>
 
-named_theorems poly_derivatives "compilation of optimised miscellaneous derivative rules."
+lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) 
+  \<longleftrightarrow> bounded_linear f' 
+  \<and>  (\<forall>X. open X \<longrightarrow> 0 \<in> X \<longrightarrow> (\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d 
+    \<longrightarrow> (f s - f x - f' (s - x)) /\<^sub>R \<parallel>s - x\<parallel> \<in> X))"
+  unfolding has_derivative_at_within tendsto_def 
+    eventually_at dist_norm by simp
 
-declare has_vderiv_on_const [poly_derivatives]
-    and has_vderiv_on_id [poly_derivatives]
-    and has_vderiv_on_add[THEN has_vderiv_on_eq_rhs, poly_derivatives]
-    and has_vderiv_on_diff[THEN has_vderiv_on_eq_rhs, poly_derivatives]
-    and has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs, poly_derivatives]
-    and has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs, poly_derivatives]
-    and has_vderiv_on_ln[poly_derivatives]
+lemma has_vderiv_on_iff: "(D f = f' on T) 
+  \<longleftrightarrow> (\<forall>x\<in>T. D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) (at x within T))"
+  unfolding has_vderiv_on_def has_vector_derivative_def by simp
 
-lemma has_vderiv_Pair: 
-  "\<lbrakk> D f = f' on T; D g = g' on T \<rbrakk> \<Longrightarrow> D (\<lambda>x. (f x, g x)) = (\<lambda> x. (f' x, g' x)) on T"
-  by (auto intro: has_vector_derivative_Pair simp add: has_vderiv_on_def)
+named_theorems vderiv_intros "optimised compilation of derivative rules."
 
-lemma vderiv_on_composeI:
+declare has_vderiv_on_const [vderiv_intros]
+    and has_vderiv_on_id [vderiv_intros]
+    and has_vderiv_on_add[THEN has_vderiv_on_eq_rhs, vderiv_intros]
+    and has_vderiv_on_diff[THEN has_vderiv_on_eq_rhs, vderiv_intros]
+    and has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs, vderiv_intros]
+    and has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs, vderiv_intros]
+    and has_vderiv_on_ln[vderiv_intros]
+
+lemma has_vderiv_on_Pair: "\<lbrakk> D f = f' on T; D g = g' on T \<rbrakk> 
+  \<Longrightarrow> D (\<lambda>x. (f x, g x)) = (\<lambda> x. (f' x, g' x)) on T"
+  by (auto intro: has_vector_derivative_Pair 
+      simp add: has_vderiv_on_def)
+
+lemma vderiv_composeI:
   assumes "D f = f' on g ` T" 
     and " D g = g' on T"
     and "h = (\<lambda>t. g' t *\<^sub>R f' (g t))"
   shows "D (\<lambda>t. f (g t)) = h on T"
-  apply(subst ssubst[of h], simp)
-  using assms has_vderiv_on_compose by auto
+  apply (rule has_vderiv_on_compose[THEN has_vderiv_on_eq_rhs, unfolded comp_def])
+  using assms by auto
 
-lemma vderiv_uminusI[poly_derivatives]:
+lemma vderiv_uminusI[vderiv_intros]:
   "D f = f' on T \<Longrightarrow> g = (\<lambda>t. - f' t) \<Longrightarrow> D (\<lambda>t. - f t) = g on T"
   using has_vderiv_on_uminus by auto
 
-lemma vderiv_npowI[poly_derivatives]:
+lemma vderiv_npowI[vderiv_intros]:
   fixes f::"real \<Rightarrow> real"
   assumes "n \<ge> 1" and "D f = f' on T" and "g = (\<lambda>t. n * (f' t) * (f t)^(n-1))"
   shows "D (\<lambda>t. (f t)^n) = g on T"
   using assms unfolding has_vderiv_on_def has_vector_derivative_def 
   by (auto intro: derivative_eq_intros simp: field_simps)
 
-lemma vderiv_divI[poly_derivatives]:
+lemma vderiv_divI[vderiv_intros]:
   assumes "\<forall>t\<in>T. g t \<noteq> (0::real)" and "D f = f' on T"and "D g = g' on T" 
     and "h = (\<lambda>t. (f' t * g t - f t * (g' t)) / (g t)^2)"
   shows "D (\<lambda>t. (f t)/(g t)) = h on T"
   apply(subgoal_tac "(\<lambda>t. (f t)/(g t)) = (\<lambda>t. (f t) * (1/(g t)))")
-   apply(erule ssubst, rule poly_derivatives(5)[OF assms(2)])
-  apply(rule vderiv_on_composeI[where g=g and f="\<lambda>t. 1/t" and f'="\<lambda>t. - 1/t^2", OF _ assms(3)])
+   apply(erule ssubst, rule vderiv_intros(5)[OF assms(2)])
+  apply(rule vderiv_composeI[where g=g and f="\<lambda>t. 1/t" and f'="\<lambda>t. - 1/t^2", OF _ assms(3)])
   apply(subst has_vderiv_on_def, subst has_vector_derivative_def, clarsimp)
   using assms(1) apply(force intro!: derivative_eq_intros simp: fun_eq_iff power2_eq_square)
   using assms by (auto simp: field_simps)
 
-lemma vderiv_cosI[poly_derivatives]:
+lemma vderiv_cosI[vderiv_intros]:
   assumes "D (f::real \<Rightarrow> real) = f' on T" and "g = (\<lambda>t. - (f' t) * sin (f t))"
   shows "D (\<lambda>t. cos (f t)) = g on T"
-  apply(rule vderiv_on_composeI[OF _ assms(1), of "\<lambda>t. cos t"])
-  unfolding has_vderiv_on_def has_vector_derivative_def 
-  by (auto intro!: derivative_eq_intros simp: assms)
+  by (rule vderiv_composeI[OF _ assms(1), of "\<lambda>t. cos t"])
+    (auto intro!: derivative_eq_intros simp: assms has_vderiv_on_iff)
 
-lemma vderiv_sinI[poly_derivatives]:
+lemma vderiv_sinI[vderiv_intros]:
   assumes "D (f::real \<Rightarrow> real) = f' on T" and "g = (\<lambda>t. (f' t) * cos (f t))"
   shows "D (\<lambda>t. sin (f t)) = g on T"
-  apply(rule vderiv_on_composeI[OF _ assms(1), of "\<lambda>t. sin t"])
-  unfolding has_vderiv_on_def has_vector_derivative_def 
-  by (auto intro!: derivative_eq_intros simp: assms)
+  by (rule vderiv_composeI[OF _ assms(1), of "\<lambda>t. sin t"])
+    (auto intro!: derivative_eq_intros simp: assms has_vderiv_on_iff)
 
-lemma vderiv_expI[poly_derivatives]:
+lemma vderiv_expI[vderiv_intros]:
   assumes "D (f::real \<Rightarrow> real) = f' on T" and "g = (\<lambda>t. (f' t) * exp (f t))"
   shows "D (\<lambda>t. exp (f t)) = g on T"
-  apply(rule vderiv_on_composeI[OF _ assms(1), of "\<lambda>t. exp t"])
-  unfolding has_vderiv_on_def has_vector_derivative_def 
-  by (auto intro!: derivative_eq_intros simp: assms)
+  by (rule vderiv_composeI[OF _ assms(1), of "\<lambda>t. exp t"])
+    (auto intro!: derivative_eq_intros simp: assms has_vderiv_on_iff)
 
-lemma vderiv_on_proj:
-  assumes "D X = X' on T " and "X' = (\<lambda>t. (X\<^sub>1' t, X\<^sub>2' t))"
-  shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X\<^sub>1' t) on T"
-    and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X\<^sub>2' t) on T"
-  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
-   apply(rule has_vector_derivative_fst', force)
-  by (rule has_vector_derivative_snd'', force)
+lemma has_vderiv_on_proj:
+  assumes "D X = X' on T " and "X' = (\<lambda>t. (X1' t, X2' t))"
+  shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X1' t) on T"
+    and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X2' t) on T"
+  using assms 
+  unfolding has_vderiv_on_def comp_def[symmetric] 
+  by (auto intro!: has_vector_derivative_fst' 
+      has_vector_derivative_snd'')
 
-lemma vderiv_on_fst [poly_derivatives]:
+lemma vderiv_fstI [vderiv_intros]:
   assumes "D X = X' on T " and "g = (\<lambda>t. fst (X' t))"
   shows "D (\<lambda>t. fst (X t)) = g on T"
-  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
+  using assms 
+  apply (unfold has_vderiv_on_def comp_def[symmetric], safe)
   subgoal for x by (rule_tac has_vector_derivative_fst'[of _ _ "(snd \<circ> X') x"], force)
   done
 
-lemma vderiv_on_snd [poly_derivatives]:
+lemma vderiv_sndI [vderiv_intros]:
   assumes "D X = X' on T " and "g = (\<lambda>t. snd (X' t))"
   shows "D (\<lambda>t. snd (X t)) = g on T"
-  using assms unfolding has_vderiv_on_def comp_def[symmetric] apply safe
+  using assms 
+  apply (unfold has_vderiv_on_def comp_def[symmetric], safe)
   subgoal for x by (rule_tac has_vector_derivative_snd''[of _ "(fst \<circ> X') x"], force)
   done
 
-lemma vderiv_pairI[poly_derivatives]:
+lemma vderiv_pairI[vderiv_intros]:
   assumes "D f1 = f1' on T" 
     and "D f2 = f2' on T"
     and "g = (\<lambda>t. (f1' t, f2' t))"
   shows "D (\<lambda>t. (f1 t, f2 t)) = g on T"
-  apply(subst assms(3))
-  using assms(1,2) unfolding has_vderiv_on_def has_vector_derivative_def
-  apply (clarsimp simp: scaleR_vec_def)
-  by (rule has_derivative_Pair, auto)
+  using assms  
+  by (clarsimp simp: scaleR_vec_def has_vderiv_on_def has_vector_derivative_def)
+    (rule has_derivative_Pair, auto)
 
 lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow>  D g = g' on T 
   \<Longrightarrow> D (\<lambda>t. f t /\<^sub>R g t) = (\<lambda>t. (f' t *\<^sub>R g t - f t *\<^sub>R (g' t)) /\<^sub>R (g t)^2) on T"
-  unfolding  has_vderiv_on_def has_vector_derivative_def
+  unfolding has_vderiv_on_def has_vector_derivative_def
   by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
 
-lemma vderiv_on_exp_scaleRlI:
+lemmas vderiv_scaleR[vderiv_intros] = has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs]
+
+lemmas vderiv_divideRI[vderiv_intros] = has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs]
+
+lemmas vderiv_ivl_integralI[vderiv_intros] = ivl_integral_has_vderiv_on[OF vderiv_on_continuous_on]
+
+lemma vderiv_exp_scaleR_leftI:
   assumes "D f = f' on T" and "g' = (\<lambda>x. f' x *\<^sub>R exp (f x *\<^sub>R A) * A)"
   shows "D (\<lambda>x. exp (f x *\<^sub>R A)) = g' on T"
-  using assms unfolding has_vderiv_on_def has_vector_derivative_def
-  by (auto intro!: exp_scaleR_has_derivative_right simp: fun_eq_iff)
+  using assms
+  by (auto intro!: exp_scaleR_has_derivative_right 
+      simp: fun_eq_iff has_vderiv_on_iff)
 
-lemmas has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs, poly_derivatives]
-thm has_vderiv_on_scaleR
-thm has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs] has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs]
-thm derivative_intros(33,39,45,46,50,60)
+text \<open>Examples for checking derivatives\<close>
 
-(********************** bounded linear and bounded bilinear *********************)
+lemma "D (*) a = (\<lambda>t. a) on T"
+  by (auto intro!: vderiv_intros)
+
+lemma "a \<noteq> 0 \<Longrightarrow> D (\<lambda>t. t/a) = (\<lambda>t. 1/a) on T"
+  by (auto intro!: vderiv_intros simp: power2_eq_square)
+
+lemma "(a::real) \<noteq> 0 \<Longrightarrow> D f = f' on T \<Longrightarrow> g = (\<lambda>t. (f' t)/a) \<Longrightarrow> D (\<lambda>t. (f t)/a) = g on T"
+  by (auto intro!: vderiv_intros simp: power2_eq_square)
+
+lemma "\<forall>t\<in>T. f t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow> g = (\<lambda>t. - a * f' t / (f t)^2) \<Longrightarrow> 
+  D (\<lambda>t. a/(f t)) = g on T"
+  by (auto intro!: vderiv_intros simp: power2_eq_square)
+
+lemma "D (\<lambda>t. a * t\<^sup>2 / 2 + v * t + x) = (\<lambda>t. a * t + v) on T"
+  by(auto intro!: vderiv_intros)
+
+lemma "D (\<lambda>t. v * t - a * t\<^sup>2 / 2 + x) = (\<lambda>x. v - a * x) on T"
+  by(auto intro!: vderiv_intros)
+
+lemma "D x = x' on (\<lambda>\<tau>. \<tau> + t) ` T \<Longrightarrow> D (\<lambda>\<tau>. x (\<tau> + t)) = (\<lambda>\<tau>. x' (\<tau> + t)) on T"
+  by (rule vderiv_composeI, auto intro: vderiv_intros)
+
+lemma "a \<noteq> 0 \<Longrightarrow> D (\<lambda>t. t/a) = (\<lambda>t. 1/a) on T"
+  by (auto intro!: vderiv_intros simp: power2_eq_square)
+
+lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. a5 * t^5 + a3 * (t^3 / c) - a2 * exp (t^2) + a1 * cos t + a0) = 
+  (\<lambda>t. 5 * a5 * t^4 + 3 * a3 * (t^2 / c) - 2 * a2 * t * exp (t^2) - a1 * sin t) on T"
+  by (auto intro!: vderiv_intros simp: power2_eq_square)
+
+lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. - a3 * exp (t^3 / c) + a1 * sin t + a2 * t^2) = 
+  (\<lambda>t. a1 * cos t + 2 * a2 * t - 3 * a3 * t^2 / c * exp (t^3 / c)) on T"
+  by (auto intro!: vderiv_intros simp: power2_eq_square)
+
+lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. exp (a * sin (cos (t^4) / c))) = 
+  (\<lambda>t. - 4 * a * t^3 * sin (t^4) / c * cos (cos (t^4) / c) * exp (a * sin (cos (t^4) / c))) on T"
+  by (intro vderiv_intros) 
+    (auto intro!: vderiv_intros simp: power2_eq_square)
+
+subsection \<open> Bounded linear and bounded bilinear \<close>
 
 thm bounded_bilinear.bounded_linear_prod_right 
   bounded_bilinear.bounded_linear_left
   bounded_bilinear.bounded_linear_right
-thm linear_iff bounded_linear.bounded bounded_linear_def bounded_bilinear_def
-thm bounded_bilinear.diff_left
+thm linear_iff bounded_linear.bounded 
+  bounded_linear_def[unfolded bounded_linear_axioms_def] 
+  bounded_bilinear_def
+thm bounded_bilinear.diff_left bounded_bilinear.diff_right
 thm bounded_bilinear.has_vector_derivative
 
 lemma bdd_linear_iff_has_derivative:
@@ -309,47 +364,80 @@ lemma vderiv_bdd_bilinearI:
       has_vderiv_on_subset[OF dg \<open>S \<subseteq> S'\<close>, unfolded has_vderiv_on_def, rule_format]
       df[unfolded has_vderiv_on_def, rule_format])
 
-(****************** end of bounded linear and bounded bilinear ******************)
+lemma bdd_linear_2op_has_vderiv_onL:
+  fixes op :: "'a::real_normed_vector \<Rightarrow> 'b \<Rightarrow> 'c::real_normed_vector"
+  assumes bdd_linear_put: "\<forall>v. bounded_linear (\<lambda>s. op s v)"
+    and non_trivial_state_space: "\<exists>s::'a. s \<noteq> 0"
+  shows "D f = f' on T 
+  \<Longrightarrow> D (\<lambda>t. op (f t) v) = (\<lambda>t. op (f' t) v) on T"
+proof (clarsimp simp: has_vderiv_on_def has_vector_derivative_def has_derivative_at_within, safe)
+  fix \<tau>
+  let "?quot f f'" = "\<lambda>\<tau> t. (f t - f \<tau> - (t - \<tau>) *\<^sub>R f' \<tau>) /\<^sub>R \<bar>t - \<tau>\<bar>"
+  let "?lim f f'" = "\<lambda>\<tau>. ((\<lambda>t. ?quot f f' \<tau> t) \<longlongrightarrow> 0) (at \<tau> within T)"
+  assume "\<tau> \<in> T" and f_hyps: "\<forall>x\<in>T. bounded_linear (\<lambda>xa. xa *\<^sub>R f' x) \<and> ?lim f f' x"
+  hence linearv: "linear (\<lambda>s. op s v)" 
+    and bdd_put: "\<exists>K. \<forall>x. \<parallel>op x v\<parallel> \<le> \<parallel>x\<parallel> * K"
+    using bdd_linear_put
+    unfolding bounded_linear_def bounded_linear_axioms_def
+    by auto
+  show "bounded_linear (\<lambda>z. z *\<^sub>R op (f' \<tau>) v)"
+    using bounded_linear_scaleR_const[OF bounded_linear_ident] .
+  {fix e::real
+    assume "e > 0"
+    obtain K where K_def: "\<forall>x. \<parallel>op x v\<parallel> \<le> \<parallel>x\<parallel> * K"
+      using bdd_put by auto
+    hence "K \<ge> 0"
+      using order.trans[OF norm_ge_zero, of "op _ v" "\<parallel>_\<parallel> * K", unfolded zero_le_mult_iff]
+        non_trivial_state_space by auto
+    have "\<parallel>op (?quot f f' \<tau> t) v\<parallel> \<le> \<parallel>?quot f f' \<tau> t\<parallel> * K" for t
+        using K_def
+      by (erule_tac x="?quot f f' \<tau> t" in allE, force)
+    moreover note f_hyps[THEN bspec[OF _ \<open>\<tau> \<in> T\<close>], THEN conjunct2, unfolded tendsto_iff eventually_at dist_norm]
+    ultimately have "\<exists>d>0. \<forall>t\<in>T. t \<noteq> \<tau> \<and> \<parallel>t - \<tau>\<parallel> < d \<longrightarrow> \<parallel>op (?quot f f' \<tau> t) v\<parallel> < e"
+      using \<open>e > 0\<close> \<open>K \<ge> 0\<close>
+      apply (cases "K = 0", force)
+      apply (erule_tac x="e / K" in allE, clarsimp)
+      apply (rule_tac x=d in exI, clarsimp)
+      apply (erule_tac x=t in ballE; clarsimp)
+      by (smt (verit, ccfv_SIG) mult_imp_div_pos_le) 
+  }
+  thus "((\<lambda>y. (op (f y) v - op (f \<tau>) v - (y - \<tau>) *\<^sub>R op (f' \<tau>) v) /\<^sub>R \<bar>y - \<tau>\<bar>) \<longlongrightarrow> 0) (at \<tau> within T)"
+    apply (fold linear_cmul[OF linearv] linear_diff[OF linearv])+
+    unfolding tendsto_iff dist_norm eventually_at by force
+qed
 
+lemma vderiv_on_blopI1:
+  fixes op :: "'a::real_normed_vector \<Rightarrow> 'b \<Rightarrow> 'c::real_normed_vector"
+  assumes "\<forall>v. bounded_linear (\<lambda>s. op s v)" 
+    and "\<exists>s::'a. s \<noteq> 0"
+    and "D f = f' on T"
+    and "g = (\<lambda>t. op (f' t) v)"
+  shows "D (\<lambda>t. op (f t) v) = g on T"
+  using bdd_linear_2op_has_vderiv_onL[OF assms(1-3)] assms(4) 
+  by auto
 
-\<comment> \<open>Examples for checking derivatives\<close>
+lemma leibniz_rule_bdd_bilinear':
+  fixes f :: "real \<Rightarrow> 'a::banach"
+    and op :: "'a \<Rightarrow> 'b::real_normed_vector \<Rightarrow> 'c::banach"
+  assumes bdd_bil: "bounded_bilinear op" 
+    and h_eq: "h = (\<lambda>t. op (f t) (g' t) + op (f' t) (g t))"
+    and df: "D f = f' on {a--b}" 
+    and dg: "D g = g' on S'" 
+    and dg': "D g' = g'' on S''" 
+    and "{a--b} \<subseteq> S'" "{a--b} \<subseteq> S''"
+  shows "D (\<lambda>t. op (f t) (g t) - (ivl_integral a t (\<lambda>\<tau>. (op (f \<tau>) (g' \<tau>))))) = (\<lambda>t. op (f' t) (g t)) on {a--b}"
+  by (auto intro!: vderiv_intros vderiv_bdd_bilinearI[OF bdd_bil _ df dg \<open>{a--b} \<subseteq> S'\<close>]
+      vderiv_bdd_bilinearI[OF bdd_bil _ df dg'  \<open>{a--b} \<subseteq> S''\<close>])
 
-lemma "D (*) a = (\<lambda>t. a) on T"
-  by (auto intro!: poly_derivatives)
-
-lemma "a \<noteq> 0 \<Longrightarrow> D (\<lambda>t. t/a) = (\<lambda>t. 1/a) on T"
-  by (auto intro!: poly_derivatives simp: power2_eq_square)
-
-lemma "(a::real) \<noteq> 0 \<Longrightarrow> D f = f' on T \<Longrightarrow> g = (\<lambda>t. (f' t)/a) \<Longrightarrow> D (\<lambda>t. (f t)/a) = g on T"
-  by (auto intro!: poly_derivatives simp: power2_eq_square)
-
-lemma "\<forall>t\<in>T. f t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow> g = (\<lambda>t. - a * f' t / (f t)^2) \<Longrightarrow> 
-  D (\<lambda>t. a/(f t)) = g on T"
-  by (auto intro!: poly_derivatives simp: power2_eq_square)
-
-lemma "D (\<lambda>t. a * t\<^sup>2 / 2 + v * t + x) = (\<lambda>t. a * t + v) on T"
-  by(auto intro!: poly_derivatives)
-
-lemma "D (\<lambda>t. v * t - a * t\<^sup>2 / 2 + x) = (\<lambda>x. v - a * x) on T"
-  by(auto intro!: poly_derivatives)
-
-lemma "D x = x' on (\<lambda>\<tau>. \<tau> + t) ` T \<Longrightarrow> D (\<lambda>\<tau>. x (\<tau> + t)) = (\<lambda>\<tau>. x' (\<tau> + t)) on T"
-  by (rule vderiv_on_composeI, auto intro: poly_derivatives)
-
-lemma "a \<noteq> 0 \<Longrightarrow> D (\<lambda>t. t/a) = (\<lambda>t. 1/a) on T"
-  by (auto intro!: poly_derivatives simp: power2_eq_square)
-
-lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. a5 * t^5 + a3 * (t^3 / c) - a2 * exp (t^2) + a1 * cos t + a0) = 
-  (\<lambda>t. 5 * a5 * t^4 + 3 * a3 * (t^2 / c) - 2 * a2 * t * exp (t^2) - a1 * sin t) on T"
-  by(auto intro!: poly_derivatives simp: power2_eq_square)
-
-lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. - a3 * exp (t^3 / c) + a1 * sin t + a2 * t^2) = 
-  (\<lambda>t. a1 * cos t + 2 * a2 * t - 3 * a3 * t^2 / c * exp (t^3 / c)) on T"
-  by(auto intro!: poly_derivatives simp: power2_eq_square)
-
-lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. exp (a * sin (cos (t^4) / c))) = 
-  (\<lambda>t. - 4 * a * t^3 * sin (t^4) / c * cos (cos (t^4) / c) * exp (a * sin (cos (t^4) / c))) on T"
-  by (intro poly_derivatives) (auto intro!: poly_derivatives simp: power2_eq_square)
+thm vderiv_ivl_integralI
+  ivl_integral_has_vector_derivative_compact_interval
+  ivl_integral_has_vderiv_on_compact_interval
+  ivl_integral_has_vderiv_on_subset_segment
+  ivl_integral_has_vderiv_on
+  ivl_integral_has_vector_derivative
+  has_vector_derivative_transform
+  integral_has_vector_derivative
+  has_integral_def[unfolded tendsto_iff dist_norm]
 
 
 subsection \<open> Intermediate Value Theorem \<close>
@@ -548,7 +636,7 @@ next
   qed
 qed
 
-lemma has_derivative_coordinate[simp]:
+lemma has_derivative_coordinate:
   "(D f \<mapsto> f' at x within S) \<longleftrightarrow> (\<forall>i. D (\<lambda>s. f s $ i) \<mapsto> (\<lambda>s. f' s $ i) at x within S)"
   by (simp add: has_derivative_within tendsto_nth_iff 
       bounded_linear_coordinate all_conj_distrib)
@@ -556,17 +644,11 @@ lemma has_derivative_coordinate[simp]:
 lemma has_vderiv_on_component[simp]:
   fixes x::"real \<Rightarrow> ('a::banach)^('n::finite)"
   shows "(D x = x' on T) = (\<forall>i. D (\<lambda>t. x t $ i) = (\<lambda>t. x' t $ i) on T)"
-  unfolding has_vderiv_on_def has_vector_derivative_def by auto
+  unfolding has_vderiv_on_def has_vector_derivative_def 
+  by (auto simp: has_derivative_coordinate)
 
-lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) \<longleftrightarrow> bounded_linear f' \<and> 
-  (\<forall>X. open X \<longrightarrow> 0 \<in> X \<longrightarrow> (\<exists>d>0. \<forall>s\<in>S. s \<noteq> x \<and> \<parallel>s - x\<parallel> < d \<longrightarrow> (f s - f x - f' (s - x)) /\<^sub>R \<parallel>s - x\<parallel> \<in> X))"
-  unfolding has_derivative_at_within tendsto_def eventually_at dist_norm by simp
-
-lemma has_vderiv_on_iff: 
-  "(D f = f' on T) \<longleftrightarrow> (\<forall>x\<in>T. D f \<mapsto> (\<lambda>h. h *\<^sub>R f' x) (at x within T))"
-  unfolding has_vderiv_on_def has_vector_derivative_def by simp
-
-(***************** PREVIOUS RESULTS GENERALISED ABOVE **************)
+text \<open> The results below are legacy and particular cases of the lemmas above in this section. 
+We leave them here because they might be useful for Sledgehammer. \<close>
 
 lemma frechet_tendsto_vec_lambda:
   fixes f::"real \<Rightarrow> ('a::banach)^('m::finite)" and x::real and T::"real set"

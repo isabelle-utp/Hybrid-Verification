@@ -34,7 +34,7 @@ lemma pendulum_dyn: "(\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2) \<l
 \<comment> \<open>Verified with differential invariants. \<close>
 
 lemma pendulum_inv: "(\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2) \<le> |x\<acute>= f & G] (\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2)"
-  by (auto intro!: diff_inv_rules poly_derivatives)
+  by (auto intro!: diff_inv_rules vderiv_intros)
 
 \<comment> \<open>Verified with the flow. \<close>
 
@@ -42,7 +42,7 @@ lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
   apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff, clarsimp)
     apply(rule_tac x="1" in exI, clarsimp, rule_tac x=1 in exI)
     apply(simp add: dist_norm norm_vec_def L2_set_def power2_commute UNIV_2)
-  by (auto simp: forall_2 intro!: poly_derivatives)
+  by (auto simp: forall_2 intro!: vderiv_intros)
 
 lemma pendulum_flow: "(\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2) \<le> |x\<acute>=f & G] (\<lambda>s. r\<^sup>2 = (s$1)\<^sup>2 + (s$2)\<^sup>2)"
   by (force simp: local_flow.fbox_g_ode_subset[OF local_flow_pend])
@@ -88,7 +88,7 @@ proof-
 qed
 
 lemma "diff_inv (\<lambda>s. UNIV) S G (\<lambda>t. f g) t\<^sub>0 (\<lambda>s. 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0)"
-  by (auto intro!: poly_derivatives diff_inv_rules)
+  by (auto intro!: vderiv_intros diff_inv_rules)
 
 lemma bouncing_ball_inv: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
   (\<lambda>s. s$1 = h \<and> s$2 = 0) \<le>
@@ -98,7 +98,7 @@ lemma bouncing_ball_inv: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
   INV (\<lambda>s. 0 \<le> s$1 \<and> 2 * g * s$1 - 2 * g * h - s$2 * s$2 = 0)]
   (\<lambda>s. 0 \<le> s$1 \<and> s$1 \<le> h)"
   apply(rule fbox_loopI, simp_all, force, force simp: bb_real_arith)
-  by (rule fbox_g_odei) (auto intro!: poly_derivatives diff_inv_rules)
+  by (rule fbox_g_odei) (auto intro!: vderiv_intros diff_inv_rules)
 
 \<comment> \<open>Verified with annotated dynamics. \<close>
 
@@ -157,7 +157,7 @@ lemma local_flow_ball: "local_flow (f g) UNIV UNIV (\<phi> g)"
   apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff, clarsimp)
     apply(rule_tac x="1/2" in exI, clarsimp, rule_tac x=1 in exI)
     apply(simp add: dist_norm norm_vec_def L2_set_def UNIV_2)
-  by (auto simp: forall_2 intro!: poly_derivatives)
+  by (auto simp: forall_2 intro!: vderiv_intros)
 
 lemma bouncing_ball_flow: "g < 0 \<Longrightarrow> h \<ge> 0 \<Longrightarrow>
   (\<lambda>s. s$1 = h \<and> s$2 = 0) \<le>
@@ -218,7 +218,7 @@ lemma local_lipschitz_temp_dyn:
   unfolding real_sqrt_abs[symmetric] by (rule real_le_lsqrt) auto
 
 lemma local_flow_temp: "a > 0 \<Longrightarrow> local_flow (f a L) UNIV UNIV (\<phi> a L)"
-  by (unfold_locales, auto intro!: poly_derivatives local_lipschitz_temp_dyn simp: forall_4 vec_eq_iff)
+  by (unfold_locales, auto intro!: vderiv_intros local_lipschitz_temp_dyn simp: forall_4 vec_eq_iff)
 
 lemma temp_dyn_down_real_arith:
   assumes "a > 0" and Thyps: "0 < Tmin" "Tmin \<le> T" "T \<le> Tmax"
@@ -323,7 +323,7 @@ lemma local_flow_tank: "local_flow (f k) UNIV UNIV (\<phi> k)"
   apply (unfold_locales, unfold local_lipschitz_def lipschitz_on_def, simp_all, clarsimp)
   apply(rule_tac x="1/2" in exI, clarsimp, rule_tac x=1 in exI)
   apply(simp add: dist_norm norm_vec_def L2_set_def, unfold UNIV_4)
-  by (auto intro!: poly_derivatives simp: vec_eq_iff)
+  by (auto intro!: vderiv_intros simp: vec_eq_iff)
 
 lemma tank_arith:
   assumes "0 \<le> (\<tau>::real)" and "0 < c\<^sub>o" and "c\<^sub>o < c\<^sub>i"
@@ -416,14 +416,14 @@ proof-
       and D1: "D (\<lambda>t. X t$1) = (\<lambda>t. A * (X t$1)\<^sup>2 + B * X t$1) on UNIV"
       and D2: "D (\<lambda>t. X t$2) = (\<lambda>t. A * X t$2 * X t$1 + B * X t$2) on UNIV"
     hence "D ?c = (\<lambda>t. ?c t * (A * (X t$1) + B)) on UNIV"
-      by (auto intro!: poly_derivatives simp: field_simps)
+      by (auto intro!: vderiv_intros simp: field_simps)
     hence "D ?c = (\<lambda>t. (A * X t$1 + B) * (X t$1 + X t$2)) on {0--t}"
       using has_vderiv_on_subset[OF _ subset_UNIV[of "{0--t}"]] by (simp add: mult.commute)
     moreover have "continuous_on UNIV (\<lambda>t. A * (X t$1) + B)"
       apply(rule vderiv_on_continuous_on)
-      using D1 by (auto intro!: poly_derivatives simp: field_simps)
+      using D1 by (auto intro!: vderiv_intros simp: field_simps)
     moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B) * 0) on {0--t}"
-      by (auto intro!: poly_derivatives)
+      by (auto intro!: vderiv_intros)
     moreover note picard_lindeloef.ivp_unique_solution[OF 
       picard_lindeloef_first_order_linear[OF UNIV_I open_UNIV is_interval_univ calculation(2)] 
       UNIV_I is_interval_closed_segment_1 subset_UNIV _ 
@@ -463,7 +463,7 @@ lemma picard_lindeloef_darboux_ineq: "picard_lindeloef (\<lambda>t. f) UNIV {s. 
   apply(unfold_locales, simp_all)
   prefer 2
    apply(rule_tac f'=df in c1_implies_local_lipschitz)
-  apply clarsimp
+      apply (clarsimp simp: has_derivative_coordinate)
   subgoal for s i
     apply(cases "i = 1")
      apply clarsimp
@@ -473,14 +473,16 @@ lemma picard_lindeloef_darboux_ineq: "picard_lindeloef (\<lambda>t. f) UNIV {s. 
     using exhaust_2[of j] by (auto intro!: bounded_linear_intros)
       apply(auto intro!: derivative_eq_intros)[1]
   apply(subst Blinfun_inverse, clarsimp)
-      apply(subst bounded_linear_coordinate, clarsimp)
+   apply(subst bounded_linear_coordinate)
+   apply (clarsimp simp: has_derivative_coordinate)
  subgoal for j
     using exhaust_2[of j] by (auto intro!: bounded_linear_intros)
   by (auto intro!: derivative_eq_intros)[1]
+  apply (auto intro!: continuous_intros)
   sorry
 
 lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>s. {t. 0 \<le> t \<and> t * s$1 < 1}) UNIV (\<lambda>t. f) 0 s"
-  by (rule ivp_solsI) (auto intro!: poly_derivatives 
+  by (rule ivp_solsI) (auto intro!: vderiv_intros 
       simp: forall_2 power2_eq_square add_divide_distrib power_divide vec_eq_iff)
 
 lemma darboux_ineq_arith:
@@ -543,7 +545,7 @@ proof-
       and D3: "D (\<lambda>t. X t$3) = (\<lambda>t. (A * X t$1 + B)/(X t$3)) on Collect ((\<le>) 0)"
     have "D ?c = (\<lambda>t. (A * (X t$2) + B * X t$1)/(X t$3)\<^sup>2 + (A * X t$1 + B)/(X t$3)) on {0--t}"
       apply(rule_tac S="Collect ((\<le>) 0)" in has_vderiv_on_subset)
-      using \<open>t \<ge> 0\<close> by (auto simp: closed_segment_eq_real_ivl intro!: poly_derivatives D1 D3)
+      using \<open>t \<ge> 0\<close> by (auto simp: closed_segment_eq_real_ivl intro!: vderiv_intros D1 D3)
     hence "D ?c = (\<lambda>t. (A * X t$1 + B)/(X t$3)\<^sup>2 * ?c t) on {0--t}"
       apply(rule has_vderiv_on_eq_rhs)
       using guard \<open>t \<ge> 0\<close>
@@ -551,17 +553,17 @@ proof-
       by (auto simp: field_simps closed_segment_eq_real_ivl)
     moreover have "continuous_on {0--t} (\<lambda>t. (A * X t$1 + B)/(X t$3)\<^sup>2)"
       apply(rule vderiv_on_continuous_on)
-      apply(rule poly_derivatives)
+      apply(rule vderiv_intros)
       using guard segment_open_subset_closed \<open>t \<ge> 0\<close> apply (force simp: closed_segment_eq_real_ivl)
-        apply(intro poly_derivatives, rule poly_derivatives)
+        apply(intro vderiv_intros, rule vderiv_intros)
       apply(rule has_vderiv_on_subset[OF D1])
       using \<open>t \<ge> 0\<close> apply(simp add: closed_segment_eq_real_ivl subset_eq, force)
-         apply(rule poly_derivatives, force)
-      apply(rule poly_derivatives,simp)
+         apply(rule vderiv_intros, force)
+      apply(rule vderiv_intros,simp)
       apply(rule has_vderiv_on_subset[OF D3])
       using \<open>t \<ge> 0\<close> by (simp_all add: closed_segment_eq_real_ivl subset_eq)
     moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t$1 + B)/(X t$3)\<^sup>2 * 0) on {0--t}"
-      by (auto intro!: poly_derivatives)   
+      by (auto intro!: vderiv_intros)   
     (*moreover note picard_lindeloef.unique_solution_general[OF 
         picard_lindeloef_first_order_linear[OF _ _ _ calculation(2)] _ _ _ _ _ this _ _ calculation(1)]
    *)
@@ -571,7 +573,7 @@ proof-
     moreover note picard_lindeloef.unique_solution_closed_ivl[OF 
         picard_lindeloef_first_order_linear[OF _ _ _ calculation(2)] this _ _ _ calculation(1)]
     ultimately show "X t$1 + X t$3 = 0"
-      using init by auto 
+      using init by auto
         (* continuous because of guard need to change assumptions of picard_lindeloef *)
         (* correct interval of existence or differentiabe \<Longrightarrow> lipschitz *)
   qed
@@ -588,10 +590,12 @@ abbreviation f9 :: "real ^ 3 \<Rightarrow> real ^ 3"
 term "(\<lambda>(t::real) (s::real^3). \<chi> i::3. if i = 1 then s $ 2 else if i = 2 then - 2 * (s $ 1 - s $ 3) - 3 * s $ 2 else 0)"
 lemma "local_lipschitz UNIV UNIV (\<lambda>(t::real). f9)"
   apply(rule_tac \<DD>=f9 in c1_local_lipschitz; clarsimp?)
+  apply (clarsimp simp: has_derivative_coordinate)
   subgoal for s i
     using exhaust_3[of i]
     by (auto intro!: derivative_eq_intros)
   apply(rule_tac f'="\<lambda>t. f9" in has_derivative_continuous_on, clarsimp)
+  apply (clarsimp simp: has_derivative_coordinate)
   subgoal for s i
     using exhaust_3[of i]
     by (auto intro!: derivative_eq_intros)

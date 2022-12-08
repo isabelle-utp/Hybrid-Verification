@@ -48,7 +48,7 @@ lemma "(\<lambda>s. s$1 \<ge> (0::real)) \<le>
         \<phi>="\<lambda>t s. (\<chi> i. if i=1 then 2*t+s$1 else s$i)" and T=UNIV])
      apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff)
    apply(clarsimp, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+  by (auto intro!: vderiv_intros)
 
 
 subsubsection \<open> Overwrite with nondeterministic assignment \<close>
@@ -80,7 +80,7 @@ lemma "(\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \<ge> 1) \<le>
         \<phi>="\<lambda>t s. (\<chi> i. if i=2 then 2*t+s$2 else s$i)" and T=UNIV])
    apply(unfold_locales; simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff le_fun_def)
      apply (clarsimp, rule_tac x=1 in exI, force)
-   apply(force intro!: poly_derivatives vec_eq_iff, simp)
+   apply(force intro!: vderiv_intros vec_eq_iff, simp)
   apply(subst change_loopI[where I="\<lambda>s. 1 \<le> s$1 \<and> 1 \<le> s$2"])
   apply(subst fbox_kcomp[symmetric], rule hoare_kcomp)
      apply(subst fbox_assign[where Q="\<lambda>s. 1 \<le> s$1 \<and> 1 \<le> s$2"], simp)
@@ -101,7 +101,7 @@ lemma "(\<lambda>s::real^2. s$1 > 0 \<and> s$2 > 0) \<le>
         and T=UNIV and Q="\<lambda>s. s$1 > 0 \<and> s$2 > 0"]; simp?)
    apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
     apply(clarsimp, rule_tac x=1 in exI)+
-    apply (force, force intro!: poly_derivatives, force simp: le_fun_def)
+    apply (force, force intro!: vderiv_intros, force simp: le_fun_def)
   apply(subst le_fbox_choice_iff, rule conjI)
    apply(subst change_loopI[where I="\<lambda>s. s$1 > 0 \<and> s$2 > 0"])
   by (rule fbox_loopI, simp_all add: le_fun_def)
@@ -120,7 +120,7 @@ lemma local_flow_exp_flow: "local_flow f UNIV UNIV \<phi>"
      apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
   apply(unfold UNIV_2, simp)
   apply (metis power2_commute real_sqrt_ge_abs1)
-  by (auto intro!: poly_derivatives simp: forall_2 vec_eq_iff)
+  by (auto intro!: vderiv_intros simp: forall_2 vec_eq_iff)
 
 (* x>0 & y>0 -> [{x'=-x}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
 lemma "(\<lambda>s::real^2. s$1 > 0 \<and> s$2 > 0) \<le> |x\<acute>= f & G]
@@ -148,15 +148,15 @@ lemma "(\<lambda>s::real^1. s$1 > 0) \<le>
   apply(simp, subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. 5*t+s$1)"]; simp?)
    apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-    apply(force, force intro!: poly_derivatives)
+    apply(force, force intro!: vderiv_intros)
   apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. 2*t+s$1)"]; simp?)
    apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-    apply(force, force intro!: poly_derivatives)
+    apply(force, force intro!: vderiv_intros)
   apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. s$1 * exp t)"]; simp?)
    apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (force, auto intro!: poly_derivatives)
+  by (force, auto intro!: vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Single integrator time \<close>
@@ -166,7 +166,7 @@ lemma "(\<lambda>s::real^1. s$1 = 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. 1)
   apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. t+s$1)"]; simp?)
   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+  by (auto intro!: vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Single integrator \<close>
@@ -179,7 +179,7 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 0 \<and> s$2 \
   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
     apply(simp add: dist_norm norm_vec_def L2_set_def)
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  unfolding UNIV_2 by (auto intro!: poly_derivatives simp: forall_2 vec_eq_iff)
+  unfolding UNIV_2 by (auto intro!: vderiv_intros simp: forall_2 vec_eq_iff)
 
 
 subsubsection \<open> Dynamics: Double integrator \<close>
@@ -193,7 +193,7 @@ lemma "(\<lambda>s::real^3. s$1 \<ge> 0 \<and> s$2 \<ge> 0 \<and> s$3 \<ge> 0) \
             else (if i = 2 then s$3*t+s$2 else s$i))"]; simp?)
   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  unfolding UNIV_3 by (auto intro!: poly_derivatives simp: forall_3 vec_eq_iff)
+  unfolding UNIV_3 by (auto intro!: vderiv_intros simp: forall_3 vec_eq_iff)
 
 
 subsubsection \<open> Dynamics: Triple integrator \<close>
@@ -208,22 +208,22 @@ lemma "(\<lambda>s::real^4. s$1 \<ge> 0 \<and> s$2 \<ge> 0 \<and> s$3 \<ge> 0 \<
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$4 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)\<^sup>2" in diff_inv_leq_alt; simp?)
-   apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
+   apply(force intro!: vderiv_intros simp: forall_4, simp add: le_fun_def)
   apply(rule_tac C="\<lambda>s. s$3 \<ge> 0" in diff_cut_rule, simp_all)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$3 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$4)" in diff_inv_leq_alt; simp?) 
-   apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
+   apply(force intro!: vderiv_intros simp: forall_4, simp add: le_fun_def)
   apply(rule_tac C="\<lambda>s. s$2 \<ge> 0" in diff_cut_rule, simp_all)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$2 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$3)" in diff_inv_leq_alt; simp?)
-   apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
+   apply(force intro!: vderiv_intros simp: forall_4, simp add: le_fun_def)
   apply(rule_tac C="\<lambda>s. s$1 \<ge> 0" in diff_cut_rule, simp_all)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 0"])
    apply(rule fbox_g_odei, simp add: le_fun_def, simp)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$2)" in diff_inv_leq_alt; simp?)
-    apply(force intro!: poly_derivatives simp: forall_4, simp add: le_fun_def)
+    apply(force intro!: vderiv_intros simp: forall_4, simp add: le_fun_def)
   by (rule diff_weak_rule, simp add: le_fun_def)
 
 no_notation triple_int_f ("f")
@@ -236,7 +236,7 @@ lemma "(\<lambda>s::real^1. s$1 > 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. - 
   apply(subst local_flow.fbox_g_ode_subset[where T=UNIV and \<phi>="\<lambda>t s. (\<chi> i. s$1 * exp (- t))"]; simp?)
   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+  by (auto intro!: vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Exponential decay (2) \<close>
@@ -247,7 +247,7 @@ lemma "(\<lambda>s::real^1. s$1 > 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i. - 
         and \<phi>="\<lambda>t s. (\<chi> i. 1 - exp (- t) + s$1 * exp (- t))"]; clarsimp?)
    apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
     apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives simp: field_simps) (smt exp_gt_zero mult_pos_pos one_less_exp_iff)
+  by (auto intro!: vderiv_intros simp: field_simps) (smt exp_gt_zero mult_pos_pos one_less_exp_iff)
 
 
 subsubsection \<open> Dynamics: Exponential decay (3) \<close>
@@ -262,7 +262,7 @@ lemma "y > 0 \<Longrightarrow> (\<lambda>s::real^1. s$1 > 0) \<le>
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x="y" in exI)
    apply (metis abs_mult abs_of_pos dist_commute dist_real_def less_eq_real_def 
       vector_space_over_itself.scale_right_diff_distrib)
-  by (auto intro!: poly_derivatives simp: field_simps)
+  by (auto intro!: vderiv_intros simp: field_simps)
 
 
 subsubsection \<open> Dynamics: Exponential growth (1) \<close>
@@ -273,7 +273,7 @@ lemma "(\<lambda>s::real^1. s$1 \<ge> 0) \<le> |x\<acute>=(\<lambda>s. (\<chi> i
         and \<phi>="\<lambda>t s. (\<chi> i. s$1 * exp t)"]; clarsimp?)
   apply(unfold_locales; (simp add: local_lipschitz_def lipschitz_on_def vec_eq_iff)?)
    apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
-  by (auto intro!: poly_derivatives)
+  by (auto intro!: vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Exponential growth (2) \<close>
@@ -308,12 +308,12 @@ lemma "(\<lambda>s::real^1. s$1 \<ge> 1) \<le>
   |x\<acute>=(\<lambda>s. (\<chi> i. (s$1)\<^sup>2 + 2 * (s$1)^4)) & G] (\<lambda>s. s$1^3 \<ge> (s$1)\<^sup>2)"
   apply(rule_tac C="\<lambda>s. s$1 \<ge> 1" in diff_cut_rule; simp?)
    apply (rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (s$1)\<^sup>2 + 2 * s$1 ^ 4" in diff_inv_leq_alt; simp?)
-  apply(force intro!: poly_derivatives)
+  apply(force intro!: vderiv_intros)
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1^3 \<ge>  (s$1)\<^sup>2 "])
 apply(rule fbox_g_odei, simp add: le_fun_def, simp_all add: power_increasing)
   apply (rule_tac \<nu>'="\<lambda>s. 2 * s$1 * ((s$1)\<^sup>2 + 2 * (s$1)^ 4)"
               and \<mu>'="\<lambda>s. 3 * (s$1)\<^sup>2 * ((s$1)\<^sup>2 + 2 * (s$1)^4)" in diff_inv_leq_alt; clarsimp?)
-  apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))
+  apply(auto intro!: vderiv_intros simp: field_simps semiring_normalization_rules(27,28))
   apply(subgoal_tac "X \<tau> $ 1 \<ge> 1")
    apply(subgoal_tac "2 + 4 * (X \<tau>)$1 ^ 2 \<le> 3 * (X \<tau>)$1 + 6 * (X \<tau>)$1 ^ 3")
     apply (smt One_nat_def numerals(1) one_le_power power.simps(2) power_0 power_add_numeral 
@@ -328,7 +328,7 @@ subsubsection \<open> Dynamics: Rotational dynamics (1) \<close>
 (* x\<^sup>2+y\<^sup>2=1 -> [{x'=-y, y'=x}]x\<^sup>2+y\<^sup>2=1 *)
 lemma "(\<lambda>s::real^2. (s$1)\<^sup>2 + (s$2)\<^sup>2 = 1) \<le> |x\<acute>= (\<lambda>s.(\<chi> i. if i = 1 then - s$2 else s$1)) & G]
   (\<lambda>s. (s$1)\<^sup>2 + (s$2)\<^sup>2 = 1)"
-  by (auto intro!: poly_derivatives diff_inv_rules)
+  by (auto intro!: vderiv_intros diff_inv_rules)
 
 
 subsubsection \<open> Dynamics: Rotational dynamics (2) \<close> (* proved as a linear system *)
@@ -343,7 +343,7 @@ subsubsection \<open> Dynamics: Rotational dynamics (3) \<close>
 lemma "(\<lambda>s::real^4. (s$3)\<^sup>2 + (s$4)\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> s$3 = - w * s$2 \<and> s$4 = w * s$1) \<le> 
   |x\<acute>= (\<lambda>s. (\<chi> i. if i=1 then s$3 else (if i=2 then s$4 else (if i = 3 then - w * s$4 else w * s$3)))) & G]
   (\<lambda>s. (s$3)\<^sup>2 + (s$4)\<^sup>2 = w\<^sup>2*p\<^sup>2 \<and> s$3 = - w * s$2 \<and> s$4= w * s$1)"
-  by (auto intro!: diff_inv_rules poly_derivatives)
+  by (auto intro!: diff_inv_rules vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Spiral to equilibrium \<close>
@@ -361,7 +361,7 @@ lemma "(\<lambda>s::real^3. (s$3) \<ge> 0 \<and> s$1=0 \<and> s$2=3) \<le>
   apply(rule fbox_g_odei, simp add: le_fun_def, simp_all add: power_increasing)
    apply(rule_tac \<nu>'="\<lambda>s. 2 * (s$3)\<^sup>2 * (s$1) * (s$2) + 2 * (s$2) * (- (s$3)\<^sup>2*(s$1) - 2*(s$3)*(s$2))"
       and \<mu>'="\<lambda>s. 0" in diff_inv_leq_alt)
-  by (auto intro!: poly_derivatives simp: forall_3 field_simps) 
+  by (auto intro!: vderiv_intros simp: forall_3 field_simps) 
     (simp add: mult.assoc[symmetric])
 
 
@@ -476,7 +476,7 @@ lemma "0 \<le> t \<Longrightarrow> (\<lambda>s::real^2. s$1^3>5 \<and> s$2>2) \<
   (\<lambda>s. s$1^3>5 \<and> s$2>2)"
   apply(simp, rule diff_inv_rules, simp_all add: diff_inv_eq ivp_sols_def forall_2; clarsimp)
    apply(frule_tac x="\<lambda>t. X t $ 1 ^ 3" and g="\<lambda>t. 3 * t^2 + 3 * (root 3 t)^5" in current_vderiv_ge_always_ge)
-      apply(rule poly_derivatives, simp, assumption, simp)
+      apply(rule vderiv_intros, simp, assumption, simp)
   apply (rule ext)
      apply (auto simp: field_simps odd_real_root_power_cancel)[1]
   apply (smt (verit, ccfv_SIG) numeral_One power3_eq_cube power4_eq_xxxx power_add_numeral power_commutes power_one_right semiring_norm(5) semiring_norm(8))
@@ -494,7 +494,7 @@ lemma "z = - 2 \<Longrightarrow> (\<lambda>s::real^2. s$1 \<ge> 1 \<and> s$2 = 1
   apply(subst g_ode_inv_def[symmetric, where I="\<lambda>s. s$1 \<ge> 1 \<and> s$2 \<ge> 0"])
   apply(rule fbox_g_odei, simp_all, simp add: le_fun_def, rule diff_inv_rules)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2" in diff_inv_leq_alt)
-  by (simp_all add: diff_inv_eq, force intro!: poly_derivatives)
+  by (simp_all add: diff_inv_eq, force intro!: vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Conserved quantity \<close>
@@ -523,7 +523,7 @@ lemma "(\<lambda>s::real^2. (s$1)^4*(s$2)^2+(s$1)^2*(s$2)^4-3*(s$1)^2*(s$2)^2 + 
     else -4*(s$1)^3*(s$2)^2-2*(s$1)*(s$2)^4+6*(s$1)*(s$2)^2)) & G] 
   (\<lambda>s. (s$1)^4*(s$2)^2+(s$1)^2*(s$2)^4-3*(s$1)^2*(s$2)^2 + 1 \<le> c)"
   apply(simp, rule_tac \<mu>'="\<lambda>s. 0" and \<nu>'="\<lambda>s. 0" in diff_inv_leq_alt; clarsimp simp: forall_2)
-  apply(intro poly_derivatives; (assumption)?, (rule poly_derivatives)?)
+  apply(intro vderiv_intros; (assumption)?, (rule vderiv_intros)?)
   apply force+
   apply(clarsimp simp: algebra_simps(17,18,19,20) semiring_normalization_rules(27,28))
   by (auto simp: dyn_cons_qty_arith)
@@ -588,14 +588,14 @@ proof-
       and D1: "D (\<lambda>t. X t $ 1) = (\<lambda>t. A * (X t $ 1)\<^sup>2 + B * X t $ 1) on UNIV"
       and D2: "D (\<lambda>t. X t $ 2) = (\<lambda>t. A * X t $ 2 * X t $ 1 + B * X t $ 2) on UNIV"
     hence "D ?c = (\<lambda>t. ?c t * (A * (X t $ 1) + B)) on UNIV"
-      by (auto intro!: poly_derivatives simp: field_simps)
+      by (auto intro!: vderiv_intros simp: field_simps)
     hence "D ?c = (\<lambda>t. (A * X t $ 1 + B) * (X t $ 1 + X t $ 2)) on {0--t}"
       using has_vderiv_on_subset[OF _ subset_UNIV[of "{0--t}"]] by (simp add: mult.commute)
     moreover have "continuous_on UNIV (\<lambda>t. A * (X t $ 1) + B)"
       apply(rule vderiv_on_continuous_on)
-      using D1 by (auto intro!: poly_derivatives simp: field_simps)
+      using D1 by (auto intro!: vderiv_intros simp: field_simps)
     moreover have "D (\<lambda>t. 0) = (\<lambda>t. (A * X t $ 1 + B) * 0) on {0--t}"
-      by (auto intro!: poly_derivatives)
+      by (auto intro!: vderiv_intros)
     moreover note picard_lindeloef.ivp_unique_solution[OF 
       picard_lindeloef_first_order_linear[OF UNIV_I open_UNIV is_interval_univ calculation(2)] 
       UNIV_I is_interval_closed_segment_1 subset_UNIV _ 
@@ -625,7 +625,7 @@ abbreviation darboux_ineq_flow2 :: "real \<Rightarrow> real^2 \<Rightarrow> real
       (s$2 - s$1 * ln(1 - t * s$1))/(1 - t * s$1))"
 
 lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols (\<lambda>s. {t. 0 \<le> t \<and> t * s $ 1 < 1}) UNIV (\<lambda>t. f) 0 s"
-  by (rule ivp_solsI) (auto intro!: poly_derivatives 
+  by (rule ivp_solsI) (auto intro!: vderiv_intros 
       simp: forall_2 add_divide_distrib power_divide vec_eq_iff power2_eq_square)
 
 lemma darboux_ineq_arith:
@@ -711,7 +711,7 @@ proof(rule_tac x="sqrt \<bar>r\<bar>" in exI, clarsimp simp: diff_inv_eq ivp_sol
     using D1 by assumption
   moreover have key: "D (\<lambda>t. sqrt (- r)) = (\<lambda>t. r + (sqrt (- r))\<^sup>2) on {0--t}"
     apply(subgoal_tac "(\<lambda>t. r + (sqrt (- r))\<^sup>2) = (\<lambda>t. 0)")
-     apply(erule ssubst, rule poly_derivatives)
+     apply(erule ssubst, rule vderiv_intros)
     using \<open>r \<le> 0\<close> by auto
   moreover note picard_lindeloef.ivp_unique_solution[OF 
       picard_lindeloef_dyn_bif[OF calculation(2) UNIV_I is_interval_univ open_UNIV] 
@@ -747,7 +747,7 @@ lemma "(\<lambda>s::real^1. s$1^3 \<ge> -1) \<le>
   |x\<acute>= (\<lambda>s. \<chi> i. (s$1 - 3)^4 + a) & (\<lambda>s. a \<ge> 0)]
   (\<lambda>s. s$1^3 \<ge> -1)"
   apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * ((s$1 - 3)^4 + a)" in diff_inv_leq_alt)
-  by (auto intro!: poly_derivatives)
+  by (auto intro!: vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Nonlinear 2 \<close>
@@ -756,7 +756,7 @@ subsubsection \<open> Dynamics: Nonlinear 2 \<close>
 lemma "(\<lambda>s::real^2. s$1 + (s$2^2)/2 = a) \<le> 
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$1 * s$2 else - s$1) & G]
   (\<lambda>s. s$1 + (s$2^2)/2 = a)"
-  by (auto intro!: diff_inv_rules poly_derivatives)
+  by (auto intro!: diff_inv_rules vderiv_intros)
 
 
 subsubsection \<open> Dynamics: Nonlinear 4 \<close>
@@ -766,7 +766,7 @@ lemma "(\<lambda>s::real^2. (s$1)^2/2 - (s$2^2)/2 \<ge> a) \<le>
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$2 + s$1 * (s$2^2) else - s$1 + s$1^2 * s$2) & (\<lambda>s. s$1 \<ge> 0 \<and> s$2 \<ge> 0)]
   (\<lambda>s. (s$1)^2/2 - (s$2^2)/2 \<ge> a)"
   apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$1*(s$2 + s$1 * (s$2^2)) - s$2 * (- s$1 + s$1^2 * s$2)" in diff_inv_leq_alt)
-  by (auto intro!: poly_derivatives simp: field_simps)
+  by (auto intro!: vderiv_intros simp: field_simps)
 
 
 subsubsection \<open> Dynamics: Nonlinear 5 \<close>
@@ -776,7 +776,7 @@ lemma "(\<lambda>s::real^2. -(s$1) *(s$2) \<ge> a) \<le>
   |x\<acute>= (\<lambda>s. \<chi> i. if i=1 then s$1 - s$2 + s$1 * s$2 else - s$2 - s$2^2) & G]
   (\<lambda>s. -(s$1)*(s$2) \<ge> a)"
   apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. (- s$1 + s$2 - s$1 * s$2) * s$2 - s$1 * (- s$2 - s$2^2)" in diff_inv_leq_alt)
-  by (auto intro!: poly_derivatives simp: field_simps)
+  by (auto intro!: vderiv_intros simp: field_simps)
 
 
 subsubsection \<open> Dynamics: Riccati \<close>
@@ -786,7 +786,7 @@ lemma "(\<lambda>s::real^1. 2 * s$1^3 \<ge> 1/4) \<le>
   |x\<acute>= (\<lambda>s. \<chi> i. s$1^2 + s$1^4) & G]
   (\<lambda>s. 2 * s$1^3 \<ge> 1/4)"
   apply(simp, rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 24 * (s$1^2) * (s$1^2 + s$1^4)" in diff_inv_leq_alt; clarsimp)
-  by (auto intro!: poly_derivatives simp: field_simps)
+  by (auto intro!: vderiv_intros simp: field_simps)
 
 
 subsubsection \<open> Dynamics: Nonlinear differential cut \<close>
@@ -797,9 +797,9 @@ lemma "(\<lambda>s::real^2. s$1^3 \<ge> - 1 \<and> s$2^5 \<ge> 0) \<le>
   (\<lambda>s. s$1^3 \<ge> - 1 \<and> s$2^5 \<ge> 0)"
   apply(simp, rule diff_inv_rules)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. 3 * s$1^2 * (s$1 - 3)^4" in diff_inv_leq_alt)
-   apply(simp_all add: forall_2, force intro!: poly_derivatives)
+   apply(simp_all add: forall_2, force intro!: vderiv_intros)
    apply(rule_tac \<nu>'="\<lambda>s. 0" and \<mu>'="\<lambda>s. s$2^2" in diff_inv_leq_alt)
-  by (auto intro!: diff_inv_rules poly_derivatives simp: forall_2)
+  by (auto intro!: diff_inv_rules vderiv_intros simp: forall_2)
 
 
 subsubsection \<open> STTT Tutorial: Example 1 \<close>
@@ -813,7 +813,7 @@ lemma "A > 0 \<Longrightarrow> (\<lambda>s::real^2. s$2 \<ge> 0) \<le>
       apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
     apply(clarsimp, rule_tac x=1 in exI)+
   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_2 using exhaust_2 by (auto intro!: poly_derivatives simp: vec_eq_iff)
+  unfolding UNIV_2 using exhaust_2 by (auto intro!: vderiv_intros simp: vec_eq_iff)
 
 
 subsubsection \<open> STTT Tutorial: Example 2 \<close>
@@ -831,7 +831,7 @@ lemma local_flow_STTT_Ex2:
   apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
     apply(clarsimp, rule_tac x=1 in exI)+
   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_3 by (auto intro!: poly_derivatives simp: forall_3 vec_eq_iff)
+  unfolding UNIV_3 by (auto intro!: vderiv_intros simp: forall_3 vec_eq_iff)
 
 lemma "A > 0 \<Longrightarrow> B > 0 \<Longrightarrow> (\<lambda>s::real^3. s$2 \<ge> 0) \<le>
   |LOOP (
@@ -985,7 +985,7 @@ lemma local_flow_STTT_Ex5:
   apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
     apply(clarsimp, rule_tac x=1 in exI)+
   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_4 by (auto intro!: poly_derivatives simp: forall_4 vec_eq_iff)
+  unfolding UNIV_4 by (auto intro!: vderiv_intros simp: forall_4 vec_eq_iff)
 
 (* v >= 0 & A > 0 & B > 0 & x+v^2/(2*B) <= S & ep > 0
  -> [
@@ -1195,7 +1195,7 @@ lemma "c > 0 \<Longrightarrow> Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow>
   apply(simp, rule_tac \<mu>'="\<lambda>s. 0" and \<nu>'="\<lambda>s. 10*(s$1-xr)*(s$2)/4 + (s$2^2)/2 + 
     (s$1-xr)*(-Kp*(s$1-xr)-Kd*(s$2))/2 + (s$2)*(-Kp*(s$1-xr)-Kd*(s$2))/2" in diff_inv_less_alt; 
       clarsimp simp: forall_2 STTexample9a_arith)
-  apply(intro poly_derivatives; (rule poly_derivatives)?)
+  apply(intro vderiv_intros; (rule vderiv_intros)?)
   by force+ (auto simp: field_simps)
 
 
@@ -1384,7 +1384,7 @@ lemma local_flow_LICS_Ex4c_1:
   apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
     apply(clarsimp, rule_tac x=1 in exI)+
   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_4 by (auto intro!: poly_derivatives simp: forall_4 vec_eq_iff)
+  unfolding UNIV_4 by (auto intro!: vderiv_intros simp: forall_4 vec_eq_iff)
 
 lemma local_flow_LICS_Ex4c_2:
   "local_flow (\<lambda>s. f k (s$3) s) UNIV UNIV
@@ -1395,7 +1395,7 @@ lemma local_flow_LICS_Ex4c_2:
   apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
     apply(clarsimp, rule_tac x=1 in exI)+
   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_4 by (auto intro!: poly_derivatives simp: forall_4 vec_eq_iff)
+  unfolding UNIV_4 by (auto intro!: vderiv_intros simp: forall_4 vec_eq_iff)
 
 lemma LICSexample4c_arith1:
   assumes "v\<^sup>2 \<le> 2 * b * (m - x)" "0 \<le> t" "A \<ge> 0" "b > 0"
@@ -1521,7 +1521,7 @@ lemma "b > 0 \<Longrightarrow> (s::real^2)$2 \<ge> 0 \<Longrightarrow>
       apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
      apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
   unfolding UNIV_2 apply clarsimp
-  apply(force intro!: poly_derivatives)
+  apply(force intro!: vderiv_intros)
   using exhaust_2 apply(force simp: vec_eq_iff)
   by (auto simp: LICSexample5_arith1 LICSexample5_arith2)
 
@@ -1573,7 +1573,7 @@ lemma local_flow_LICS_Ex6:
   apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
     apply(clarsimp, rule_tac x=1 in exI)+
   apply(clarsimp simp: dist_norm norm_vec_def L2_set_def)
-  unfolding UNIV_3 by (auto intro!: poly_derivatives simp: forall_3 vec_eq_iff)
+  unfolding UNIV_3 by (auto intro!: vderiv_intros simp: forall_3 vec_eq_iff)
 
 (* v>=0 & b>0 & A>=0 & ep>=0 -> (
     [t:=0; {x'=v, v'=A, t'=1 & t<=ep}][{x'=v, v'=-b}]x<=m
@@ -1760,7 +1760,7 @@ lemma "assumptions (s$2) \<delta> \<and> (s$1) \<le> m \<Longrightarrow>
       apply(unfold_locales, simp_all add: local_lipschitz_def forall_2 lipschitz_on_def)
      apply(clarsimp simp: dist_norm norm_vec_def L2_set_def, rule_tac x=1 in exI)+
   unfolding UNIV_2 using exhaust_2 
-  by (auto intro!: poly_derivatives simp: vec_eq_iff 
+  by (auto intro!: vderiv_intros simp: vec_eq_iff 
       ETCS_Prop1_arith1 closed_segment_eq_real_ivl ETCS_Prop1_arith2)
 
 

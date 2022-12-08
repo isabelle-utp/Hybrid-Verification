@@ -144,20 +144,17 @@ lemma has_derivative_mtx_ith[derivative_intros]:
 lemmas has_derivative_mtx_vec_mult[derivative_intros] = 
   bounded_bilinear.FDERIV[OF bounded_bilinear_sq_mtx_vec_mult]
 
-declare has_derivative_coordinate [simp del]
-
-lemma vderiv_on_mtx_vec_multI[poly_derivatives]:
+lemma vderiv_on_mtx_vec_multI[vderiv_intros]:
   assumes "D u = u' on T" and "D A = A' on T"
       and "g = (\<lambda>t. A t *\<^sub>V u' t + A' t *\<^sub>V u t )"
     shows "D (\<lambda>t. A t *\<^sub>V u t) = g on T"
-  using assms unfolding has_vderiv_on_def has_vector_derivative_def apply clarsimp
+  using assms 
+  unfolding has_vderiv_on_def has_vector_derivative_def 
+  apply clarsimp
   apply(erule_tac x=x in ballE, simp_all)+
   apply(rule derivative_eq_intros(160))
-  by (auto simp: fun_eq_iff mtx_vec_scaleR_commute pth_6 scaleR_mtx_vec_assoc)
-
-lemmas has_vderiv_on_ivl_integral = ivl_integral_has_vderiv_on[OF vderiv_on_continuous_on]
-
-declare has_vderiv_on_ivl_integral [poly_derivatives]
+  by (auto simp: fun_eq_iff mtx_vec_scaleR_commute 
+      pth_6 scaleR_mtx_vec_assoc)
 
 lemma has_derivative_mtx_vec_multl[derivative_intros]:
   assumes "\<And> i j. D (\<lambda>t. (A t) $$ i $ j) \<mapsto> (\<lambda>\<tau>. \<tau> *\<^sub>R (A' t) $$ i $ j) (at t within T)"
@@ -172,11 +169,6 @@ lemma has_derivative_mtx_vec_multl[derivative_intros]:
 
 lemma continuous_on_mtx_vec_multr: "continuous_on S ((*\<^sub>V) A)"
   by transfer (simp add: matrix_vector_mult_linear_continuous_on)
-
-\<comment> \<open>Automatically generated derivative rules from this subsubsection \<close>
-
-declare has_derivative_coordinate [simp]
-thm derivative_eq_intros(140,141,142,143)
 
 
 subsubsection \<open> Existence and uniqueness with square matrices \<close>
@@ -232,7 +224,7 @@ lemmas sq_mtx_unique_sol_autonomous_affine = picard_lindeloef.ivp_unique_solutio
 
 lemma has_vderiv_on_sq_mtx_linear:
   "D (\<lambda>t. exp ((t - t\<^sub>0) *\<^sub>R A) *\<^sub>V s) = (\<lambda>t. A *\<^sub>V (exp ((t - t\<^sub>0) *\<^sub>R A) *\<^sub>V s)) on {t\<^sub>0--t}"
-  by (rule poly_derivatives vderiv_on_exp_scaleRlI)+ 
+  by (rule vderiv_intros vderiv_exp_scaleR_leftI)+ 
     (auto simp: exp_times_scaleR_commute sq_mtx_times_vec_assoc)
 
 lemma has_vderiv_on_sq_mtx_affine:
@@ -241,7 +233,7 @@ lemma has_vderiv_on_sq_mtx_affine:
   shows "D (\<lambda>t. lSol 1 t *\<^sub>V s + lSol 1 t *\<^sub>V (\<integral>\<^sub>t\<^sub>0\<^sup>t (lSol (-1) \<tau> *\<^sub>V B) \<partial>\<tau>)) = 
   (\<lambda>t. A *\<^sub>V (lSol 1 t *\<^sub>V s + lSol 1 t *\<^sub>V (\<integral>\<^sub>t\<^sub>0\<^sup>t (lSol (-1) \<tau> *\<^sub>V B) \<partial>\<tau>)) + B) on {t\<^sub>0--t}"
   unfolding assms apply(simp only: mult.left_neutral mult_minus1)
-  apply(rule poly_derivatives vderiv_on_exp_scaleRlI, (force)?, (force)?, (force)?, (force)?)+
+  apply(rule vderiv_intros vderiv_exp_scaleR_leftI, (force)?, (force)?, (force)?, (force)?)+
   by (simp add: mtx_vec_mult_add_rdistl sq_mtx_times_vec_assoc[symmetric] 
       exp_minus_inverse exp_times_scaleR_commute mult_exp_exp  scale_left_distrib[symmetric])
 

@@ -316,7 +316,7 @@ lemma "(x \<ge> 0 \<and> y \<ge>0 \<and> z \<ge> 0)\<^sub>e \<le> |{x` = y, y` =
   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> z * t\<^sup>2 / 2 + y * t + x, y \<leadsto> z * t + y]"]; clarsimp?)
   apply (unfold local_flow_on_def, clarsimp, unfold_locales; expr_simp)
   subgoal by (lipschitz 1) (metis norm_snd_le real_norm_def)
-  by (auto intro!: poly_derivatives) expr_simp
+  by (auto intro!: vderiv_intros) expr_simp
 
 end
 
@@ -404,7 +404,7 @@ lemma "`y > 0` \<Longrightarrow> (x > 0)\<^sub>e \<le> |{x` = - y * x}] (x > 0)"
     by (metis abs_1 abs_mult_pos dist_commute dist_scaleR 
         less_eq_real_def mult.commute mult_1 real_norm_def 
         real_scaleR_def)
-  by (auto intro!: poly_derivatives) expr_simp
+  by (auto intro!: vderiv_intros) expr_simp
 
 end
 
@@ -468,13 +468,13 @@ lemma "(x \<ge> 1)\<^sub>e \<le> |{x` = x\<^sup>2 + 2 * x\<^sup>4}] (x^3 \<ge> x
      apply (expr_simp add: le_fun_def numeral_Bit1 field_simps)
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(2 * x * (x\<^sup>2 + 2 * x\<^sup>4))\<^sup>e" "(3 * x\<^sup>2 * (x\<^sup>2 + 2 * x\<^sup>4))\<^sup>e"; clarsimp)
-     apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))[1]
+     apply(auto intro!: vderiv_intros simp: field_simps semiring_normalization_rules(27,28))[1]
   subgoal for X \<tau>
     apply (move_left "2::real", move_left "3::real", move_left "4::real", move_left "6::real")
     by mon_pow_simp (smt (z3) mult_le_cancel_left numerals(1) pos2 
         power_commutes power_numeral_even power_numeral_odd 
         power_one_right self_le_power)
-     apply(auto intro!: poly_derivatives simp: field_simps semiring_normalization_rules(27,28))[1]
+     apply(auto intro!: vderiv_intros simp: field_simps semiring_normalization_rules(27,28))[1]
   by expr_auto (rule diff_weak_on_rule, expr_auto)
 
 end
@@ -570,7 +570,7 @@ lemma "w \<noteq> 0 \<Longrightarrow> (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<
   apply (unfold_locales; clarsimp?)
    prefer 2
   subgoal for t a c1 c2 b
-    apply (intro poly_derivatives; (force | rule poly_derivatives)?)
+    apply (intro vderiv_intros; (force | rule vderiv_intros)?)
     sorry
   apply (lipschitz 1, simp add: abs_minus_commute norm_Pair dist_norm)
   oops
@@ -595,7 +595,7 @@ lemma "(w \<ge> 0 \<and> x = 0 \<and> y = 3)\<^sub>e \<le> |{x` = y, y` = - w\<^
    apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
    apply (diff_inv_on_single_ineq_intro "(2 * w\<^sup>2 * x * y + 2 * y * (- w\<^sup>2 * x - 2 * w * y))\<^sup>e" "(0)\<^sup>e"; expr_simp)
     apply (force simp: field_simps)[1]
-   apply (force intro!: poly_derivatives)
+   apply (force intro!: vderiv_intros)
   by (expr_simp add: le_fun_def)
 
 end
@@ -740,12 +740,12 @@ lemma "(x\<^sup>3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x\<^sup>3 + x\<^sup>4, 
   subgoal for s X t
     apply(rule current_vderiv_ge_always_ge[of 5 "\<lambda>t. (fst (X t))\<^sup>3" 0 
         "\<lambda>t. 3 * (fst (X t))\<^sup>2 * ((fst (X t))\<^sup>3 + (fst (X t))\<^sup>4)", where g="\<lambda>t. 3 * t\<^sup>2 + 3 * (root 3 t)\<^sup>5", rule_format])
-    by (auto intro!: poly_derivatives simp: odd_real_root_power_cancel split: if_splits) 
+    by (auto intro!: vderiv_intros simp: odd_real_root_power_cancel split: if_splits) 
       (clarsimp simp: fun_eq_iff, ferrack)
   apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
    apply (expr_simp add: Collect_ge_ivl)
   by (rule current_vderiv_ge_always_ge[rule_format, of 2 "\<lambda>t. (snd (_ t))", where g="\<lambda>t. 5 * t + t\<^sup>2"])
-    (auto intro!: poly_derivatives simp: odd_real_root_power_cancel split: if_splits)
+    (auto intro!: vderiv_intros simp: odd_real_root_power_cancel split: if_splits)
 
 end
 
@@ -764,7 +764,7 @@ lemma "(x \<ge> 1 \<and> y = 10 \<and> z = - 2)\<^sub>e \<le> |{x` = y, y` =$z +
     apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
     apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(y)\<^sup>e"; expr_simp)
   apply (metis indeps(1) lens_plus_def plus_vwb_lens vwbs(1) vwbs(2))
-  by (force intro!: poly_derivatives)
+  by (force intro!: vderiv_intros)
     (expr_simp add: hoare_diff_inv_on fbox_diff_inv_on diff_inv_on_eq)
 
 end
@@ -792,7 +792,7 @@ lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 
   (x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)"
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(0)\<^sup>e"; expr_simp)
-  apply (intro poly_derivatives; (assumption)?, (rule poly_derivatives)?)
+  apply (intro vderiv_intros; (assumption)?, (rule vderiv_intros)?)
   by force+ ferrack
 
 end
@@ -859,11 +859,11 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillem
   subgoal for s X t
     apply (rule picard_lindeloef.ivp_unique_solution[of "(\<lambda>t r. r * (A * (fst (X t)) + B))" UNIV UNIV 0 "get\<^bsub>x\<^esub> s + get\<^bsub>z\<^esub> s" "\<lambda>s. UNIV" t 
           _ "\<lambda>t. 0"]; (clarsimp simp: ivp_sols_def)?)
-      prefer 2 apply (intro poly_derivatives, force, force, force, force)
+      prefer 2 apply (intro vderiv_intros, force, force, force, force)
       apply (distribute, mon_pow_simp)
-     prefer 2 apply (force intro!: poly_derivatives)
+     prefer 2 apply (force intro!: vderiv_intros)
     apply (unfold_locales; clarsimp?)
-     apply (force intro!: vderiv_on_continuous_on poly_derivatives)
+     apply (force intro!: vderiv_on_continuous_on vderiv_intros)
     apply distribute
     apply (rule_tac f'="\<lambda>(t, r). Blinfun (\<lambda>r. r * (A * fst (X t)) + r * B) " in c1_implies_local_lipschitz; clarsimp?)
     apply (rule has_derivative_Blinfun)
@@ -889,7 +889,7 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
   apply (unfold_locales; clarsimp?)
     prefer 2
   subgoal for t a b
-    apply (intro poly_derivatives; (force | rule poly_derivatives)?)
+    apply (intro vderiv_intros; (force | rule vderiv_intros)?)
        apply (auto simp: field_simps)
     oops
 
@@ -926,10 +926,10 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
           _ "\<lambda>t. 0"]; (clarsimp simp: ivp_sols_def closed_segment_eq_real_ivl)?)
       prefer 3 subgoal
       apply (frule has_vderiv_on_subset[where T="{0..t}"]; clarsimp?)
-      by (force intro!: poly_derivatives)
+      by (force intro!: vderiv_intros)
     prefer 2 subgoal
       apply (frule has_vderiv_on_subset[where T="{0..t}"]; clarsimp?)
-      by (auto simp: field_simps intro!: poly_derivatives)
+      by (auto simp: field_simps intro!: vderiv_intros)
     apply (unfold_locales; clarsimp?) \<comment> \<open> set is not open \<close>
     oops
 
@@ -1001,7 +1001,7 @@ lemma darboux_flow_ivp: "(\<lambda>t. \<phi> t s) \<in> Sols ({t. 0 \<le> t \<an
   by (cases "i=2"; cases "i=1")
     (auto simp: expr_simps lens_defs vec_upd_def fun_eq_iff
       add_divide_distrib power2_eq_square
-      intro!: poly_derivatives split: if_splits)
+      intro!: vderiv_intros split: if_splits)
   done
 
 (* x+z>=0 -> [{x'=x^2, z' = z*x+y & y = x^2}] x+z>=0 *)
@@ -1026,7 +1026,7 @@ lemma "(x + z \<ge> 0)\<^sub>e \<le> |{x` = x\<^sup>2, z` = z*x + y | y = x\<^su
   subgoal 
     apply (unfold local_flow_on_def, clarsimp)
     apply (unfold_locales; expr_simp)
-    prefer 5 apply (auto simp: intro!: poly_derivatives)[1]
+    prefer 5 apply (auto simp: intro!: vderiv_intros)[1]
   oops (* local_flow's interval parameter should be a function *)
 
 end
@@ -1077,7 +1077,7 @@ proof(clarsimp, rule_tac x="sqrt \<bar>r\<bar>" in exI, clarsimp simp: hoare_dif
     using D1 by assumption
   moreover have key: "D (\<lambda>t. sqrt (- r)) = (\<lambda>t. r + (sqrt (- r))\<^sup>2) on {0--t}"
     apply(subgoal_tac "(\<lambda>t. r + (sqrt (- r))\<^sup>2) = (\<lambda>t. 0)")
-     apply(erule ssubst, rule poly_derivatives)
+     apply(erule ssubst, rule vderiv_intros)
     using \<open>`r \<le> 0`\<close> by expr_auto
   moreover note picard_lindeloef.ivp_unique_solution[OF 
       picard_lindeloef_dyn_bif[OF calculation(2) UNIV_I is_interval_univ open_UNIV] 
@@ -1170,7 +1170,7 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
     apply (auto simp: field_simps)[1]
   apply (auto simp: field_simps)[1]
   apply expr_simp
-  by (auto intro!: poly_derivatives)
+  by (auto intro!: vderiv_intros)
 
 
 (* verified with the help of a CAS *)
@@ -1223,7 +1223,7 @@ begin
 lemma "(x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)\<^sub>e \<le> |{x1` = x2 + x1*x2\<^sup>2, x2` = -x1 + x1\<^sup>2 * x2| (x1 \<ge> 0 \<and> x2 \<ge> 0)}] (x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)"
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(x1 * (x2 + x1*x2\<^sup>2) - x2 * (-x1 + x1\<^sup>2 * x2))\<^sup>e"; expr_simp)
-  by (auto simp: field_simps fun_eq_iff intro!: poly_derivatives split: if_splits)
+  by (auto simp: field_simps fun_eq_iff intro!: vderiv_intros split: if_splits)
 
 end
 
@@ -1237,7 +1237,7 @@ begin
 lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^sup>2}] (-x1*x2 \<ge> a)"
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   by (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "((- x1 + x2 - x1*x2)*x2 - x1 * (-x2 - x2\<^sup>2))\<^sup>e"; expr_simp)
-    (auto simp: field_simps fun_eq_iff intro!: poly_derivatives split: if_splits)
+    (auto simp: field_simps fun_eq_iff intro!: vderiv_intros split: if_splits)
 
 lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^sup>2}] (-x1*x2 \<ge> a)"
   find_local_flow
@@ -1251,7 +1251,7 @@ lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^
   apply (unfold_locales; clarsimp?)
     prefer 2
   subgoal for t a b
-    apply (intro poly_derivatives; (force | rule poly_derivatives)?)
+    apply (intro vderiv_intros; (force | rule vderiv_intros)?)
     oops
 
 end
@@ -1323,7 +1323,7 @@ lemma "local_flow_on [x \<leadsto> v, v \<leadsto> a, a \<leadsto> 0] (x +\<^sub
     by expr_simp (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_on_continuous_on
         fun_eq_iff continuous_intros split: prod.splits)
   apply expr_simp
-  by (auto intro!: poly_derivatives) expr_simp
+  by (auto intro!: vderiv_intros) expr_simp
 
 lemma "local_flow_on [x \<leadsto> v, v \<leadsto> a, a \<leadsto> 0] (x +\<^sub>L v +\<^sub>L a) UNIV UNIV 
   (\<lambda>t. [x \<leadsto> a * t\<^sup>2 / 2 + v * t + x, v \<leadsto> a * t + v, a \<leadsto> a])"
@@ -1331,14 +1331,14 @@ lemma "local_flow_on [x \<leadsto> v, v \<leadsto> a, a \<leadsto> 0] (x +\<^sub
   apply (unfold_locales; expr_simp)
    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ 
         "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((fst (snd c)), (snd (snd c)), 0)))"]; expr_simp)
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 lemma "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v) UNIV UNIV 
   (\<lambda>t. [x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])"
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 lemma local_flow_STTT: "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v) UNIV UNIV 
   (\<lambda>t. [x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])"
@@ -1533,7 +1533,7 @@ lemma local_flow_STTT2: "local_flow_on [c \<leadsto> 1, v \<leadsto> $a, x \<lea
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
   by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
-    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* v >= 0 & A > 0 & B > 0 & x+v^2/(2*B) <= S & ep > 0
  -> [
@@ -1774,7 +1774,7 @@ lemma "(v \<ge> 0 \<and> c > 0 \<and> Kp = 2 \<and> Kd = 3 \<and> (5/4)*(x-xr)\<
   + (v/2) * (-Kp * (x-xr) - Kd * v))\<^sup>e" "(0)\<^sup>e"; 
       expr_simp add: le_fun_def STTexample9a_arith)
   apply (metis indeps(1) lens_plus_def plus_vwb_lens vwbs(1) vwbs(2))
-  by (intro poly_derivatives; (rule poly_derivatives)?; force?)
+  by (intro vderiv_intros; (rule vderiv_intros)?; force?)
     (auto simp: field_simps)
 
 end
@@ -1818,7 +1818,7 @@ lemma "Kd \<noteq> 0 \<Longrightarrow> Kp \<noteq> 0 \<Longrightarrow> Kd\<^sup>
     apply (rule c1_implies_local_lipschitz[of UNIV UNIV _
         "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (snd c, - Kp * fst c - Kd * snd c)))"]; expr_simp)
     by (auto intro!: has_derivative_Blinfun derivative_eq_intros)
-  apply (intro poly_derivatives; (force intro!: poly_derivatives)?)
+  apply (intro vderiv_intros; (force intro!: vderiv_intros)?)
   apply (auto simp: fun_eq_iff field_split_simps exp_minus_inverse closed_segment_eq_real_ivl split: if_splits)
   oops
 
@@ -1830,7 +1830,7 @@ lemma local_flow_STTT_9b: "local_flow_on [v \<leadsto> 2 * xr - 2 * x - 3 * v, x
   apply (unfold_locales; expr_simp)
   apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ 
         "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (snd c, - 2 * fst c - 3 * snd c)))"]; expr_simp)
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives split: if_splits)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros split: if_splits)
     (auto simp: fun_eq_iff field_simps exp_minus_inverse)
 
 (* v >= 0 & xm <= x & x <= S & xr = (xm + S)/2 & Kp = 2 & Kd = 3
@@ -1884,7 +1884,7 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
     apply (rule fbox_invs)
      apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
      apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(v)\<^sup>e"; expr_simp)
-    by (auto intro!: poly_derivatives)[1](diff_inv_on_eq)
+    by (auto intro!: vderiv_intros)[1](diff_inv_on_eq)
   apply simp
   apply (rule_tac I="(5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sup>e" in fbox_diff_invI)
     prefer 3 apply expr_auto
@@ -1898,7 +1898,7 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
    prefer 2 
   subgoal for X s
     apply (simp add: sign_distrib_laws, distribute?)
-    apply (intro poly_derivatives; (force | (rule poly_derivatives))?)
+    apply (intro vderiv_intros; (force | (rule vderiv_intros))?)
     by (simp add: sign_distrib_laws, distribute?) 
       (simp add: power2_eq_square[symmetric])
     apply (clarsimp simp: field_class.power_divide add_divide_distrib, bin_unfold?, distribute?)
@@ -2277,7 +2277,7 @@ lemma local_flow_LICS: "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* v>=0 & a>=0 -> [{x'=v, v'=a & v>=0}] v>=0 *)
 lemma "(v \<ge> 0 \<and> a \<ge> 0)\<^sub>e \<le> |{x` = v, v` = a | (v \<ge> 0)}] (v \<ge> 0)"
@@ -2374,7 +2374,7 @@ lemma local_flow_LICS2: "local_flow_on [t \<leadsto> 1, v \<leadsto> $a, x \<lea
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
   by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
-    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (*v^2<=2*b*(m-x) & v>=0  & A>=0 & b>0
  -> [
@@ -2477,7 +2477,7 @@ lemma local_flow_LICS3: "local_flow_on [v \<leadsto> c, x \<leadsto> $v] (x +\<^
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* ( [{x' = v, v' = -b()}]x<=m()
    & v >= 0
@@ -2621,7 +2621,7 @@ lemma local_flow_LICS4: "local_flow_on [t \<leadsto> 1, v \<leadsto> c, x \<lead
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* v>=0 & b>0 & A>=0 & ep>=0 -> (
     [t:=0; {x'=v, v'=A, t'=1 & t<=ep}][{x'=v, v'=-b}]x<=m
@@ -2669,7 +2669,7 @@ lemma local_flow_LICS7: "local_flow_on [t \<leadsto> 1, v \<leadsto> a, x \<lead
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
    apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
-  by (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+  by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* [{x'=v, v'=-b}](x<=m)
    & v >= 0
@@ -2824,7 +2824,7 @@ lemma local_flow_LICS1: "local_flow_on [t \<leadsto> 1, v \<leadsto> $a, z \<lea
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
   by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (fst (snd c), 0)))"])
-    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* initial(m, z, v)  ->
     [
@@ -2852,7 +2852,7 @@ lemma local_flow_LICS2: "local_flow_on [v \<leadsto> -b, z \<leadsto> $v] (z +\<
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
   by (rule c1_implies_local_lipschitz[of UNIV UNIV _ "(\<lambda>(t::real,c). Blinfun (\<lambda>c. ((snd c), 0)))"])
-    (auto intro!: has_derivative_Blinfun derivative_eq_intros poly_derivatives)
+    (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros)
 
 (* Assumptions(v, d) & z<=m
   ->
@@ -3096,7 +3096,7 @@ lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
     apply (expr_simp add: iota1_def iota2_def)
     by distribute (clarsimp simp: add_divide_distrib diff_divide_distrib discr_def)
   apply (rename_tac x1 y1)
-  apply (rule poly_derivatives)
+  apply (rule vderiv_intros)
     prefer 3 apply force
   apply (rule iffD1[OF has_vderiv_on_component, rule_format]) (* name this lemma *)
    apply (rule has_vderiv_Phi_A, simp, simp)
