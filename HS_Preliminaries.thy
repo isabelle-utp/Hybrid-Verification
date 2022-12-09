@@ -173,10 +173,14 @@ declare has_vderiv_on_const [vderiv_intros]
     and has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs, vderiv_intros]
     and has_vderiv_on_ln[vderiv_intros]
 
-lemma has_vderiv_on_Pair: "\<lbrakk> D f = f' on T; D g = g' on T \<rbrakk> 
-  \<Longrightarrow> D (\<lambda>x. (f x, g x)) = (\<lambda> x. (f' x, g' x)) on T"
-  by (auto intro: has_vector_derivative_Pair 
-      simp add: has_vderiv_on_def)
+lemma vderiv_compI:
+  fixes f :: "'a::real_normed_vector \<Rightarrow> 'b::real_normed_vector"
+  assumes dg: "D g = g' on T" 
+    and df: "\<forall>t\<in>T. D f \<mapsto> f' at (g t) within g ` T"
+    and h_eq: "\<forall>t\<in>T. h t = f' (g' t)"
+  shows "D (f \<circ> g) = h on T"
+  using assms vector_derivative_diff_chain_within[of g _ _ T f f']
+  unfolding has_vderiv_on_def by metis
 
 lemma vderiv_composeI:
   assumes "D f = f' on g ` T" 
@@ -226,6 +230,20 @@ lemma vderiv_expI[vderiv_intros]:
   by (rule vderiv_composeI[OF _ assms(1), of "\<lambda>t. exp t"])
     (auto intro!: derivative_eq_intros simp: assms has_vderiv_on_iff)
 
+lemma has_vderiv_on_Pair: "\<lbrakk> D f = f' on T; D g = g' on T \<rbrakk> 
+  \<Longrightarrow> D (\<lambda>x. (f x, g x)) = (\<lambda> x. (f' x, g' x)) on T"
+  by (auto intro: has_vector_derivative_Pair 
+      simp add: has_vderiv_on_def)
+
+lemma vderiv_pairI[vderiv_intros]:
+  assumes "D f1 = f1' on T" 
+    and "D f2 = f2' on T"
+    and "g = (\<lambda>t. (f1' t, f2' t))"
+  shows "D (\<lambda>t. (f1 t, f2 t)) = g on T"
+  using assms  
+  by (clarsimp simp: scaleR_vec_def has_vderiv_on_def has_vector_derivative_def)
+    (rule has_derivative_Pair, auto)
+
 lemma has_vderiv_on_proj:
   assumes "D X = X' on T " and "X' = (\<lambda>t. (X1' t, X2' t))"
   shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X1' t) on T"
@@ -250,15 +268,6 @@ lemma vderiv_sndI [vderiv_intros]:
   apply (unfold has_vderiv_on_def comp_def[symmetric], safe)
   subgoal for x by (rule_tac has_vector_derivative_snd''[of _ "(fst \<circ> X') x"], force)
   done
-
-lemma vderiv_pairI[vderiv_intros]:
-  assumes "D f1 = f1' on T" 
-    and "D f2 = f2' on T"
-    and "g = (\<lambda>t. (f1' t, f2' t))"
-  shows "D (\<lambda>t. (f1 t, f2 t)) = g on T"
-  using assms  
-  by (clarsimp simp: scaleR_vec_def has_vderiv_on_def has_vector_derivative_def)
-    (rule has_derivative_Pair, auto)
 
 lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow>  D g = g' on T 
   \<Longrightarrow> D (\<lambda>t. f t /\<^sub>R g t) = (\<lambda>t. (f' t *\<^sub>R g t - f t *\<^sub>R (g' t)) /\<^sub>R (g t)^2) on T"
