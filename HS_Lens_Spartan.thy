@@ -1729,28 +1729,29 @@ lemma darboux:
   oops
 
 lemma darboux: 
-  fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
+  fixes x y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
     and e e' :: "'a \<Rightarrow> real"
     and g :: real
-  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
-    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
+  assumes vwbs: "vwb_lens x" "vwb_lens y" "vwb_lens z" 
+    and indeps: "y \<bowtie> x" "z \<bowtie> x" "z \<bowtie> y"
     and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
     and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
     and dbx_hyp: "e' \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
-    and deriv: "\<And>s. D e \<mapsto> e' (at s)"
+    and deriv: "\<And>s. D e \<mapsto> e' (at s)" "\<And>s. (\<lambda>c. e (put\<^bsub>x +\<^sub>L y\<^esub> s c)) differentiable (at (get\<^bsub>x +\<^sub>L y\<^esub> s))"
     and bdd_linear_gety: "bounded_linear get\<^bsub>y\<^esub>"
-    and bdd_linear_put: "\<And>s. bounded_linear (put\<^bsub>a +\<^sub>L y\<^esub> s)"
-  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
-  thm diff_ghost_rule diff_ghost_rule_very_simple
+    and bdd_linear_put: "\<And>s. bounded_linear (put\<^bsub>x +\<^sub>L y\<^esub> s)"
+  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame x f G] (e \<ge> 0)"
+  thm has_vderiv_on_iff
   apply (rule diff_ghost_rule_very_simple[where k="-g", OF _ vwbs(2) indeps(1) yGhost])
   apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
   using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
   apply (subst SEXP_def[symmetric, of G])
   apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
    apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
-  using indeps apply (expr_simp) 
+  using indeps apply (expr_simp)
   apply (rule diff_ghost_rule_very_simple[where k="g/2", OF _ vwbs(3) _ zGhost])
-  apply (subst hoare_diff_inv_on)
+    prefer 2 using indeps apply expr_simp
+    apply (subst hoare_diff_inv_on)
   apply (rule diff_inv_on_raw_eqI; clarsimp?)
   using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
@@ -1758,56 +1759,64 @@ lemma darboux:
    apply (intro vderiv_intros; force?)
    apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
   using vwbs indeps apply (expr_simp add: power2_eq_square)
-  using vwbs indeps apply expr_simp
   apply (rule_tac I="\<lambda>\<s>. 0 \<le> e \<s> * $y" in fbox_diff_invI)
     prefer 3 apply (expr_simp add: le_fun_def)
-   prefer 2 apply (expr_simp add: le_fun_def) 
-  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-    (* proof correct up to here *)
+   prefer 2 apply (expr_simp add: le_fun_def)
+  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof correct up to here *)
+  apply (subgoal_tac "vwb_lens (x +\<^sub>L y)")
+   prefer 2 using assms(1-5) lens_indep_sym plus_vwb_lens apply blast
+
+ (*  (* approach using deriv(2) *)
+  apply (rule_tac \<nu>'="(0)\<^sup>e" in diff_inv_on_leqI; clarsimp?)
+   prefer 2
+   apply (rule_tac g'="\<lambda>t. get\<^bsub>y\<^esub> (put\<^bsub>x +\<^sub>L y\<^esub> s (get\<^bsub>x +\<^sub>L y\<^esub> ((f(y \<leadsto> - (\<guillemotleft>g\<guillemotright> * $y))) (put\<^bsub>x +\<^sub>L y\<^esub> s (X t)))))" in vderiv_intros(5))
+     prefer 2 using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)
+  using vderiv_sndI apply fastforce
+    apply (clarsimp simp: has_vderiv_on_iff)
+    apply (rule has_derivative_subset)
+  using deriv(2)[unfolded differentiable_def] *)
 
   (* trying to make Isabelle give the solution, approach where I suggest solution below *)
-  (* apply (rule_tac \<nu>'="(0)\<^sup>e" in diff_inv_on_raw_leqI; clarsimp?)
-  using assms(1-5) lens_indep_sym plus_vwb_lens apply blast
+ (* apply (rule_tac \<nu>'="(0)\<^sup>e" in diff_inv_on_leqI; clarsimp?)
    prefer 2
-  term "e (put\<^bsub>a +\<^sub>L y\<^esub> s (X x)) * get\<^bsub>y\<^esub> (put\<^bsub>a +\<^sub>L y\<^esub> s (X x))"
-  apply (rule vderiv_intros(5))
-      apply (rule vderiv_compI[unfolded comp_def, where f=e and g="\<lambda>\<tau>. put\<^bsub>a +\<^sub>L y\<^esub> _ (_ \<tau>)"])
+  term "e (put\<^bsub>x +\<^sub>L y\<^esub> s (X x)) * get\<^bsub>y\<^esub> (put\<^bsub>x +\<^sub>L y\<^esub> s (X x))"
+  thm vderiv_intros(5)
+   apply (rule_tac vderiv_intros(5))
+      apply (rule vderiv_compI[unfolded comp_def, where f=e and g="\<lambda>\<tau>. put\<^bsub>x +\<^sub>L y\<^esub> _ (_ \<tau>)"])
         apply (rule vderiv_putI[OF bdd_linear_put]; force)
-      apply (rule ballI, rule has_derivative_subset[OF deriv], force, force)
-     apply (rule vderiv_compI[unfolded comp_def, where f="get\<^bsub>y\<^esub>" and g="\<lambda>t. put\<^bsub>a +\<^sub>L y\<^esub> _ (_ t)"])
+      apply (rule ballI, rule has_derivative_subset[OF deriv(1)], force, force)
+     apply (rule vderiv_compI[unfolded comp_def, where f="get\<^bsub>y\<^esub>" and g="\<lambda>t. put\<^bsub>x +\<^sub>L y\<^esub> _ (_ t)"])
       apply (rule vderiv_putI[OF bdd_linear_put]; force)
      apply (subst bdd_linear_iff_has_derivative[symmetric])
   using bdd_linear_gety apply (force, force)
-  term "\<lambda>s'. e s' * get\<^bsub>y\<^esub> (put\<^bsub>a +\<^sub>L y\<^esub> s (get\<^bsub>a +\<^sub>L y\<^esub> (put\<^bsub>y\<^esub> (f s') (- (g * get\<^bsub>y\<^esub> s'))))) +
-       e' (put\<^bsub>a +\<^sub>L y\<^esub> s (get\<^bsub>a +\<^sub>L y\<^esub> (put\<^bsub>y\<^esub> (f s') (- (g * get\<^bsub>y\<^esub> s'))))) * get\<^bsub>y\<^esub> s'"
-
-  using wb_lens.get_put[of "a +\<^sub>L y"] weak_lens.put_get[of "a +\<^sub>L y"] lens_plus_def
+  term "\<lambda>s'. e s' * get\<^bsub>y\<^esub> (put\<^bsub>x +\<^sub>L y\<^esub> s (get\<^bsub>x +\<^sub>L y\<^esub> (put\<^bsub>y\<^esub> (f s') (- (g * get\<^bsub>y\<^esub> s'))))) +
+       e' (put\<^bsub>x +\<^sub>L y\<^esub> s (get\<^bsub>x +\<^sub>L y\<^esub> (put\<^bsub>y\<^esub> (f s') (- (g * get\<^bsub>y\<^esub> s'))))) * get\<^bsub>y\<^esub> s'"
+  using wb_lens.get_put[of "x +\<^sub>L y"] weak_lens.put_get[of "x +\<^sub>L y"] lens_plus_def
     using assms(1-5) yGhost(1) (* lens_indep_sym plus_vwb_lens *)
     apply (expr_simp add: lens_indep.lens_put_irr2)
-     apply (subst lens_indep_comm[of a y, OF lens_indep_sym]; expr_simp?)
-     apply (subst lens_indep_comm[of a y, OF lens_indep_sym]; expr_simp?)
+     apply (subst lens_indep_comm[of x y, OF lens_indep_sym]; expr_simp?)
+     apply (subst lens_indep_comm[of x y, OF lens_indep_sym]; expr_simp?)
 
     apply (expr_simp add: lens_indep.lens_put_irr2)
 
     oops *)
 
   (* approach where I suggest solution *)
-  apply (rule_tac \<nu>'="(0)\<^sup>e" and \<mu>'="(e' * y + e * (- \<guillemotleft>g\<guillemotright> *\<^sub>R y))\<^sup>e" in diff_inv_on_raw_leqI; clarsimp?)
-  using assms(1-5) lens_indep_sym plus_vwb_lens apply blast
+  apply (rule_tac \<nu>'="(0)\<^sup>e" and \<mu>'="(e' * y + e * (- \<guillemotleft>g\<guillemotright> *\<^sub>R y))\<^sup>e" in diff_inv_on_leqI; clarsimp?)
   using indeps dbx_hyp apply (expr_simp add: le_fun_def mult.commute)
-
   subgoal for X s
-    apply (rule vderiv_intros(5))
-      apply (rule vderiv_compI[unfolded comp_def, where f=e and g="\<lambda>\<tau>. put\<^bsub>a +\<^sub>L y\<^esub> s (X \<tau>)"])
+    apply (rule_tac vderiv_intros(5))
+      apply (rule vderiv_compI[unfolded comp_def, where f=e and g="\<lambda>\<tau>. put\<^bsub>x +\<^sub>L y\<^esub> s (X \<tau>)"])
         apply (rule vderiv_putI[OF bdd_linear_put]; force)
-       apply (rule ballI, rule has_derivative_subset[OF deriv], force, force)
-     apply (rule vderiv_compI[unfolded comp_def, where f="get\<^bsub>y\<^esub>" and g="\<lambda>t. put\<^bsub>a +\<^sub>L y\<^esub> s (X t)"])
+       apply (rule ballI, rule has_derivative_subset[OF deriv(1)], force, force)
+     apply (rule vderiv_compI[unfolded comp_def, where f="get\<^bsub>y\<^esub>" and g="\<lambda>t. put\<^bsub>x +\<^sub>L y\<^esub> s (X t)"])
        apply (rule vderiv_putI[OF bdd_linear_put]; force)
       apply (subst bdd_linear_iff_has_derivative[symmetric])
     using bdd_linear_gety apply (force, force)
     using assms(1-5) yGhost(1) (* lens_indep_sym plus_vwb_lens *)
     apply (expr_simp add: lens_indep.lens_put_irr2)
-    apply (subst lens_indep_comm[of a y, OF lens_indep_sym], expr_simp?)+
+    apply (subst lens_indep_comm[of x y, OF lens_indep_sym], expr_simp?)+
+    apply (subst (asm) lens_indep_comm[of x y, OF lens_indep_sym], expr_simp?)+
     apply (expr_simp add: lens_indep.lens_put_irr2)
     using weak_lens.put_get
     using bdd_linear_gety bdd_linear_put

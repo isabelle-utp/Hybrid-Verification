@@ -236,10 +236,10 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0)
   apply (subst fbox_kcomp[symmetric])
   apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
    apply (dGhost "z" "(x*z\<^sup>2 = 1 \<and> y > 0)\<^sub>e" "1/2")
-    apply (expr_auto add: exp_ghost_arith)
    apply (rule fbox_invs(1))
     apply (diff_inv_on_eq)
-   apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
+    apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
+    apply (expr_auto add: exp_ghost_arith)
   apply (rule hoare_choice)
   by hoare_wp_auto+
 
@@ -358,8 +358,8 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
 (* x>0 -> [{x'=-x}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
-  by (expr_auto add: exp_ghost_arith)
-    (diff_inv_on_eq)
+  by (diff_inv_on_eq)
+    (expr_auto add: exp_ghost_arith)
 
 end
 
@@ -382,7 +382,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
 (* proof with ghosts *)
 (* x>0 -> [{x'=-x+1}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
-   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2") (* find adequate ghost *)
+  apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2") (* find adequate ghost *)
     apply (expr_auto add: exp_ghost_arith)
   (* apply (diff_inv_on_eq) *)
   oops
@@ -904,6 +904,7 @@ begin
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
   apply (rule diff_ghost_rule_very_simple[where y="w" and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w + z*w = 0 \<and> w \<noteq> 0)\<^sup>e"])
+  defer
        apply expr_simp
   apply expr_simp
   using lens_indep_comm[of w z] lens_indep_comm[of w x] indeps  apply expr_auto
