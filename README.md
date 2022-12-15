@@ -7,4 +7,11 @@ In order to use this tool, you currently need Isabelle 2021-1, and a set of comp
 * [Shallow Expressions](https://github.com/isabelle-utp/Shallow-Expressions), branch main
 * [Hybrid Library](https://github.com/isabelle-utp/Hybrid-Library), branch main
 
-Check these out, and make Isabelle aware of them either by editing your ``ROOTS`` file, or by running ``isabelle jedit -d dirs``. Alternatively, it may be best to build the Hybrid Library heap image with ``isabelle build -b Hybrid-Library`` to make the start time quicker. Once done, you should be able to run the theories in this repository.
+Check these out, and make Isabelle aware of them either by editing your ``ROOTS`` file, or by running ``isabelle jedit -d dirs``. Alternatively, it may be start Isabelle with the Hybrid Library's heap image already built-in with ``isabelle jedit -R Hybrid-Verification`` to make the start time quicker. Once done, you should be able to run the theories in this repository.
+
+#### Papers describing this work:
+* Certifying Differential Equation Solutions from Computer Algebra Systems in Isabelle/HOL. In ArXiV 2021: [https://arxiv.org/abs/2102.02679](https://arxiv.org/abs/2102.02679)
+* Hybrid systems verification with Isabelle/HOL: Simpler syntax, better models, faster proofs. In FM 2021: [https://doi.org/10.1007/978-3-030-90870-6_20](https://doi.org/10.1007/978-3-030-90870-6_20)
+* Affine systems of ODEs in Isabelle/HOL for hybrid-program verification. In SEFM 2020: [https://doi.org/10.1007/978-3-030-58768-0_5](https://doi.org/10.1007/978-3-030-58768-0_5)
+* Differential Hoare logics and refinement calculi for hybrid systems with Isabelle/HOL. In RAMiCS 2020: [https://doi.org/10.1007/978-3-030-43520-2_11](https://doi.org/10.1007/978-3-030-58768-0_5)
+* Predicate transformer semantics for hybrid systems. In JAR, 2022: [https://doi.org/10.1007/s10817-021-09607-x](https://doi.org/10.1007/978-3-030-58768-0_5)
