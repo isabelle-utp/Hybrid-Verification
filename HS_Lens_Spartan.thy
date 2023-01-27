@@ -191,7 +191,7 @@ translations
   "_assign x e" == "\<langle>CONST subst_upd [\<leadsto>] x (e)\<^sub>e\<rangle>" (* "\<langle>[x \<leadsto>\<^sub>s e]\<rangle>" *)
 
 lemma fbox_assign: "|x ::= e] Q = (Q\<lbrakk>e/x\<rbrakk>)\<^sub>e"
-  by (simp add: assigns_def expr_defs fbox_def)
+  by (simp add: assigns_def subst_app_def fbox_def fun_eq_iff)
 
 lemma hoare_assign: "\<^bold>{Q\<lbrakk>e/x\<rbrakk>\<^bold>} (x ::= e) \<^bold>{Q\<^bold>}"
   by (auto simp: fbox_assign)
@@ -658,6 +658,27 @@ lemma hoare_loopI_break:
   "\<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} (Y ; (LOOP X INV I)) \<^bold>{Q\<^bold>}"
   by (rule hoare_kcomp, force) (rule hoare_loopI, simp_all)
 
+subsection \<open> While loop \<close>
+
+definition while :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> 'a set)" 
+  where [prog_defs]: "while T X \<equiv> (\<questiondown>T? ; X)\<^sup>* ; \<questiondown>\<not>T?"
+
+syntax "_while" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("WHILE _ DO _" [0,63] 64)
+translations "WHILE T DO X" == "CONST while (T)\<^sub>e X"
+
+lemma hoare_while:
+  "\<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} (WHILE T DO X) \<^bold>{\<not> T \<and> I\<^bold>}"
+  unfolding while_def 
+  apply (simp add: fbox_test fbox_kcomp)
+  apply (rule_tac p\<^sub>2=I and q\<^sub>2=I in hoare_conseq)
+    prefer 3 apply expr_simp
+  prefer 2 apply expr_simp
+  apply (rule_tac I="I" in hoare_kstarI)
+      apply expr_simp
+   apply expr_simp
+  apply (rule_tac R="(I \<and> T)\<^sup>e" in hoare_kcomp)
+  by (auto simp: fbox_test fbox_kcomp)
+
 
 subsection \<open> Framing \<close>
 
@@ -1056,6 +1077,12 @@ lemma g_ode_frame_syntax_sugar:
 lemma g_ode_on_syntax_sugar:
   "g_ode_on x (f)\<^sub>e (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 = g_orbital_on x (\<lambda>t. [x \<leadsto> f]) G U S t\<^sub>0"
   by (simp add: SEXP_def taut_def subst_upd_def subst_id_def)
+
+lemma g_ode_frame_prod_sugar:
+  "h \<bowtie> t \<Longrightarrow> {h` = \<guillemotleft>k\<guillemotright>, t` = 1 | $t \<le> (H\<^sub>u - h\<^sub>m)/\<guillemotleft>k\<guillemotright>} = {(h, t)` = (\<guillemotleft>k\<guillemotright>, 1) | $t \<le> (H\<^sub>u - h\<^sub>m)/\<guillemotleft>k\<guillemotright>}"
+  unfolding g_orbital_on_def apply(clarsimp simp add: fun_eq_iff)
+  by (rule_tac x="[h \<leadsto> \<guillemotleft>k\<guillemotright>, t \<leadsto> 1]" in arg_cong)
+    (expr_simp add: lens_indep.lens_put_comm)
 
 text \<open> We use the local-flow results to show the generalised counterparts. \<close>
 

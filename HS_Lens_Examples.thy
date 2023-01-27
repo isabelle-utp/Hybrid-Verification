@@ -489,6 +489,112 @@ lemma tank_correct:
    \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
   using ci co by dProve
 
+
+(* TODO: Tactic for automated Hoare-style verification. *)
+(* named_theorems hoare_intros "introduction rules from Hoare logic"
+
+declare hoare_invs [hoare_intros]
+    and hoare_skip [hoare_intros]
+    and hoare_test [hoare_intros]
+    and H_assign_init [hoare_intros]
+    and hoare_if_then_else [hoare_intros]
+
+method body_hoare 
+  = (rule hoare_intros,(simp)?; body_hoare?)
+
+method hyb_hoare for P::"'b \<Rightarrow> bool" 
+  = (rule hoare_loopI, rule hoare_kcomp[where R=P]; body_hoare?)
+
+
+lemma tank_diff_inv:
+  "\<^bold>{h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 
+    {h` = k, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/k}
+   \<^bold>{h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+  apply(subst subst_ode)
+  apply(intro hoare_invs)
+    apply(dInduct_mega)[1]
+   apply(subst hoare_diff_inv_on)
+   apply(rule lie_deriv_le_rule)
+  sorry
+
+
+
+lemma 
+  "\<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 
+    LOOP ctrl ; dyn INV (h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
+   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+  apply(hyb_hoare "(h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)\<^sub>e")
+        prefer 4 prefer 5
+  using tank_diff_inv 
+  apply (rule hoare_loopI)
+  apply(rule hoare_loopI)
+  apply(hyb_hoare "(H\<^sub>l \<le> $h)\<^sub>e")
+    apply (simp only: wp fbox_if_then_else)
+  apply clarsimp
+  apply (hoare_wp_auto)
+  apply (rule hoare_if_then_else_inv)
+  using ci apply dInduct_mega
+  thm nmods_invariant
+      apply (rule_tac nmods_invariant)
+       apply (rule nmods_g_orbital_on_discrete')
+       apply (simp)
+      apply unrest
+     apply (dInduct_mega)
+  apply (dInduct_auto)
+  oops
+
+abbreviation tank_diff_inv :: "real \<Rightarrow> real \<Rightarrow> real \<Rightarrow> (real^4) upred" ("dI")
+  where "dI h\<^sub>l h\<^sub>h k \<equiv> \<^U>(h = k \<cdot> t + h\<^sub>0 \<and> 0 \<le> t \<and> h\<^sub>l \<le> h\<^sub>0 \<and> h\<^sub>0 \<le> h\<^sub>h \<and> (\<pi> = 0 \<or> \<pi> = 1))"
+
+lemma tank_diff_inv:
+  "0 \<le> \<tau> \<Longrightarrow> diff_invariant (dI h\<^sub>l h\<^sub>h k) (f k) {0..\<tau>} UNIV 0 Guard"
+  apply(pred_simp, intro diff_invariant_conj_rule)
+      apply(force intro!: poly_derivatives diff_invariant_rules)
+     apply(rule_tac \<nu>'="\<lambda>t. 0" and \<mu>'="\<lambda>t. 1" in diff_invariant_leq_rule, simp_all)
+    apply(rule_tac \<nu>'="\<lambda>t. 0" and \<mu>'="\<lambda>t. 0" in diff_invariant_leq_rule, simp_all)
+  by (auto intro!: poly_derivatives diff_invariant_rules)
+
+lemma tank_inv_arith1:
+  assumes "0 \<le> (\<tau>::real)" and "c\<^sub>o < c\<^sub>i" and b: "h\<^sub>l \<le> y\<^sub>0" and g: "\<tau> \<le> (h\<^sub>h - y\<^sub>0) / (c\<^sub>i - c\<^sub>o)"
+  shows "h\<^sub>l \<le> (c\<^sub>i - c\<^sub>o) \<cdot> \<tau> + y\<^sub>0" and "(c\<^sub>i - c\<^sub>o) \<cdot> \<tau> + y\<^sub>0 \<le> h\<^sub>h"
+proof-
+  have "(c\<^sub>i - c\<^sub>o) \<cdot> \<tau> \<le> (h\<^sub>h - y\<^sub>0)"
+    using g assms(2,3) by (metis diff_gt_0_iff_gt mult.commute pos_le_divide_eq) 
+  thus "(c\<^sub>i - c\<^sub>o) \<cdot> \<tau> + y\<^sub>0 \<le> h\<^sub>h"
+    by auto
+  show "h\<^sub>l \<le> (c\<^sub>i - c\<^sub>o) \<cdot> \<tau> + y\<^sub>0"
+    using b assms(1,2) by (metis add.commute add_increasing2 diff_ge_0_iff_ge 
+        less_eq_real_def mult_nonneg_nonneg) 
+qed
+
+lemma tank_inv_arith2:
+  assumes "0 \<le> (\<tau>::real)" and "0 < c\<^sub>o" and b: "y\<^sub>0 \<le> h\<^sub>h" and g: "\<tau> \<le> - ((h\<^sub>l - y\<^sub>0) / c\<^sub>o)"
+  shows "h\<^sub>l \<le> y\<^sub>0 - c\<^sub>o \<cdot> \<tau>" and "y\<^sub>0 - c\<^sub>o \<cdot> \<tau> \<le> h\<^sub>h"
+proof-
+  have "\<tau> \<cdot> c\<^sub>o \<le> y\<^sub>0 - h\<^sub>l"
+    using g \<open>0 < c\<^sub>o\<close> pos_le_minus_divide_eq by fastforce 
+  thus "h\<^sub>l \<le> y\<^sub>0 - c\<^sub>o \<cdot> \<tau>"
+    by (auto simp: mult.commute)
+  show "y\<^sub>0 - c\<^sub>o \<cdot> \<tau> \<le> h\<^sub>h" 
+    using b assms(1,2)
+    by (smt mult_sign_intros(1))  
+qed
+
+abbreviation tank_dyn_dinv :: "real \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real \<Rightarrow> (real^4) nd_fun" ("dyn")
+  where "dyn c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau> \<equiv> IF (\<pi> = 0) THEN 
+    x\<acute>= f (c\<^sub>i-c\<^sub>o) & G h\<^sub>h (c\<^sub>i-c\<^sub>o) on {0..\<tau>} UNIV @ 0 DINV (dI h\<^sub>l h\<^sub>h (c\<^sub>i-c\<^sub>o))
+  ELSE x\<acute>= f (-c\<^sub>o) & G h\<^sub>l (-c\<^sub>o) on {0..\<tau>} UNIV @ 0 DINV (dI h\<^sub>l h\<^sub>h (-c\<^sub>o))"
+
+abbreviation "tank_dinv c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau> \<equiv> LOOP (ctrl h\<^sub>l h\<^sub>h ; dyn c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau>) INV (I h\<^sub>l h\<^sub>h)"
+
+lemma tank_inv:
+  assumes "0 \<le> \<tau>" and "0 < c\<^sub>o" and "c\<^sub>o < c\<^sub>i"
+  shows "\<^bold>{I h\<^sub>l h\<^sub>h\<^bold>} tank_dinv c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau> \<^bold>{I h\<^sub>l h\<^sub>h\<^bold>}"
+  apply(hyb_hoare "\<^U>(I h\<^sub>l h\<^sub>h \<and> t = 0 \<and> h\<^sub>0 = h)")
+            prefer 4 prefer 7 using tank_diff_inv assms apply force+
+  using assms tank_inv_arith1 tank_inv_arith2 by (rel_auto' simp: eucl_nth_def) *)
+
+
 end
 
 locale example_9b = 
