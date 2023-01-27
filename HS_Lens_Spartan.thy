@@ -1477,6 +1477,7 @@ lemma diff_ghost_gen_rule:
 
 lemma diff_ghost_gen_rule:
   fixes A :: "('n::finite) sq_mtx" and b :: "real ^ 'n" 
+  fixes x :: "'c :: real_normed_vector \<Longrightarrow> 's"
   defines "gen_sol \<equiv> (\<lambda>\<tau> \<s>. exp (\<tau> *\<^sub>R A) *\<^sub>V  \<s> + exp (\<tau> *\<^sub>R A) *\<^sub>V (\<integral>\<^sub>0\<^sup>\<tau>(exp (- r *\<^sub>R A) *\<^sub>V b)\<partial>r))" 
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
@@ -1541,13 +1542,24 @@ lemma has_vderiv_linear:
   using assms unfolding sol_def
   by (auto simp: field_simps intro!: vderiv_intros)
 
+lemma 
+  fixes k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd::real_normed_vector"
+  assumes "\<forall>s. (\<lambda>c. b (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
+    and "\<forall>s. (\<lambda>c. k (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
+  shows "P"
+  using assms
+  unfolding differentiable_def
+
 lemma (* apparently we have to assume that (\<lambda>c. b (put\<^bsub>x + y\<^esub> s c)) 
   and (\<lambda>c. k (put\<^bsub>x + y\<^esub> s c)) is differentiable at (get\<^bsub>x + y\<^esub> s) ...
   see more about this in HS_Lie_Derivatives, same solution works for Darboux *)
   fixes k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd::real_normed_vector"
-  assumes "k \<noteq> 0"
-  defines "sol \<equiv> (\<lambda>s t. (- b + exp (k * t) *\<^sub>R (b + k *\<^sub>R s))/\<^sub>R k)"
-  shows "D (sol s) = (\<lambda>t. k *\<^sub>R (sol s t) + b) on S"
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
+    and y :: "'d::real_normed_vector \<Longrightarrow> 's"
+  assumes "\<forall>s. (\<lambda>c. b (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
+    and "\<forall>s. (\<lambda>c. k (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
+  defines "sol \<equiv> (\<lambda>s c t. (- b s + exp (k s * t) *\<^sub>R (b s + k s *\<^sub>R c))/\<^sub>R (k s))"
+  shows "D (sol s) = (\<lambda>t. k s *\<^sub>R (sol s t) + b s) on S"
   using assms unfolding sol_def
   by (auto simp: field_simps intro!: vderiv_intros)
 
@@ -1557,8 +1569,9 @@ lemma diff_ghost_gen_1rule:
     and k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd"
   defines "sol \<equiv> (\<lambda>s c t. (- (b s) + exp ((k s) * t) *\<^sub>R ((b s) + (k s) *\<^sub>R c))/\<^sub>R (k s))"
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (k *\<^sub>R ($y) + b))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
-    and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G" "\<forall>s s'. k (put\<^bsub>y\<^esub> s s') = k s" "\<forall>s s'. b (put\<^bsub>y\<^esub> s s') = b s" 
+    and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
     and x_hyps: "vwb_lens x"
+    and expr_hyps: "\<forall>s s'. k (put\<^bsub>y\<^esub> s s') = k s" "\<forall>s s'. b (put\<^bsub>y\<^esub> s s') = b s" 
   shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
   using hyp
   apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def)
@@ -1600,6 +1613,7 @@ lemma diff_ghost_gen_1rule:
 
 lemma diff_ghost_gen_1rule:
   fixes b :: "'b :: real_normed_vector" and k :: real
+  fixes x :: "'c :: real_normed_vector \<Longrightarrow> 's"
   defines "sol \<equiv> (\<lambda>s t. (- b + exp (k * t) *\<^sub>R (b + k *\<^sub>R s))/\<^sub>R k)"
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
@@ -1663,6 +1677,7 @@ lemma \<comment> \<open>2 one-line proofs means there is a more general result \
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
   shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
+  thm diff_ghost_gen_rule diff_ghost_gen_1rule
   \<comment> \<open> this also works: @{text "by (rule diff_ghost_gen_1rule[OF hyp y_hyps])"}\<close>
   by (rule diff_ghost_gen_rule[OF hyp[folded diag_mult_eq_scaleR] y_hyps])
 
