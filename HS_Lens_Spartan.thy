@@ -1542,36 +1542,30 @@ lemma has_vderiv_linear:
   using assms unfolding sol_def
   by (auto simp: field_simps intro!: vderiv_intros)
 
-lemma 
-  fixes k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd::real_normed_vector"
-  assumes "\<forall>s. (\<lambda>c. b (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
-    and "\<forall>s. (\<lambda>c. k (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
-  shows "P"
-  using assms
-  unfolding differentiable_def
-
 lemma (* apparently we have to assume that (\<lambda>c. b (put\<^bsub>x + y\<^esub> s c)) 
   and (\<lambda>c. k (put\<^bsub>x + y\<^esub> s c)) is differentiable at (get\<^bsub>x + y\<^esub> s) ...
   see more about this in HS_Lie_Derivatives, same solution works for Darboux *)
   fixes k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd::real_normed_vector"
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
     and y :: "'d::real_normed_vector \<Longrightarrow> 's"
-  assumes "\<forall>s. (\<lambda>c. b (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
-    and "\<forall>s. (\<lambda>c. k (put\<^bsub>x\<^esub> s c)) differentiable (at (get\<^bsub>a\<^esub> s))"
-  defines "sol \<equiv> (\<lambda>s c t. (- b s + exp (k s * t) *\<^sub>R (b s + k s *\<^sub>R c))/\<^sub>R (k s))"
-  shows "D (sol s) = (\<lambda>t. k s *\<^sub>R (sol s t) + b s) on S"
-  using assms unfolding sol_def
-  by (auto simp: field_simps intro!: vderiv_intros)
+  defines "sol \<equiv> (\<lambda>s t. (- b s + exp (k s * t) *\<^sub>R (b s + k s *\<^sub>R (get\<^bsub>y\<^esub> s)))/\<^sub>R (k s))"
+  assumes "\<forall>s. D (\<lambda>c. b (put\<^bsub>y\<^esub> s c)) \<mapsto> (\<lambda>c. 0) (at (get\<^bsub>y\<^esub> s))"
+    and "\<forall>s. D (\<lambda>c. k (put\<^bsub>y\<^esub> s c)) \<mapsto> (\<lambda>c. 0) (at (get\<^bsub>y\<^esub> s))"
+    and "\<forall>s. k s \<noteq> 0"
+  shows "D (sol s) = (\<lambda>t. (exp (k s * t)) *\<^sub>R (b s + k s *\<^sub>R get\<^bsub>y\<^esub> s)) on UNIV"
+  using assms(2-) unfolding sol_def
+  by (auto intro!: vderiv_intros)
 
 lemma diff_ghost_gen_1rule:
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
     and y :: "'d::real_normed_vector \<Longrightarrow> 's"
     and k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd"
-  defines "sol \<equiv> (\<lambda>s c t. (- (b s) + exp ((k s) * t) *\<^sub>R ((b s) + (k s) *\<^sub>R c))/\<^sub>R (k s))"
+(*   defines "sol \<equiv> (\<lambda>s c t. (- (b s) + exp ((k s) * t) *\<^sub>R ((b s) + (k s) *\<^sub>R c))/\<^sub>R (k s))"
+ *)  
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (k *\<^sub>R ($y) + b))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
     and x_hyps: "vwb_lens x"
-    and expr_hyps: "\<forall>s s'. k (put\<^bsub>y\<^esub> s s') = k s" "\<forall>s s'. b (put\<^bsub>y\<^esub> s s') = b s" 
+    and expr_hyps: "\<forall>s d. k (put\<^bsub>y\<^esub> s d) = k s" "\<forall>s d. b (put\<^bsub>y\<^esub> s d) = b s" 
   shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
   using hyp
   apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def)
@@ -1582,17 +1576,24 @@ lemma diff_ghost_gen_1rule:
   apply expr_simp
   apply (subst (asm) lens_indep_comm[of y x], expr_simp?)+
   apply (expr_simp add: ivp_sols_def, clarsimp)
-  subgoal for s X t s'
+  subgoal for s X t d
   apply (cases "k s \<noteq> 0")
-    apply (erule allE[where x="put\<^bsub>y\<^esub> s s'"] impE; expr_simp add: lens_indep.lens_put_irr2)
-  apply (drule_tac x="\<lambda>t. (X t, sol (put\<^bsub>x\<^esub> s (X t)) s' t)" in spec, elim conjE impE; (intro conjI)?)
+    apply (erule allE[where x="put\<^bsub>y\<^esub> s d"] impE; expr_simp add: lens_indep.lens_put_irr2)
+  apply (drule_tac x="\<lambda>t. (X t, Y t)" in spec, elim conjE impE; (intro conjI)?)
   prefer 3 subgoal
     apply (clarsimp simp: lens_indep.lens_put_irr2 )
     apply (erule_tac x=t in ballE; clarsimp?)
     apply (subst (asm) lens_indep_comm[of x y, OF lens_indep_sym], expr_simp)+
     by expr_auto
-   prefer 2 subgoal by (simp_all add: lens_indep.lens_put_irr2 sol_def)
-  apply (rule vderiv_pairI, force simp: lens_indep.lens_put_irr2)
+    prefer 2 subgoal
+    apply  (simp_all add: lens_indep.lens_put_irr2) (* sol_def *)
+    sorry
+  subgoal
+    apply (rule vderiv_pairI, force simp: lens_indep.lens_put_irr2)
+     prefer 2 
+apply (auto simp: lens_indep.lens_put_irr2 fun_eq_iff
+      lens_indep_comm[of x y, OF lens_indep_sym])[1]
+
     apply (subgoal_tac "D (\<lambda>t. sol (put\<^bsub>x\<^esub> s (X t)) s' t) = (\<lambda>t. (k (put\<^bsub>x\<^esub> s (X t))) *\<^sub>R (sol (put\<^bsub>x\<^esub> s (X t)) s' t) + (b (put\<^bsub>x\<^esub> s (X t)))) on (U (get\<^bsub>x\<^esub> s))", assumption)
   subgoal unfolding sol_def by (rule has_vderiv_linear)
   apply (auto simp: lens_indep.lens_put_irr2 fun_eq_iff
