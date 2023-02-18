@@ -288,10 +288,8 @@ lemma hoare_kcomp_inv:
   shows "\<^bold>{I\<^bold>} G ; F \<^bold>{I\<^bold>}"
   using assms hoare_kcomp by fastforce
 
-lemma fdia_kcomp:
-  assumes "H = |F\<rangle> P"
-  shows"|G ; F\<rangle> P = |G\<rangle> H"
-  unfolding fdia_def kcomp_def assms by auto
+lemma fdia_kcomp: "|G ; F\<rangle> P = |G\<rangle> |F\<rangle> P"
+  unfolding fdia_def kcomp_def by auto
 
 lemma hoare_fwd_assign:
   assumes "vwb_lens x" "\<And> x\<^sub>0. \<^bold>{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>\<^bold>} S \<^bold>{Q\<^bold>}"
@@ -308,7 +306,7 @@ definition ifthenelse :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'b set) \<Righ
 syntax "_ifthenelse" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("IF _ THEN _ ELSE _" [0,0,63] 64)
 translations "IF P THEN X ELSE Y" == "CONST ifthenelse (P)\<^sub>e X Y"
 
-lemma "IF T THEN X ELSE Y = \<questiondown>T? ; X \<sqinter> \<questiondown>\<not> T? ; Y"
+lemma if_then_else_eq: "IF T THEN X ELSE Y = \<questiondown>T? ; X \<sqinter> \<questiondown>\<not> T? ; Y"
   by (auto simp: fun_eq_iff test_def kcomp_def ifthenelse_def nondet_choice_def)
 
 lemma fbox_if_then_else [simp]:
@@ -328,10 +326,8 @@ lemma hoare_if_then_else_inv:
   by (auto simp add: fbox_def expr_defs ifthenelse_def)
 
 lemma fdia_if_then_else:
-  assumes "H1 = |X\<rangle> Q"
-  assumes "H2 = |Y\<rangle> Q"
-  shows"|IF T THEN X ELSE Y\<rangle> Q = ((T \<and> H1) \<or> (\<not> T \<and> H2))\<^sub>e"
-  unfolding fdia_def ifthenelse_def assms by expr_auto
+  "|IF T THEN X ELSE Y\<rangle> Q = ((T \<and> |X\<rangle> Q) \<or> (\<not> T \<and> |Y\<rangle> Q))\<^sub>e"
+  unfolding fdia_def ifthenelse_def by expr_auto
 
 
 subsection \<open> Finite iteration \<close>
@@ -426,6 +422,8 @@ next
     by auto
 qed
 
+find_theorems "(rtrancl _) O _"
+
 lemma kpower_inv: 
   fixes F :: "'a \<Rightarrow> 'a set"
   assumes "\<forall>s. I s \<longrightarrow> (\<forall>s'. s' \<in> F s \<longrightarrow> I s')" 
@@ -466,6 +464,85 @@ qed
 
 lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} F\<^sup>* \<^bold>{Q\<^bold>}"
   by (rule fbox_kstarI) (auto simp: SEXP_def taut_def)
+
+lemma pred_iffI: 
+  "`P \<longrightarrow> Q` \<Longrightarrow> `Q \<longrightarrow> P` \<Longrightarrow> P = Q"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `Q \<longrightarrow> P` \<Longrightarrow> `P \<longleftrightarrow> Q`"
+  by expr_auto+
+
+lemma pred_conjI: "`P` \<Longrightarrow> `Q` \<Longrightarrow> `P \<and> Q`"
+  by expr_auto+
+
+lemma fbox_kstar: "`|F\<^sup>*] Q` = `\<forall>n. ( |kpower F n] Q)`"
+  unfolding kstar_def fbox_def
+  by expr_auto
+
+lemma fbox_kstar': "|F\<^sup>*] Q = (\<lambda>s. \<forall>n. ( |kpower F n] Q) s)"
+  unfolding kstar_def fbox_def
+  by expr_auto
+
+lemma fdia_kstar: "`|F\<^sup>*\<rangle> Q` = `\<exists>n. ( |kpower F n\<rangle> Q)`"
+  unfolding kstar_def fdia_def
+  by expr_auto fastforce+
+
+lemma fdia_kstar': "|F\<^sup>*\<rangle> Q = (\<lambda>s. \<exists>n. ( |kpower F n\<rangle> Q) s)"
+  unfolding kstar_def fdia_def
+  by expr_auto
+
+lemma quant_refl: "\<forall>s. P s = Q s \<Longrightarrow> \<forall>s. Q s = P s"
+  by auto
+
+lemma fdia_kstar_fixpoint: 
+  "`|F\<^sup>*\<rangle> Q \<longleftrightarrow> ( |F\<rangle> |F\<^sup>*\<rangle> Q \<or> Q)`"
+  apply (intro pred_iffI)
+  subgoal
+    unfolding fdia_kstar'
+    unfolding fdia_def
+    unfolding taut_def SEXP_def
+    apply (intro allI impI conjI)
+    unfolding fdia_def apply clarsimp
+    apply (rename_tac s n s')
+     apply (subgoal_tac "n \<noteq> 0")
+    prefer 2 using kpower_0[of F, simplified fun_eq_iff]
+      apply (metis singletonD)
+     apply (subgoal_tac "\<exists>m. n = Suc m"; clarsimp)
+      prefer 2 using not0_implies_Suc apply blast
+    unfolding kpower_Suc kcomp_def apply clarsimp
+    apply (rule_tac x=x in exI, simp)
+    by (rule_tac x=m in exI, force) (* first conjunct done *)
+  subgoal
+    unfolding fdia_kstar'
+    unfolding fdia_def
+    unfolding taut_def SEXP_def
+    apply (intro allI impI conjI)
+    apply (erule disjE; clarsimp?)
+    apply (rename_tac s s' n s'')
+    apply (rule_tac x="Suc n" in exI, clarsimp simp: kpower_Suc kcomp_def, force)
+    by (rule_tac x=0 in exI, clarsimp simp: kpower_0)
+  done
+
+lemma fdia_kstar_fixpoint': 
+  "( |F\<^sup>*\<rangle> Q) = (\<lambda>s. ( |F\<rangle> |F\<^sup>*\<rangle> Q) s \<or> Q s)"
+  "( |F\<^sup>*\<rangle> Q) s = (( |F\<rangle> |F\<^sup>*\<rangle> Q) s \<or> Q s)"
+  using fdia_kstar_fixpoint[of F Q]
+  unfolding taut_def SEXP_def by blast+
+
+lemma fdia_kstar_strongest: 
+  "`@P \<longleftrightarrow> ( |F\<rangle> P) \<or> Q` \<Longrightarrow> `|F\<^sup>*\<rangle> Q \<longrightarrow> @P`"
+  unfolding fdia_kstar'
+  unfolding taut_def SEXP_def
+  apply (intro conjI impI allI)
+  apply (clarsimp simp: )
+  subgoal for s n
+    apply (induct n arbitrary: s)
+    apply (thin_tac "\<forall>\<s>. P \<s> = (fdia F P \<s> \<or> Q \<s>)")
+     apply (clarsimp simp: kpower_0 fdia_def)
+    apply (subst fdia_def, clarsimp simp: kpower_Suc)
+    apply (subst (asm) fdia_kcomp[unfolded SEXP_def])
+    apply (subst (asm) fdia_def[of F "fdia _ _"], clarsimp)
+    by blast
+  done
+  
 
 lemma le_fdia_kstarI:
   assumes "P \<le> I" and "I \<le> Q" and "I \<le> |F\<rangle> I" 
@@ -565,7 +642,7 @@ proof-
         by expr_simp
       hence case_eq0: "n = 0 \<Longrightarrow> ( |kpower F (Suc n)\<rangle> @(P (t - (1 + real n)))) s"
         using iter'[rule_format, OF \<open>t > 0\<close> \<open>P t s\<close>]
-        by (subst kpower_Suc, subst fdia_kcomp[OF refl])
+        by (subst kpower_Suc, subst fdia_kcomp)
           (simp add: kpower_base skip_def[symmetric] fdia_skip)
       have "( |kpower F n\<rangle> @(P (t - real n))) s"
         using hyps induct'[OF \<open>0 < t - real n\<close>]
@@ -574,10 +651,10 @@ proof-
       ultimately have "n \<noteq> 0 \<Longrightarrow> ( |kpower F (Suc n)\<rangle> @(P (t - (1 + real n)))) s"
         apply -
         apply (frule not0_implies_Suc, clarsimp)
-        apply (subst kpower_Suc, subst fdia_kcomp[OF refl])
-        apply (subst (asm) kpower_Suc, subst (asm) fdia_kcomp[OF refl])
+        apply (subst kpower_Suc, subst fdia_kcomp)
+        apply (subst (asm) kpower_Suc, subst (asm) fdia_kcomp)
         apply (rule fdia_mono, force)
-        apply (subst kpower_Suc, subst kcomp_kpower, subst fdia_kcomp[OF refl])
+        apply (subst kpower_Suc, subst kcomp_kpower, subst fdia_kcomp)
         by (rule fdia_mono) (auto simp: taut_def diff_add_eq_diff_diff_swap)
       thus "( |kpower F (Suc n)\<rangle> @(P (t - (1 + real n)))) s"
         using case_eq0 by blast
@@ -597,8 +674,8 @@ proof-
       by force
     hence "( |F\<^sup>*\<rangle> @(P (r - (Suc n)))) s"
       apply (intro fdia_unfoldI disjI2)
-      apply (subst fdia_kcomp[OF refl, symmetric])
-      apply (subst kcomp_kstar, subst fdia_kcomp[OF refl])
+      apply (subst fdia_kcomp[symmetric])
+      apply (subst kcomp_kstar, subst fdia_kcomp)
       apply (rule fdia_mono, force)
       using iter'[rule_format, OF \<open>r - n > 0\<close>]
       by (auto simp: taut_def diff_add_eq_diff_diff_swap)
