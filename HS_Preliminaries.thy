@@ -327,6 +327,7 @@ lemma "c \<noteq> 0 \<Longrightarrow> D (\<lambda>t. exp (a * sin (cos (t^4) / c
   by (intro vderiv_intros) 
     (auto intro!: vderiv_intros simp: power2_eq_square)
 
+
 subsection \<open> Bounded linear and bounded bilinear \<close>
 
 thm bounded_bilinear.bounded_linear_prod_right 
@@ -730,7 +731,7 @@ lemmas bounded_continuous_image = compact_imp_bounded[OF compact_continuous_imag
 
 lemmas bdd_above_continuous_image = bounded_continuous_image[THEN bounded_imp_bdd_above]
 
-lemma real_compact_intervalI:
+lemma is_compact_intervalD:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
 

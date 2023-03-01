@@ -12,73 +12,119 @@ theory HS_Lens_ODEs
     "Shallow-Expressions.Shallow_Expressions"
 begin
 
+text \<open> In this section we use type @{typ 's} for the state space, 
+type @{typ 'c} for a sub-region of @{typ 's}, and types @{typ 't} and 
+@{typ 'v} for generic representations of time and a value domain. With 
+lenses @{term "x :: 'c \<Longrightarrow> 's"}, we lift entities from @{typ 'c} to 
+@{typ 's} and frame others from @{typ 's} to @{typ 'c}. \<close>
+
 no_notation id_lens ("1\<^sub>L")
 notation id_lens ("\<one>\<^sub>L")
 
-subsection \<open> ODEs and Orbits  \<close>
+subsection \<open> Framing  \<close>
+
+definition lframe_fun :: "('c \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> 'v) \<Rightarrow> 's \<Rightarrow> ('c \<Rightarrow> 'v)" (infixr "\<down>\<^sub>F\<index>" 100)
+  where "(F\<down>\<^sub>F\<^bsub>x\<^esub> s) c = F (put\<^bsub>x\<^esub> s c)"
+
+definition llift_fun :: "('c \<Longrightarrow> 's) \<Rightarrow> ('c \<Rightarrow> 'v) \<Rightarrow> ('s \<Rightarrow> 'v)" (infixr "\<up>\<^sub>F\<index>" 100)
+  where "F\<up>\<^sub>F\<^bsub>x\<^esub> s \<equiv>  F (get\<^bsub>x\<^esub> s)"
+
+definition llift_set :: "('c \<Longrightarrow> 's) \<Rightarrow> 'c set \<Rightarrow> 's \<Rightarrow> 's set" (infixr "\<up>\<^sub>S\<^sub>e\<^sub>t\<index>" 100)
+  where "X\<up>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub> s \<equiv>  \<P> (\<lambda>c. put\<^bsub>x\<^esub> s c) X"
+
+definition lframe_set :: "('c \<Longrightarrow> 's) \<Rightarrow> 's set \<Rightarrow> 'c set" ("_\<down>\<^sub>S\<^sub>e\<^sub>t\<index>" [100] 100)
+  where "X\<down>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub> = \<P> get\<^bsub>x\<^esub> X"
+
+definition lframe_pred :: "('c \<Longrightarrow> 's) \<Rightarrow> ('s \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> bool)" ("_\<down>\<^sub>P\<index>" [100] 1000)
+  where "P\<down>\<^sub>P\<^bsub>x\<^esub> c \<longleftrightarrow> c \<in> {s. P s}\<down>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub>"
+
+lemma lframe_pred_iff_pred_as_fun: 
+  "vwb_lens x \<Longrightarrow> P\<down>\<^sub>P\<^bsub>x\<^esub> c \<longleftrightarrow> (\<exists>s. (P\<down>\<^sub>F\<^bsub>x\<^esub> s) c)"
+  unfolding lframe_pred_def lframe_fun_def lframe_set_def
+  by (expr_auto add: image_iff)
+    (metis vwb_lens_def wb_lens.get_put)
+
+lemma lframe_set_Collect_llift_fun: 
+  "vwb_lens x \<Longrightarrow> \<P> get\<^bsub>x\<^esub> UNIV = UNIV \<Longrightarrow> {s. P\<up>\<^sub>F\<^bsub>x\<^esub> s}\<down>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub> = {c. P c}"
+  by (auto simp: llift_fun_def lframe_set_def)
+
+lemma llift_set_Collect_lframe_pred: 
+  "vwb_lens x \<Longrightarrow> {c. P\<down>\<^sub>P\<^bsub>x\<^esub> c}\<up>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub> s = {put\<^bsub>x\<^esub> s (get\<^bsub>x\<^esub> s') |s'. P s'}"
+  by (auto simp: lframe_pred_def llift_set_def image_iff lframe_set_def)
+
+lemma Un_llift_set_lframe_pred_supset: 
+  "vwb_lens x \<Longrightarrow> {s. P s} \<subseteq> (\<Union>s. {c. P\<down>\<^sub>P\<^bsub>x\<^esub> c}\<up>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub> s)"
+  by (auto simp: lframe_pred_def llift_set_def image_iff lframe_set_def)
+    (metis vwb_lens.put_eq)
+
+
+subsection \<open> Framed orbitals  \<close>
 
 text \<open> Localise a substitution using a lens. Useful for localising both ODEs and flows. \<close>
 
-abbreviation loc_subst :: 
-  "('c \<Longrightarrow> 's)              \<comment> \<open> lens selecting @{typ 'c}, a local region \<close> 
-   \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's)     \<comment> \<open> substitution on the global state space @{typ 's}\<close>
-   \<Rightarrow> 's                    \<comment> \<open> initial global state \<close>
-   \<Rightarrow> (real \<Rightarrow> 'c \<Rightarrow> 'c)"    \<comment> \<open> substitution on the local state space @{typ 'c} \<close>
-   where "loc_subst a f s \<equiv> (\<lambda> t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c)))"
+definition lframe_tsubst :: "('c \<Longrightarrow> 's) \<Rightarrow> ('t \<Rightarrow> 's \<Rightarrow> 's) \<Rightarrow> 's \<Rightarrow> ('t \<Rightarrow> 'c \<Rightarrow> 'c)"
+  where "lframe_tsubst x F s t c \<equiv> get\<^bsub>x\<^esub> ((F t \<down>\<^sub>F\<^bsub>x\<^esub> s) c)"
 
-text \<open> A version of guarded orbits localised by a lens \<close>
+abbreviation tsubst2vecf :: "('c::real_normed_vector \<Longrightarrow> 's) 
+  \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) \<Rightarrow> 's \<Rightarrow> real \<Rightarrow> 'c \<Rightarrow> 'c" (infixr "\<down>\<^sub>V\<^sub>e\<^sub>c\<index>" 100)
+  where "(F\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) t c \<equiv> lframe_tsubst x F s t c"
+
+lemma tsubst2vecf_eq[expr_defs]: "F \<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s = (\<lambda> t c. get\<^bsub>x\<^esub> (F t (put\<^bsub>x\<^esub> s c)))"
+  by (auto simp: lframe_tsubst_def fun_eq_iff lframe_fun_def)
 
 text \<open> A version of orbital localised by a lens \<close>
 
-definition g_orbital_on :: "('c::real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
-  \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real => 'a \<Rightarrow> 'a set"
-  where "g_orbital_on a f G U S t\<^sub>0 s
-    = \<P> (put\<^bsub>a\<^esub> s) (g_orbital (loc_subst a f s) (\<lambda>c. G (put\<^bsub>a\<^esub> s c)) U S t\<^sub>0 (get\<^bsub>a\<^esub> s))"
+definition g_orbital_on :: "('c::real_normed_vector \<Longrightarrow> 's) 
+  \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) \<Rightarrow> ('s \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> 's \<Rightarrow> 's set"
+  where "g_orbital_on x F G U S t\<^sub>0 s 
+    = (g_orbital (F\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) (G\<down>\<^sub>F\<^bsub>x\<^esub> s) U S t\<^sub>0 (get\<^bsub>x\<^esub> s))\<up>\<^sub>S\<^sub>e\<^sub>t\<^bsub>x\<^esub> s"
+
+lemma g_orbital_on_eq: "g_orbital_on x f G U S t\<^sub>0 s 
+  = {put\<^bsub>x\<^esub> s (X t) |t X. t \<in> U (get\<^bsub>x\<^esub> s) 
+    \<and> \<P> (\<lambda>t. put\<^bsub>x\<^esub> s (X t)) (down (U (get\<^bsub>x\<^esub> s)) t) \<subseteq> {s. G s} 
+    \<and> X \<in> Sols U S (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) t\<^sub>0 (get\<^bsub>x\<^esub> s)}"
+  unfolding g_orbital_on_def g_orbital_eq image_le_pred 
+  by (auto simp: image_def tsubst2vecf_eq llift_set_def lframe_fun_def)
 
 lemma g_orbital_on_id_lens: "g_orbital_on \<one>\<^sub>L = g_orbital"
-  by (simp add: g_orbital_on_def fun_eq_iff lens_defs)
-
-lemma g_orbital_on_eq: "g_orbital_on a f G U S t\<^sub>0 s = {put\<^bsub>a\<^esub> s (X t) |t X. 
-  t \<in> U (get\<^bsub>a\<^esub> s) 
-  \<and> \<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> {s. G s} 
-  \<and> X \<in> Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s)}"
-  unfolding g_orbital_on_def g_orbital_eq image_le_pred 
-  by (auto simp: image_def)
+  by (simp add: g_orbital_on_eq tsubst2vecf_eq g_orbital_eq fun_eq_iff lens_defs)
 
 lemma g_orbital_onI:
-  assumes "X \<in> Sols U S (\<lambda>t c. get\<^bsub>a\<^esub> (f t (put\<^bsub>a\<^esub> s c))) t\<^sub>0 (get\<^bsub>a\<^esub> s)"
-    and "t \<in> U (get\<^bsub>a\<^esub> s)" and "(\<P> (\<lambda>x. put\<^bsub>a\<^esub> s (X x)) (down (U (get\<^bsub>a\<^esub> s)) t) \<subseteq> Collect G)"
-  shows "put\<^bsub>a\<^esub> s (X t) \<in> g_orbital_on a f G U S t\<^sub>0 s"
-  using assms unfolding g_orbital_on_eq by auto
+  assumes "X \<in> Sols U S (\<lambda>t c. get\<^bsub>x\<^esub> (f t (put\<^bsub>x\<^esub> s c))) t\<^sub>0 (get\<^bsub>x\<^esub> s)"
+    and "t \<in> U (get\<^bsub>x\<^esub> s)" and "(\<P> (\<lambda>\<tau>. put\<^bsub>x\<^esub> s (X \<tau>)) (down (U (get\<^bsub>x\<^esub> s)) t) \<subseteq> Collect G)"
+  shows "put\<^bsub>x\<^esub> s (X t) \<in> g_orbital_on x f G U S t\<^sub>0 s"
+  using assms unfolding g_orbital_on_eq tsubst2vecf_eq by auto
 
-subsection \<open> Differential Invariants \<close>
 
-definition diff_inv_on :: "('a \<Rightarrow> bool) \<Rightarrow> ('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> 
-  ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
-  where "diff_inv_on I a f U S t\<^sub>0 G \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on a f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
+subsection \<open> Framed differential dnvariants \<close>
 
-lemma diff_inv_on_eq: "diff_inv_on I a f U S t\<^sub>0 G = 
-  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (loc_subst a f s) t\<^sub>0 (get\<^bsub>a\<^esub> s). 
-    (\<forall>t\<in>U (get\<^bsub>a\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>a\<^esub> s)) t). G (put\<^bsub>a\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>a\<^esub> s (X t)))))"
-  unfolding diff_inv_on_def g_orbital_on_eq image_le_pred by (auto simp: image_def)
+definition diff_inv_on :: "('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
+  \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
+  where "diff_inv_on x f G U S t\<^sub>0 I \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on x f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
-lemma diff_inv_on_id_lens: "diff_inv_on I \<one>\<^sub>L f U S t\<^sub>0 G = diff_inv U S G f t\<^sub>0 I"
+lemma diff_inv_on_eq: "diff_inv_on x f G U S t\<^sub>0 I = 
+  (\<forall>s. I s \<longrightarrow> (\<forall>X\<in>Sols U S (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) t\<^sub>0 (get\<^bsub>x\<^esub> s). 
+    (\<forall>t\<in>U (get\<^bsub>x\<^esub> s).(\<forall>\<tau>\<in>(down (U (get\<^bsub>x\<^esub> s)) t). G (put\<^bsub>x\<^esub> s (X \<tau>))) \<longrightarrow> I (put\<^bsub>x\<^esub> s (X t)))))"
+  unfolding diff_inv_on_def g_orbital_on_eq image_le_pred 
+  by (auto simp: image_def tsubst2vecf_eq)
+
+lemma diff_inv_on_id_lens: "diff_inv_on \<one>\<^sub>L f G U S t\<^sub>0 I = diff_inv U S G f t\<^sub>0 I"
   by (simp add: diff_inv_on_def diff_inv_def g_orbital_on_id_lens)
 
 lemma diff_inv_on_iff:
-  assumes"vwb_lens a"
-  shows "diff_inv_on I a f U S t\<^sub>0 G \<longleftrightarrow> 
-  (\<forall>s. diff_inv U S (\<lambda>c. G (put\<^bsub>a\<^esub> s c)) (loc_subst a f s) t\<^sub>0 (\<lambda>c. I (put\<^bsub>a\<^esub> s c)))"
+  assumes"vwb_lens x"
+  shows "diff_inv_on x f G U S t\<^sub>0 I \<longleftrightarrow> 
+  (\<forall>s. diff_inv U S (\<lambda>c. G (put\<^bsub>x\<^esub> s c)) (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) t\<^sub>0 (\<lambda>c. I (put\<^bsub>x\<^esub> s c)))"
 proof(intro iffI, goal_cases "(\<Rightarrow>)" "(\<Leftarrow>)")
   case ("(\<Rightarrow>)")
   then show ?case 
     using assms
-    by (auto simp: diff_inv_on_eq diff_inv_eq)
+    by (auto simp: diff_inv_on_eq diff_inv_eq tsubst2vecf_eq)
 next
   case "(\<Leftarrow>)"
   thus ?case
     apply(clarsimp simp: diff_inv_on_eq diff_inv_eq)
-    apply (erule_tac x=s in allE, erule_tac x="get\<^bsub>a\<^esub> s" in allE)
+    apply (erule_tac x=s in allE, erule_tac x="get\<^bsub>x\<^esub> s" in allE)
     using assms by auto
 qed
 
@@ -91,9 +137,9 @@ lemma diff_inv_on_eq0I:
   fixes \<mu> :: "_ \<Rightarrow> 'c::real_inner"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow>
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow>
   \<forall>\<tau>\<in>(down (U (X t\<^sub>0)) t). G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>t. 0) on U (X t\<^sub>0))"
-  shows "diff_inv_on (\<mu> = 0)\<^sub>e a f U S t\<^sub>0 G"
+  shows "diff_inv_on a f G U S t\<^sub>0  (\<mu> = 0)\<^sub>e"
   unfolding diff_inv_on_iff[OF assms(1)]
   apply (clarsimp, subst diff_inv_eq0I[OF Uhyp]; simp?)
   using dX by force
@@ -102,9 +148,9 @@ lemma diff_inv_on_eqI [diff_inv_on_intros]:
   fixes \<mu> \<nu> :: "_ \<Rightarrow> 'c::real_inner"
   assumes "vwb_lens a" (* do we need derivative rules for loc_subst then? *)
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow>
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) \<Longrightarrow>
   \<forall>\<tau>\<in>(down (U (X t\<^sub>0)) t). G (put\<^bsub>a\<^esub> s (X \<tau>)) \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>))-\<nu>(put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>t. 0) on U (X t\<^sub>0))"
-  shows "diff_inv_on (\<mu> = \<nu>)\<^sub>e a f U S t\<^sub>0 G"
+  shows "diff_inv_on a f G U S t\<^sub>0 (\<mu> = \<nu>)\<^sub>e"
   using assms diff_inv_on_eq0I[OF assms(1,2), where \<mu>="\<lambda>s. \<mu> s - \<nu> s"]
   by auto
 
@@ -112,13 +158,13 @@ lemma diff_inv_on_leqI [diff_inv_on_intros]:
   fixes \<mu> ::"_ \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
       \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<longrightarrow> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and Gl: "\<And>X s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U(X t\<^sub>0)) 
+    and Gl: "\<And>X s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U(X t\<^sub>0)) 
       \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
       \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu> (put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>\<tau>. \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))) on U (X t\<^sub>0))"
-  shows "diff_inv_on (\<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  shows "diff_inv_on a f G U S t\<^sub>0 (\<nu> \<le> \<mu>)\<^sub>e"
   apply (clarsimp simp: diff_inv_on_iff[OF assms(1)])
   apply (rule diff_inv_leq_alt[OF Uhyp, where \<mu>'="\<lambda>c. \<mu>' (put\<^bsub>a\<^esub> _ c)" and \<nu>'="\<lambda>c. \<nu>' (put\<^bsub>a\<^esub> _ c)"])
   using assms by auto
@@ -127,36 +173,36 @@ lemma diff_inv_on_lessI [diff_inv_on_intros]:
   fixes \<mu> ::"_ \<Rightarrow> real"
   assumes "vwb_lens a"
     and Uhyp: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
-    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+    and Gg: "\<And>X t s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
       \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> > t\<^sub>0 \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>)) \<longrightarrow> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and Gl: "\<And>X s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U(X t\<^sub>0)) 
+    and Gl: "\<And>X s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U(X t\<^sub>0)) 
       \<Longrightarrow> (\<forall>\<tau>\<in>U(X t\<^sub>0). \<tau> < t\<^sub>0 \<longrightarrow> \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) \<le> \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>)))"
-    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (loc_subst a f s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
+    and dX: "\<And>X t s. (D X = (\<lambda>\<tau>. (f\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>a\<^esub> s) \<tau> (X \<tau>)) on U (X t\<^sub>0)) 
       \<Longrightarrow> (D (\<lambda>\<tau>. \<mu> (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu> (put\<^bsub>a\<^esub> s (X \<tau>))) = (\<lambda>\<tau>. \<mu>' (put\<^bsub>a\<^esub> s (X \<tau>)) - \<nu>' (put\<^bsub>a\<^esub> s (X \<tau>))) on U (X t\<^sub>0))"
-  shows "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  shows "diff_inv_on a f G U S t\<^sub>0 (\<nu> < \<mu>)\<^sub>e "
   apply (clarsimp simp: diff_inv_on_iff[OF assms(1)])
   apply (rule diff_inv_less_alt[OF Uhyp, where \<mu>'="\<lambda>c. \<mu>' (put\<^bsub>a\<^esub> _ c)" and \<nu>'="\<lambda>c. \<nu>' (put\<^bsub>a\<^esub> _ c)"])
   using assms by auto
 
 lemma diff_inv_on_nleq_iff:
   fixes \<mu>::"_ \<Rightarrow> real"
-  shows "diff_inv_on (\<not> \<nu> \<le> \<mu>)\<^sub>e a f U S t\<^sub>0 G \<longleftrightarrow> diff_inv_on (\<nu> > \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+  shows "diff_inv_on a f G U S t\<^sub>0 (\<not> \<nu> \<le> \<mu>)\<^sub>e \<longleftrightarrow> diff_inv_on a f G U S t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
   unfolding approximation_preproc_push_neg(2) by presburger
 
 lemma diff_inv_on_neqI [diff_inv_on_intros]:
   fixes \<mu>::"_ \<Rightarrow> real"
   assumes "vwb_lens a"
-    and "diff_inv_on (\<nu> < \<mu>)\<^sub>e a f U S t\<^sub>0 G"
-    and "diff_inv_on (\<nu> > \<mu>)\<^sub>e a f U S t\<^sub>0 G"
-  shows "diff_inv_on (\<nu> \<noteq> \<mu>)\<^sub>e a f U S t\<^sub>0 G"
+    and "diff_inv_on a f G U S t\<^sub>0 (\<nu> < \<mu>)\<^sub>e"
+    and "diff_inv_on a f G U S t\<^sub>0 (\<nu> > \<mu>)\<^sub>e"
+  shows "diff_inv_on a f G U S t\<^sub>0 (\<nu> \<noteq> \<mu>)\<^sub>e"
   using assms unfolding diff_inv_on_iff[OF assms(1)]
   using diff_inv_neqI by force
 
 lemma 
-  assumes "diff_inv_on (I\<^sub>1)\<^sub>e a f U S t\<^sub>0 G"
-    and "diff_inv_on (I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-  shows diff_inv_on_conjI [diff_inv_on_intros]: "diff_inv_on (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
-    and diff_inv_on_disjI [diff_inv_on_intros]: "diff_inv_on (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e a f U S t\<^sub>0 G"
+  assumes "diff_inv_on a f G U S t\<^sub>0 (I\<^sub>1)\<^sub>e"
+    and "diff_inv_on a f G U S t\<^sub>0 (I\<^sub>2)\<^sub>e"
+  shows diff_inv_on_conjI [diff_inv_on_intros]: "diff_inv_on a f G U S t\<^sub>0 (I\<^sub>1 \<and> I\<^sub>2)\<^sub>e"
+    and diff_inv_on_disjI [diff_inv_on_intros]: "diff_inv_on a f G U S t\<^sub>0 (I\<^sub>1 \<or> I\<^sub>2)\<^sub>e"
   using assms unfolding diff_inv_on_eq by auto
 
 lemmas diff_inv_on_raw_eqI = diff_inv_on_eqI[unfolded expr_defs]

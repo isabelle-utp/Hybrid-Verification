@@ -236,7 +236,8 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0)
   apply (subst fbox_kcomp[symmetric])
   apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
    apply (dGhost "z" "(x*z\<^sup>2 = 1 \<and> y > 0)\<^sub>e" "1/2")
-   apply (rule fbox_invs(1))
+    apply (rule fbox_invs(1))
+  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
     apply (diff_inv_on_eq)
     apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
     apply (expr_auto add: exp_ghost_arith)
@@ -316,7 +317,7 @@ lemma "(x \<ge> 0 \<and> y \<ge>0 \<and> z \<ge> 0)\<^sub>e \<le> |{x` = y, y` =
   apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> z * t\<^sup>2 / 2 + y * t + x, y \<leadsto> z * t + y]"]; clarsimp?)
   apply (unfold local_flow_on_def, clarsimp, unfold_locales; expr_simp)
   subgoal by (lipschitz 1) (metis norm_snd_le real_norm_def)
-  by (auto intro!: vderiv_intros) expr_simp
+  by (auto simp: tsubst2vecf_eq intro!: vderiv_intros) expr_simp
 
 end
 
@@ -711,7 +712,7 @@ lemma
   assumes sublens: "x \<subseteq>\<^sub>L a"
     and dhyp: "f' = (\<lambda>t. h (f t))" "\<forall>x\<ge>c::real. g x \<ge> 0"
   shows "(\<lambda>s. c < g (get\<^bsub>x\<^esub> s)) \<le> fbox (g_ode_frame a f G (\<lambda>s. {t\<^sub>0..}) S t\<^sub>0) (\<lambda>s. c < g (get\<^bsub>x\<^esub> s))"
-proof (clarsimp simp: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
+proof (clarsimp simp: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def tsubst2vecf_eq)
   fix s X t
   assume "c < g (get\<^bsub>x\<^esub> s)" and "t\<^sub>0 \<le> t" and "X \<in> {t\<^sub>0..} \<rightarrow> S" 
     and "(X has_vderiv_on (\<lambda>x. get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (X x))))) {t\<^sub>0..}"
@@ -886,7 +887,7 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
       1 / B * ln (- 1 + A * exp (B * (t + $x))))) * $z]"]; expr_simp?)
    prefer 2 subgoal sorry
   apply (clarsimp simp: local_flow_on_def)
-  apply (unfold_locales; clarsimp?)
+  apply (unfold_locales; (clarsimp simp: tsubst2vecf_eq)?)
     prefer 2
   subgoal for t a b
     apply (intro vderiv_intros; (force | rule vderiv_intros)?)
@@ -1066,7 +1067,8 @@ begin
 lemma 
   fixes r::real
   shows "`\<guillemotleft>r\<guillemotright> \<le> 0` \<longrightarrow> (\<exists>f. (x=f)\<^sub>e \<le> |{x` = \<guillemotleft>r\<guillemotright> + x^2| True on UNIV UNIV @ 0}] (x=f))"
-proof(clarsimp, rule_tac x="sqrt \<bar>r\<bar>" in exI, clarsimp simp: hoare_diff_inv_on diff_inv_on_eq ivp_sols_def)
+proof(clarsimp, rule_tac x="sqrt \<bar>r\<bar>" in exI, 
+    clarsimp simp: hoare_diff_inv_on diff_inv_on_eq ivp_sols_def tsubst2vecf_eq)
   fix X::"real\<Rightarrow>real" and t::real and s::'st
   assume init: "X 0 = sqrt \<bar>r\<bar>" and "`r \<le> 0`"
      and D1: "D X = (\<lambda>t. get\<^bsub>x\<^esub> ([x \<leadsto> \<guillemotleft>r\<guillemotright> + ($x)\<^sup>2] (put\<^bsub>x\<^esub> s (X t)))) on UNIV"
@@ -2430,7 +2432,7 @@ lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0
   (x \<ge> p)))`"
   apply (clarsimp simp: taut_def)
   apply (rule_tac x=M in exI)
-  apply (rule fdia_kstarI)
+  apply (rule fdia_kstar_variantI)
     prefer 2
   apply (clarsimp simp: taut_def fdia_skip fdia_abort fdia_test fdia_assign 
       fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on
@@ -3034,7 +3036,7 @@ lemma my_subst: "[x \<leadsto> y, y \<leadsto> a * x + b * y] =
   by (expr_auto add: A_vec_mult_eq)
 
 lemma local_lipschitz_hosc: 
-  "local_lipschitz UNIV UNIV (loc_subst (x +\<^sub>L y) (\<lambda>t::real. [x \<leadsto> y, y \<leadsto> a * x + b * y]) s)"
+  "local_lipschitz UNIV UNIV (tsubst2vecf (x +\<^sub>L y) (\<lambda>t::real. [x \<leadsto> y, y \<leadsto> a * x + b * y]) s)"
   apply expr_simp
   by (rule_tac \<DD>="(\<lambda>c. (snd c, a * fst c + b * snd c))" in c1_local_lipschitz)
     (auto intro!: derivative_eq_intros continuous_intros)
@@ -3088,7 +3090,7 @@ lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   unfolding local_flow_on_def 
   unfolding local_flow_def local_flow_axioms_def apply safe
   using local_lipschitz_hosc
-     apply (unfold_locales; clarsimp?)
+     apply (unfold_locales; (clarsimp simp: tsubst2vecf_eq)?)
     apply (expr_simp add: x_sol_eq y_sol_eq)
     apply (subst sols_to_Phi)
     apply (subst vecf_to_A)
