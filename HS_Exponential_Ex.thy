@@ -61,8 +61,8 @@ lemma exp_arith: "0 < (a::real) \<longleftrightarrow> (\<exists>b. a * b\<^sup>2
 (* x>0 -> [{x'=-x}](x>0) *)
 lemma dG_example: "\<^bold>{x > 0\<^bold>}dyn\<^bold>{x > 0\<^bold>}"
   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
-  apply (expr_auto add: exp_arith)
   apply (dInduct_auto)
+  apply (expr_auto add: exp_arith)
   done
 
 abbreviation (input) "exp_f \<equiv> [x \<leadsto> -x]" (* x>0 -> [{x'=-x}](x>0) *)

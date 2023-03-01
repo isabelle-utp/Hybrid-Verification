@@ -22,6 +22,14 @@ notation Union ("\<mu>")
 lemma impl_eq_leq: "`@P \<longrightarrow> @Q` = (P \<le> Q)"
   by (auto simp: taut_def)
 
+lemma pred_iffI: 
+  "`P \<longrightarrow> Q` \<Longrightarrow> `Q \<longrightarrow> P` \<Longrightarrow> P = Q"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `Q \<longrightarrow> P` \<Longrightarrow> `P \<longleftrightarrow> Q`"
+  by expr_auto+
+
+lemma pred_conjI: "`P` \<Longrightarrow> `Q` \<Longrightarrow> `P \<and> Q`"
+  by expr_auto+
+
 
 subsection \<open> Forward box operator \<close>
 
@@ -330,7 +338,7 @@ lemma fdia_if_then_else:
   unfolding fdia_def ifthenelse_def by expr_auto
 
 
-subsection \<open> Finite iteration \<close>
+subsection \<open> N iterations \<close>
 
 definition kpower :: "('a \<Rightarrow> 'a set) \<Rightarrow> nat \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "kpower f n = (\<lambda>s. (((;) f ^^ n) skip) s)"
@@ -358,11 +366,11 @@ lemma "kpower f 2 s = (\<Union> {f s' |s'. s' \<in> f s})"
   by (subgoal_tac "2 = Suc (Suc 0)", erule ssubst)
     (auto simp: kpower_Suc kpower_base kcomp_id kcomp_eq)
 
-lemma kpower_nil: "kpower (\<lambda>s. {}) (Suc n) = (\<lambda>s. {})"
+lemma kpower_empty: "kpower (\<lambda>s. {}) (Suc n) = (\<lambda>s. {})"
   by (induct n) 
     (simp_all add: kpower_base kpower_Suc kcomp_eq)
 
-lemmas kpower_abort = kpower_nil[unfolded abort_def[symmetric]]
+lemmas kpower_abort = kpower_empty[unfolded abort_def[symmetric]]
 
 lemma kpower_id: "kpower (\<lambda>s. {s}) n = (\<lambda>s. {s})"
   by (induct n) 
@@ -373,6 +381,31 @@ lemmas kpower_skip = kpower_id[unfolded skip_def[symmetric]]
 lemma kcomp_kpower: "(f ; kpower f n) = (kpower f n; f)"
   by (induct n, simp_all add: kpower_base kcomp_id 
       kpower_Suc kpower_Suc' kcomp_assoc[symmetric])
+
+lemma kpower_inv: 
+  fixes F :: "'a \<Rightarrow> 'a set"
+  assumes "\<forall>s. I s \<longrightarrow> (\<forall>s'. s' \<in> F s \<longrightarrow> I s')" 
+  shows "\<forall>s. I s \<longrightarrow> (\<forall>s'. s' \<in> (kpower F n s) \<longrightarrow> I s')"
+  apply(clarsimp, induct n)
+  unfolding kpower_base kpower_Suc
+   apply(simp_all add: kcomp_eq, clarsimp) 
+  apply(subgoal_tac "I y", simp)
+  using assms by blast
+
+lemma fbox_kpower_0: "|kpower F 0] Q = Q"
+  by (simp only: kpower_0 skip_def[symmetric] fbox_skip)
+
+lemma fbox_kpower_Suc: "|kpower F (Suc n)] Q = ( |F] |kpower F n] Q)"
+  by (simp only: kpower_Suc fbox_kcomp)
+
+lemma fdia_kpower_0: "|kpower F 0\<rangle> Q = Q"
+  by (simp only: kpower_0 skip_def[symmetric] fdia_skip)
+
+lemma fdia_kpower_Suc: "|kpower F (Suc n)\<rangle> Q = ( |F\<rangle> |kpower F n\<rangle> Q)"
+  by (simp only: kpower_Suc fdia_kcomp)
+
+
+subsection \<open> Finite iteration \<close>
 
 definition kstar :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> 'a set)" ("(_\<^sup>*)" [1000] 999)
   where [prog_defs]: "(f\<^sup>*) s = \<Union> {kpower f n s |n. n \<in> UNIV}"
@@ -385,13 +418,13 @@ lemma in_kstar_self: "s \<in> (f\<^sup>*) s"
   by (rule_tac x="{s}" in exI, clarsimp)
     (rule_tac x=0 in exI, clarsimp simp: kpower_base)
 
-lemma kstar_nil: "(\<lambda>s. {})\<^sup>* = (\<lambda>s. {s})"
+lemma kstar_empty: "(\<lambda>s. {})\<^sup>* = (\<lambda>s. {s})"
   unfolding kstar_def apply (intro ext set_eqI iffI; clarsimp)
-  subgoal for s' s n by (induct n, simp_all add: kpower_id kpower_nil kpower_base)
+  subgoal for s' s n by (induct n, simp_all add: kpower_id kpower_empty kpower_base)
   by (rule_tac x="{s}" in exI, clarsimp)
     (rule_tac x=0 in exI, clarsimp simp: kpower_base)
 
-lemmas kstar_abort = kstar_nil[unfolded abort_def[symmetric] skip_def[symmetric]]
+lemmas kstar_abort = kstar_empty[unfolded abort_def[symmetric] skip_def[symmetric]]
 
 lemma kstar_id: "(\<lambda>s. {s})\<^sup>* = (\<lambda>s. {s})"
   unfolding kstar_def 
@@ -422,23 +455,26 @@ next
     by auto
 qed
 
-find_theorems "(rtrancl _) O _"
+lemma fbox_kstar: "|F\<^sup>*] Q = (\<lambda>s. \<forall>n. ( |kpower F n] Q) s)"
+  unfolding kstar_def fbox_def
+  by expr_auto
 
-lemma kpower_inv: 
-  fixes F :: "'a \<Rightarrow> 'a set"
-  assumes "\<forall>s. I s \<longrightarrow> (\<forall>s'. s' \<in> F s \<longrightarrow> I s')" 
-  shows "\<forall>s. I s \<longrightarrow> (\<forall>s'. s' \<in> (kpower F n s) \<longrightarrow> I s')"
-  apply(clarsimp, induct n)
-  unfolding kpower_base kpower_Suc
-   apply(simp_all add: kcomp_eq, clarsimp) 
-  apply(subgoal_tac "I y", simp)
-  using assms by blast
+lemma fdia_kstar: "|F\<^sup>*\<rangle> Q = (\<lambda>s. \<exists>n. ( |kpower F n\<rangle> Q) s)"
+  unfolding kstar_def fdia_def
+  by expr_auto
 
-lemma kstar_inv: "I \<le> |F] I \<Longrightarrow> I \<le> |F\<^sup>*] I"
+lemma fdia_kstarI: "( |kpower F n\<rangle> Q) s \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
+  unfolding fdia_kstar 
+  by auto
+
+lemma fbox_kstar_inv: "I \<le> |F] I \<Longrightarrow> I \<le> |F\<^sup>*] I"
   unfolding kstar_def fbox_def 
   apply clarsimp
   apply(unfold le_fun_def, subgoal_tac "\<forall>x. I x \<longrightarrow> (\<forall>s'. s' \<in> F x \<longrightarrow> I s')")
   using kpower_inv[of I F] by blast simp
+
+lemma kstar_inv_rule: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} F\<^sup>* \<^bold>{I\<^bold>}"
+  by (metis SEXP_def fbox_kstar_inv)
 
 lemma fdia_kstar_inv: "I \<le> |F\<rangle> I \<Longrightarrow> I \<le> |F\<^sup>*\<rangle> I"
   unfolding kstar_def fdia_def apply(clarsimp simp: le_fun_def)
@@ -446,15 +482,12 @@ lemma fdia_kstar_inv: "I \<le> |F\<rangle> I \<Longrightarrow> I \<le> |F\<^sup>
   apply(rule_tac x="kpower F 1 x" in exI, simp add: kpower_base)
   by (rule_tac x=1 in exI, simp add: kpower_base)
 
-lemma kstar_inv_rule: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} F\<^sup>* \<^bold>{I\<^bold>}"
-  by (metis SEXP_def kstar_inv)
-
-lemma fbox_kstarI:
+lemma le_fbox_kstarI:
   assumes "P \<le> I" and "I \<le> Q" and "I \<le> |F] I" 
   shows "P \<le> |F\<^sup>*] Q"
 proof-
   have "I \<le> |F\<^sup>*] I"
-    using assms(3) kstar_inv by blast
+    using assms(3) fbox_kstar_inv by blast
   hence "P \<le> |F\<^sup>*] I"
     using assms(1) by auto
   also have "|F\<^sup>*] I \<le> |F\<^sup>*] Q"
@@ -463,40 +496,26 @@ proof-
 qed
 
 lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} F\<^sup>* \<^bold>{Q\<^bold>}"
-  by (rule fbox_kstarI) (auto simp: SEXP_def taut_def)
+  by (rule le_fbox_kstarI) (auto simp: SEXP_def taut_def)
 
-lemma pred_iffI: 
-  "`P \<longrightarrow> Q` \<Longrightarrow> `Q \<longrightarrow> P` \<Longrightarrow> P = Q"
-  "`P \<longrightarrow> Q` \<Longrightarrow> `Q \<longrightarrow> P` \<Longrightarrow> `P \<longleftrightarrow> Q`"
-  by expr_auto+
-
-lemma pred_conjI: "`P` \<Longrightarrow> `Q` \<Longrightarrow> `P \<and> Q`"
-  by expr_auto+
-
-lemma fbox_kstar: "`|F\<^sup>*] Q` = `\<forall>n. ( |kpower F n] Q)`"
-  unfolding kstar_def fbox_def
-  by expr_auto
-
-lemma fbox_kstar': "|F\<^sup>*] Q = (\<lambda>s. \<forall>n. ( |kpower F n] Q) s)"
-  unfolding kstar_def fbox_def
-  by expr_auto
-
-lemma fdia_kstar: "`|F\<^sup>*\<rangle> Q` = `\<exists>n. ( |kpower F n\<rangle> Q)`"
-  unfolding kstar_def fdia_def
-  by expr_auto fastforce+
-
-lemma fdia_kstar': "|F\<^sup>*\<rangle> Q = (\<lambda>s. \<exists>n. ( |kpower F n\<rangle> Q) s)"
-  unfolding kstar_def fdia_def
-  by expr_auto
-
-lemma quant_refl: "\<forall>s. P s = Q s \<Longrightarrow> \<forall>s. Q s = P s"
-  by auto
+lemma le_fdia_kstarI:
+  assumes "P \<le> I" and "I \<le> Q" and "I \<le> |F\<rangle> I" 
+  shows "P \<le> |F\<^sup>*\<rangle> Q"
+proof-
+  have "I \<le> |F\<^sup>*\<rangle> I"
+    using assms(3) fdia_kstar_inv by blast
+  hence "P \<le> |F\<^sup>*\<rangle> I"
+    using assms(1) by auto
+  also have "|F\<^sup>*\<rangle> I \<le> |F\<^sup>*\<rangle> Q"
+    by (rule fdia_iso[OF assms(2)])
+  finally show ?thesis .
+qed
 
 lemma fdia_kstar_fixpoint: 
   "`|F\<^sup>*\<rangle> Q \<longleftrightarrow> ( |F\<rangle> |F\<^sup>*\<rangle> Q \<or> Q)`"
   apply (intro pred_iffI)
   subgoal
-    unfolding fdia_kstar'
+    unfolding fdia_kstar
     unfolding fdia_def
     unfolding taut_def SEXP_def
     apply (intro allI impI conjI)
@@ -511,7 +530,7 @@ lemma fdia_kstar_fixpoint:
     apply (rule_tac x=x in exI, simp)
     by (rule_tac x=m in exI, force) (* first conjunct done *)
   subgoal
-    unfolding fdia_kstar'
+    unfolding fdia_kstar
     unfolding fdia_def
     unfolding taut_def SEXP_def
     apply (intro allI impI conjI)
@@ -529,7 +548,7 @@ lemma fdia_kstar_fixpoint':
 
 lemma fdia_kstar_strongest: 
   "`@P \<longleftrightarrow> ( |F\<rangle> P) \<or> Q` \<Longrightarrow> `|F\<^sup>*\<rangle> Q \<longrightarrow> @P`"
-  unfolding fdia_kstar'
+  unfolding fdia_kstar
   unfolding taut_def SEXP_def
   apply (intro conjI impI allI)
   apply (clarsimp simp: )
@@ -542,27 +561,8 @@ lemma fdia_kstar_strongest:
     apply (subst (asm) fdia_def[of F "fdia _ _"], clarsimp)
     by blast
   done
-  
 
-lemma le_fdia_kstarI:
-  assumes "P \<le> I" and "I \<le> Q" and "I \<le> |F\<rangle> I" 
-  shows "P \<le> |F\<^sup>*\<rangle> Q"
-proof-
-  have "I \<le> |F\<^sup>*\<rangle> I"
-    using assms(3) fdia_kstar_inv by blast
-  hence "P \<le> |F\<^sup>*\<rangle> I"
-    using assms(1) by auto
-  also have "|F\<^sup>*\<rangle> I \<le> |F\<^sup>*\<rangle> Q"
-    by (rule fdia_iso[OF assms(2)])
-  finally show ?thesis .
-qed
-
-lemma fdia_kpower_kstar: "( |kpower F n\<rangle> Q) s \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
-  by (clarsimp simp: kstar_def fdia_def) 
-    (rule_tac x=s' in exI, force)
-
-lemma fdia_kstar_kpower: "( |F\<^sup>*\<rangle> Q) s \<Longrightarrow> \<exists>n. ( |kpower F n\<rangle> Q) s"
-  by (auto simp: kstar_def fdia_def) 
+(* TODO: revise proofs, names and usage of these |F\<^sup>*\<rangle> Q *)
 
 lemma fdia_unfoldI: "( |F\<rangle> Q) s \<or> ( |F\<rangle> |F\<^sup>*\<rangle> Q) s \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
 proof-
@@ -572,7 +572,7 @@ proof-
     hence "( |kpower F (Suc 0)\<rangle> Q) s"
       unfolding fdia_def kpower_base .
     hence "( |F\<^sup>*\<rangle> Q) s"
-      using fdia_kpower_kstar[of F "Suc 0"] 
+      using fdia_kstarI[of F "Suc 0"] 
       by blast}
   moreover
   {assume hyp: "( |F\<rangle> |F\<^sup>*\<rangle> Q) s"
@@ -670,7 +670,7 @@ proof-
           simplified, rule_format, OF _ \<open>P r s\<close>]
       by simp
     hence "( |F\<^sup>*\<rangle> @(P (r - n))) s"
-      using fdia_kpower_kstar[of F "n"] 
+      using fdia_kstarI[of F "n"] 
       by force
     hence "( |F\<^sup>*\<rangle> @(P (r - (Suc n)))) s"
       apply (intro fdia_unfoldI disjI2)
@@ -689,7 +689,7 @@ proof-
     using case1 by linarith
 qed
 
-lemma fdia_kstarI:
+lemma fdia_kstar_variantI:
   fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
   assumes init: "`\<exists>r. @(P r)`"
     and iter: "`\<forall>r>0. @(P r) \<longrightarrow> ( |F\<rangle> @(P (r - 1)))`"
@@ -710,14 +710,14 @@ lemma change_loopI: "LOOP X INV G = LOOP X INV I"
   unfolding loopi_def by simp
 
 lemma fbox_loopI: "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> |F] I \<Longrightarrow> P \<le> |LOOP F INV I] Q"
-  unfolding loopi_def using fbox_kstarI[of "P"] by (auto simp: SEXP_def)
+  unfolding loopi_def using le_fbox_kstarI[of "P"] by (auto simp: SEXP_def)
 
 lemma in_fbox_loopI: "I s \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> ( |R] @(I)) \<Longrightarrow> ( |LOOP R INV @I] (@Q)) s"
   using fbox_loopI[of I I Q R]
   by (clarsimp simp: le_fun_def)
 
 lemma fbox_loopI': "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> fbox F I \<Longrightarrow> P \<le> fbox (loopi F I) Q"
-  by (metis clarify_fbox fbox_kstarI loopi_def)
+  by (metis clarify_fbox le_fbox_kstarI loopi_def)
 
 lemma hoare_loopI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} LOOP F INV I \<^bold>{Q\<^bold>}"
   by (rule fbox_loopI) (auto simp: SEXP_def taut_def)
@@ -755,7 +755,6 @@ lemma hoare_while:
    apply expr_simp
   apply (rule_tac R="(I \<and> T)\<^sup>e" in hoare_kcomp)
   by (auto simp: fbox_test fbox_kcomp)
-
 
 subsection \<open> Framing \<close>
 
@@ -1619,10 +1618,21 @@ lemma has_vderiv_linear:
   using assms unfolding sol_def
   by (auto simp: field_simps intro!: vderiv_intros)
 
+term Blinop thm bounded_linear_Blinfun_apply
+term "f :: ('a, 'a) blinfun" thm bounded_linear_def
+term "f :: 'a \<Rightarrow>\<^sub>C 'a" thm bcontfun_def
+term "exp :: 'a \<Rightarrow> 'a::{banach,real_normed_algebra_1}"
+term "x :: 'a :: real_algebra_1"
+term "x :: 'a :: ring_1"
+thm onorm_def
+term "(*v) :: ('a::semiring_1) ^'n^'m \<Rightarrow> 'a ^'n \<Rightarrow> 'a ^ 'm"
+
+
 lemma (* apparently we have to assume that (\<lambda>c. b (put\<^bsub>x + y\<^esub> s c)) 
   and (\<lambda>c. k (put\<^bsub>x + y\<^esub> s c)) is differentiable at (get\<^bsub>x + y\<^esub> s) ...
   see more about this in HS_Lie_Derivatives, same solution works for Darboux *)
-  fixes k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd::real_normed_vector"
+  fixes k :: "'s \<Rightarrow> real" 
+    and b :: "'s \<Rightarrow> 'd::real_normed_vector"
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
     and y :: "'d::real_normed_vector \<Longrightarrow> 's"
   defines "sol \<equiv> (\<lambda>s t. (- b s + exp (k s * t) *\<^sub>R (b s + k s *\<^sub>R (get\<^bsub>y\<^esub> s)))/\<^sub>R (k s))"
@@ -1633,18 +1643,40 @@ lemma (* apparently we have to assume that (\<lambda>c. b (put\<^bsub>x + y\<^es
   using assms(2-) unfolding sol_def
   by (auto intro!: vderiv_intros)
 
-lemma diff_ghost_gen_1rule:
+lemma has_vderiv_linear': (* y' = k * y + b *)
+  fixes k :: "'s \<Rightarrow> real" 
+    and b :: "'s \<Rightarrow> 'd::real_normed_vector"
+    and x :: "'c::real_normed_vector \<Longrightarrow> 's"
+    and y :: "'d::real_normed_vector \<Longrightarrow> 's"
+  defines "sol \<equiv> (\<lambda>s t. (- b s + exp (k s * t) *\<^sub>R (b s + k s *\<^sub>R get\<^bsub>y\<^esub> s))/\<^sub>R k s)"
+  assumes "\<forall>s. k s \<noteq> 0"
+  shows "D (sol s) = (\<lambda>t. k s *\<^sub>R (sol s t) + b s) on S"
+  using assms(2)
+  by (auto simp: sol_def intro!: vderiv_intros)
+
+lemma vderiv_inverse:
+  assumes "D f = f' on T" and "\<forall>t\<in>T. f t \<noteq> 0"
+    and "g' = (\<lambda>t. - f' t /\<^sub>R (f t)^2)"
+  shows "D (\<lambda>t. inverse (f t)) = g' on T"
+  using assms
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
+
+lemma
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
     and y :: "'d::real_normed_vector \<Longrightarrow> 's"
     and k :: "'s \<Rightarrow> real" and b :: "'s \<Rightarrow> 'd"
-(*   defines "sol \<equiv> (\<lambda>s c t. (- (b s) + exp ((k s) * t) *\<^sub>R ((b s) + (k s) *\<^sub>R c))/\<^sub>R (k s))"
- *)  
+  defines "sol \<equiv> (\<lambda>s t. ((- b s + exp (k s * t) *\<^sub>R (b s + k s *\<^sub>R get\<^bsub>y\<^esub> s))/\<^sub>R k s))"
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (k *\<^sub>R ($y) + b))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
     and x_hyps: "vwb_lens x"
-    and expr_hyps: "\<forall>s d. k (put\<^bsub>y\<^esub> s d) = k s" "\<forall>s d. b (put\<^bsub>y\<^esub> s d) = b s" 
+    and expr_hyps': 
+      "\<forall>s. (\<lambda>c. k (put\<^bsub>x +\<^sub>L y\<^esub> s c)) differentiable (at (get\<^bsub>x +\<^sub>L y\<^esub> s))"
+      "\<forall>s. (\<lambda>c. b (put\<^bsub>x +\<^sub>L y\<^esub> s c)) differentiable (at (get\<^bsub>x +\<^sub>L y\<^esub> s))"
+    and expr_hyps: "\<forall>s. k s \<noteq> 0" "\<forall>s d. k (put\<^bsub>y\<^esub> s d) = k s" "\<forall>s d. b (put\<^bsub>y\<^esub> s d) = b s" 
   shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
   using hyp
+    (* unfolding defs *)
   apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def)
   apply (simp add: liberate_lens'[OF vwb_lens_mwb[OF y_hyps(1)]])
     (* simplifying notation *)
@@ -1653,22 +1685,40 @@ lemma diff_ghost_gen_1rule:
   apply expr_simp
   apply (subst (asm) lens_indep_comm[of y x], expr_simp?)+
   apply (expr_simp add: ivp_sols_def, clarsimp)
+    (* proof *)
   subgoal for s X t d
-  apply (cases "k s \<noteq> 0")
     apply (erule allE[where x="put\<^bsub>y\<^esub> s d"] impE; expr_simp add: lens_indep.lens_put_irr2)
-  apply (drule_tac x="\<lambda>t. (X t, Y t)" in spec, elim conjE impE; (intro conjI)?)
+  apply (drule_tac x="\<lambda>t. (X t, sol (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)) t)" in spec, elim conjE impE; (intro conjI)?)
   prefer 3 subgoal
     apply (clarsimp simp: lens_indep.lens_put_irr2 )
     apply (erule_tac x=t in ballE; clarsimp?)
     apply (subst (asm) lens_indep_comm[of x y, OF lens_indep_sym], expr_simp)+
     by expr_auto
     prefer 2 subgoal
-    apply  (simp_all add: lens_indep.lens_put_irr2) (* sol_def *)
-    sorry
+    apply  (simp_all add: lens_indep.lens_put_irr2 sol_def) (* sol_def *)
+    using expr_hyps(1) by force
   subgoal
     apply (rule vderiv_pairI, force simp: lens_indep.lens_put_irr2)
+   apply (subgoal_tac "D (\<lambda>t. sol (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)) t) = (\<lambda>t. (k (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t))) *\<^sub>R (sol (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)) t) + (b (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)))) on (U (get\<^bsub>x\<^esub> s))", assumption)
+    subgoal unfolding sol_def
+      apply (auto intro!: vderiv_intros)
+            apply (rule vderiv_inverse)
+      using expr_hyps'[unfolded differentiable_def] 
+              apply (clarsimp simp: has_vderiv_on_iff)
+      subgoal sorry
+      using expr_hyps apply force
+      using has_derivative_compose[where f="\<lambda>t. put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)"]
+      apply (rule has_derivative_compose)
+      apply expr_simps
+      find_theorems name: has_deriv name: comp
+      term frechet_derivative
+            apply (rule has_vderiv_linear'[OF expr_hyps(1)])
+      oops
+    using expr_hyps
+    apply (auto simp: lens_indep.lens_put_irr2 field_simps fun_eq_iff
+      lens_indep_comm[of x y, OF lens_indep_sym])
      prefer 2 
-apply (auto simp: lens_indep.lens_put_irr2 fun_eq_iff
+     apply (auto simp: lens_indep.lens_put_irr2 fun_eq_iff
       lens_indep_comm[of x y, OF lens_indep_sym])[1]
 
     apply (subgoal_tac "D (\<lambda>t. sol (put\<^bsub>x\<^esub> s (X t)) s' t) = (\<lambda>t. (k (put\<^bsub>x\<^esub> s (X t))) *\<^sub>R (sol (put\<^bsub>x\<^esub> s (X t)) s' t) + (b (put\<^bsub>x\<^esub> s (X t)))) on (U (get\<^bsub>x\<^esub> s))", assumption)
@@ -1690,7 +1740,7 @@ apply (auto simp: lens_indep.lens_put_irr2 fun_eq_iff
 
 
 lemma diff_ghost_gen_1rule:
-  fixes b :: "'b :: real_normed_vector" and k :: real
+  fixes b :: "'d :: real_normed_vector" and k :: real
   fixes x :: "'c :: real_normed_vector \<Longrightarrow> 's"
   defines "sol \<equiv> (\<lambda>s t. (- b + exp (k * t) *\<^sub>R (b + k *\<^sub>R s))/\<^sub>R k)"
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
@@ -1738,7 +1788,7 @@ lemma diff_ghost_gen_1rule:
   done
 
 lemma diff_ghost_1rule:
-  fixes b :: "'b :: real_normed_vector"
+  fixes b :: "'d :: real_normed_vector"
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q'\<^bold>}"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G" and Q_eq: "Q = Q' \\ $y"
   shows "\<^bold>{P\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q\<^bold>}"
@@ -1760,7 +1810,7 @@ lemma \<comment> \<open>2 one-line proofs means there is a more general result \
   by (rule diff_ghost_gen_rule[OF hyp[folded diag_mult_eq_scaleR] y_hyps])
 
 lemma diff_ghost_inv_1rule:
-  fixes b :: "'b :: real_normed_vector" 
+  fixes b :: "'d :: real_normed_vector" 
   assumes inv_hyp: "diff_inv_on J (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y + \<guillemotleft>c\<guillemotright>)) (U \<circ> fst) UNIV 0 G"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "$y \<sharp>\<^sub>s f" "$y \<sharp> G" and I_eq: "I = J \\ $y"
   shows "diff_inv_on I x (\<lambda>t. f) U UNIV 0 G"
