@@ -706,9 +706,33 @@ lemma has_derivative_vec_nth_old:
 subsection \<open> Differentiability implies Lipschitz \<close>
 
 (********************************************************************************)
-\<comment> \<open> Useful to remember these theorems \<close>
-thm filter_eq_iff eventually_at eventually_at_topological \<comment> \<open> filters \<close>
-thm at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> at within \<close>
+
+text \<open> Dive on topological classes \<close>
+thm first_countable_topology_axioms
+thm class.first_countable_topology.axioms
+thm class.metric_space.axioms class.metric_space_axioms_def
+find_theorems "class.metric_space _ _ _ \<Longrightarrow> _"
+find_theorems "class.t2_space"
+
+term "x :: 'a :: first_countable_topology" thm first_countable_basis
+term "x :: 'a :: metric_space" thm dist_eq_0_iff dist_triangle2
+term "x :: 'a :: uniformity"
+term "x :: 'a :: dist"
+term "x :: 'a :: uniformity_dist" thm uniformity_dist
+term "x :: 'a :: open_uniformity" thm open_uniformity
+term "x :: 'a :: open"
+
+
+text \<open> Useful to remember these theorems \<close>
+
+text \<open> A filter is a predicate of predicates closed under sub-properties and finite conjunctions.
+Given a filter F and predicate P, the property @{term "eventually F P"} holds iff @{term "F P"}.\<close>
+
+thm filter_eq_iff eventually_principal \<comment> \<open> filters (principal) \<close>
+thm eventually_at_filter eventually_at eventually_at_topological 
+  at_within_open at_within_open_subset at_within_Icc_at \<comment> \<open> @{term "at x within T"} \<close>
+thm at_within_def nhds_metric nhds_def eventually_inf_principal eventually_nhds_metric 
+  eventually_at[unfolded at_within_def eventually_inf_principal] \<comment> \<open> Proof of @{thm eventually_at} \<close>
 thm has_derivative_at_within Lim_ident_at \<comment> \<open> derivative at within \<close>
 thm has_real_derivative_iff_has_vector_derivative \<comment> \<open> real vs vector derivative \<close>
 thm Rolle_deriv mvt mvt_simple mvt_very_simple mvt_general \<comment> \<open> mean value theorem \<close>

@@ -1169,7 +1169,7 @@ text \<open> We use the local-flow results to show the generalised counterparts.
 
 definition local_flow_on :: "('s \<Rightarrow> 's) \<Rightarrow> ('c::{heine_borel, banach} \<Longrightarrow> 's) \<Rightarrow> real set 
   \<Rightarrow> 'c set \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) \<Rightarrow> bool"
-  where "local_flow_on f A T S \<phi> = (\<forall>s. local_flow (tsubst2vecf A (\<lambda>t. f) s 0) T S (lframe_tsubst A \<phi> s))"
+  where "local_flow_on f x T S \<phi> = (\<forall>s. local_flow (lframe_subst x f s) T S (\<lambda>t. (\<phi>\<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) t))"
 
 lemma fbox_g_ode_on: "|{x` = f | G on U S @ t\<^sub>0}] Q = 
   (\<lambda>s. \<forall>X \<in> Sols (U)\<^sub>e S ((\<lambda>t. [x \<leadsto> f]) \<down>\<^sub>V\<^sub>e\<^sub>c\<^bsub>x\<^esub> s) t\<^sub>0 (get\<^bsub>x\<^esub> s). 
@@ -1183,14 +1183,6 @@ lemma fdia_g_ode_on: "|{x` = f | G on U S @ t\<^sub>0}\<rangle> Q =
   unfolding fdia_g_orbital_on_orbital fdia_g_orbital
   by auto
 
-context 
-  assumes hyp: "local_flow_on f x T S \<phi>"
-begin
-
-thm local_flow.fbox_g_ode_subset hyp[unfolded local_flow_on_def, rule_format]
-
-end
-
 lemma fbox_g_ode_frame_flow:
   fixes a::"'c::{heine_borel,banach} \<Longrightarrow> 's"
     and f::"'s \<Rightarrow> 's"
@@ -1200,7 +1192,7 @@ lemma fbox_g_ode_frame_flow:
     \<longrightarrow> (\<forall>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>x\<^esub> s)) t. G (s \<triangleleft>\<^bsub>x\<^esub> \<phi> \<tau> s)) \<longrightarrow> Q (s \<triangleleft>\<^bsub>x\<^esub> \<phi> t s)))"
   apply (subst fbox_g_orbital_on_orbital, rule ext)
   apply (unfold tsubst2vecf_eq)
-  apply (subst local_flow.fbox_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def tsubst2vecf_eq, rule_format]])
+  apply (subst local_flow.fbox_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def lframe_subst_def lframe_fun_def, rule_format]])
   using assms(2) by expr_auto+
 
 lemmas fbox_solve = fbox_g_ode_frame_flow[where T=UNIV]
@@ -1214,7 +1206,7 @@ lemma fdia_g_ode_frame_flow:
   (\<lambda>s. (\<exists>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>x\<^esub> s)) t. G (s \<triangleleft>\<^bsub>x\<^esub> \<phi> \<tau> s)) \<and> Q (s \<triangleleft>\<^bsub>x\<^esub> \<phi> t s)))"
   apply (subst fdia_g_orbital_on_orbital, rule ext)
   apply (unfold tsubst2vecf_eq)
-  apply (subst local_flow.fdia_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def tsubst2vecf_eq, rule_format]])
+  apply (subst local_flow.fdia_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def lframe_subst_def lframe_fun_def, rule_format]])
   using assms(2) by expr_simp
 
 lemma fbox_g_ode_on_flow:
@@ -1995,7 +1987,7 @@ lemma darboux:
   apply (rule diff_ghost_rule_very_simple[where k="g/2", OF _ vwbs(3) _ zGhost])
     prefer 2 using indeps apply expr_simp
     apply (subst hoare_diff_inv_on)
-  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: tsubst2vecf_eq)?)
+  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: lframe_subst_def)?)
   using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)

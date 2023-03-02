@@ -1323,7 +1323,7 @@ lemma "local_flow_on [x \<leadsto> v, v \<leadsto> a, a \<leadsto> 0] (x +\<^sub
   subgoal for s
     apply (rule c1_implies_local_lipschitz[of UNIV UNIV _
       "(\<lambda>(t,c). Blinfun (\<lambda>c. get\<^bsub>x +\<^sub>L v +\<^sub>L a\<^esub> ([x \<leadsto> $v, v \<leadsto> $a, a \<leadsto> 0] (put\<^bsub>x +\<^sub>L v +\<^sub>L a\<^esub> s c))))"])
-    by expr_simp (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_on_continuous_on
+    by expr_simp (auto simp: lframe_subst_def intro!: has_derivative_Blinfun derivative_eq_intros vderiv_on_continuous_on
         fun_eq_iff continuous_intros split: prod.splits)
   apply expr_simp
   by (auto intro!: vderiv_intros) expr_simp

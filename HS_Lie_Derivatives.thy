@@ -514,7 +514,7 @@ lemma darboux:
   apply (rule diff_ghost_rule_very_simple[where k="g/2", OF _ vwbs(3) _ zGhost])
     prefer 2 using indeps apply expr_simp
     apply (subst hoare_diff_inv_on)
-  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: tsubst2vecf_eq)?)
+  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: lframe_subst_def)?)
   using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)
