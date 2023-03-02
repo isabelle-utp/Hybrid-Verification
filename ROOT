@@ -4,6 +4,7 @@ session "ODE_Verify" = Ordinary_Differential_Equations +
     "Shallow-Expressions"
     "Hybrid-Library"
     Optics
+    CAS_Integration
   theories
     ODE_Verify
 
