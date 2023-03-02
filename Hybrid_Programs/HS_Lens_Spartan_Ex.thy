@@ -1,5 +1,5 @@
 theory HS_Lens_Spartan_Ex
-  imports HS_Lens_Spartan HS_Lie_Derivatives "Matrices/MTX_Flows"
+  imports HS_Lens_Spartan
 begin
 
 subsection \<open> Matrices \<close>
@@ -59,58 +59,55 @@ lemma pendulum: "\<^bold>{r\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = 
 
 \<comment> \<open> Partial derivatives? \<close>
 
-lemma "\<L>\<^bsub>subst\<^esub> [expr]\<^sub>e on x = lie_deriv_on subst (expr::'a ss_scheme \<Rightarrow> real) x"
-  by (simp add: lie_deriv_on_def)
+lemma "\<D>\<^bsub>x\<^esub>\<langle>subst\<rangle> [expr]\<^sub>e = lframe_frechetD x subst (expr::'a ss_scheme \<Rightarrow> real)"
+ by (simp add: lframe_frechetD_alt)
 
-lemma "lie_deriv_on subst expr x s = 
+lemma "lframe_frechetD x subst expr s = 
   (SOME f'. D (expr \<circ> put\<^bsub>x\<^esub> s) \<mapsto> f' (at (get\<^bsub>x\<^esub> s))) (get\<^bsub>x\<^esub> (subst s))"
-  unfolding lie_deriv_on_def frechet_derivative_def by (simp add: comp_def)
+  unfolding lframe_frechetD_alt frechet_derivative_def by (simp add: comp_def)
 
-lemma "lie_deriv_on f expr x s = 
+lemma "lframe_frechetD x f expr s = 
   (SOME f'. bounded_linear f' \<and>
     (\<forall>e>0. \<exists>d>0. \<forall>y\<in>UNIV. \<parallel>y - get\<^bsub>x\<^esub> s\<parallel> < d \<longrightarrow>
       \<parallel>expr (put\<^bsub>x\<^esub> s y) - expr (put\<^bsub>x\<^esub> s (get\<^bsub>x\<^esub> s)) - f' (y - get\<^bsub>x\<^esub> s)\<parallel> \<le> e * \<parallel>y - get\<^bsub>x\<^esub> s\<parallel>))
   (get\<^bsub>x\<^esub> (f s))"
-  unfolding lie_deriv_on_def frechet_derivative_def has_derivative_within_alt 
+  unfolding lframe_frechetD_alt frechet_derivative_def has_derivative_within_alt 
   by (simp add: comp_def)
 
 lemma "(x\<^sup>2 * y)\<^sub>e = (\<lambda>s. (get\<^bsub>x\<^esub> s)^2 * (get\<^bsub>y\<^esub> s))"
   unfolding SEXP_def by simp
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1]\<^esub> x\<^sup>2 * y on x = 
-(\<lambda>s. (SOME f'. D ((x\<^sup>2 * y)\<^sub>e \<circ> (put\<^bsub>x\<^esub> s)) \<mapsto> f' (at (get\<^bsub>x\<^esub> s))) (get\<^bsub>x\<^esub> ([x \<leadsto> 1, y \<leadsto> 1] s)))"
-  unfolding lie_deriv_on_def frechet_derivative_def by (simp add: comp_def)
+lemma "\<D>\<^bsub>x\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1]\<rangle> (x\<^sup>2 * y) 
+  = (\<lambda>s. (SOME f'. D ((x\<^sup>2 * y)\<^sub>e \<circ> (put\<^bsub>x\<^esub> s)) \<mapsto> f' (at (get\<^bsub>x\<^esub> s))) (get\<^bsub>x\<^esub> ([x \<leadsto> 1, y \<leadsto> 1] s)))"
+  unfolding lframe_frechetD_alt frechet_derivative_def by (simp add: comp_def)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1]\<^esub> x\<^sup>2 * y on x = (2 * x * y)\<^sub>e"
-  by (simp add: lie_deriv closure usubst)
+lemma "\<D>\<^bsub>x\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1]\<rangle> (x\<^sup>2 * y) = (2 * x * y)\<^sub>e"
+  by (simp add: framed_derivs ldifferentiable usubst)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 2, y \<leadsto> 1]\<^esub> x\<^sup>2 * y on x = (4 * x * y)\<^sub>e"
-  by (simp add: lie_deriv closure usubst)
+lemma "\<D>\<^bsub>x\<^esub>\<langle>[x \<leadsto> 2, y \<leadsto> 1]\<rangle> (x\<^sup>2 * y) = (4 * x * y)\<^sub>e"
+  by (simp add: framed_derivs ldifferentiable usubst)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 3, y \<leadsto> 2]\<^esub> x\<^sup>2 * y on y = (2 * x\<^sup>2 * 1)\<^sub>e"
-  by (simp add: lie_deriv closure usubst field_simps)
+lemma "\<D>\<^bsub>y\<^esub>\<langle>[x \<leadsto> 3, y \<leadsto> 2]\<rangle> (x\<^sup>2 * y) = (2 * x\<^sup>2 * 1)\<^sub>e"
+  by (simp add: framed_derivs ldifferentiable usubst field_simps)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1]\<^esub> x\<^sup>2 * y on y = (x\<^sup>2 * 1)\<^sub>e"
-  by (simp add: lie_deriv closure usubst)
+lemma "\<D>\<^bsub>y\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1]\<rangle> (x\<^sup>2 * y) = (x\<^sup>2 * 1)\<^sub>e"
+  by (simp add: framed_derivs ldifferentiable usubst)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1]\<^esub> x\<^sup>2 * y on (x +\<^sub>L y) = (x\<^sup>2 + 2 * x * y)\<^sub>e"
-  by (simp add: lie_deriv closure usubst)
+lemma "\<D>\<^bsub>x +\<^sub>L y\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1]\<rangle> (x\<^sup>2 * y) = (x\<^sup>2 + 2 * x * y)\<^sub>e"
+  by (simp add: framed_derivs ldifferentiable usubst)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1, z \<leadsto> 1]\<^esub> x\<^sup>2 * y + z * y on z = (y)\<^sub>e"
-  by (simp add: lie_deriv closure usubst)
+lemma "\<D>\<^bsub>z\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1, z \<leadsto> 1]\<rangle> (x\<^sup>2 * y + z * y) = (y)\<^sub>e"
+   by (simp add: framed_derivs ldifferentiable usubst)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1, z \<leadsto> 1]\<^esub> x\<^sup>2 * y + z * y on (x +\<^sub>L y +\<^sub>L z) = (x\<^sup>2 + 2 * x * y + y + z)\<^sub>e"
-  apply (simp add: lie_deriv closure usubst)
-  by (simp add: field_simps)
+lemma "\<D>\<^bsub>x +\<^sub>L y +\<^sub>L z\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1, z \<leadsto> 1]\<rangle> (x\<^sup>2 * y + z * y) = (x\<^sup>2 + 2 * x * y + y + z)\<^sub>e"
+   by (simp add: framed_derivs ldifferentiable usubst field_simps)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 1, y \<leadsto> 1, z \<leadsto> 2]\<^esub> x\<^sup>2 * y + z * y on (x +\<^sub>L y +\<^sub>L z) = (x\<^sup>2 + 2 * x * y + 2*y + z)\<^sub>e"
-  apply (simp add: lie_deriv closure usubst)
-  by (simp add: field_simps)
+lemma "\<D>\<^bsub>x +\<^sub>L y +\<^sub>L z\<^esub>\<langle>[x \<leadsto> 1, y \<leadsto> 1, z \<leadsto> 2]\<rangle> (x\<^sup>2 * y + z * y) = (x\<^sup>2 + 2 * x * y + 2*y + z)\<^sub>e"
+   by (simp add: framed_derivs ldifferentiable usubst field_simps)
 
-lemma "\<L>\<^bsub>[x \<leadsto> 2*x]\<^esub> x\<^sup>2 on x = (4 * x\<^sup>2)\<^sub>e"
-  apply (simp add: lie_deriv closure usubst)
-  apply (expr_simp add: power2_eq_square)
-  done
+lemma "\<D>\<^bsub>x\<^esub>\<langle>[x \<leadsto> 2*x]\<rangle> x\<^sup>2 = (4 * x\<^sup>2)\<^sub>e"
+   by (simp add: framed_derivs ldifferentiable usubst field_simps)
+
 
 text \<open> We create the bouncing ball in a locale context using the command "dataspace", which
   generates abstract lenses and contextual information. \<close>
@@ -170,29 +167,6 @@ lemma safety_property_1:
   apply (expr_simp)
   apply (smt g_pos zero_le_mult_iff zero_le_power2)
   done
-
-lemma safety_property_1_in_one_go:
-  "\<^bold>{0 \<le> h \<and> v\<^sup>2 \<le> 2*g*(H - h)\<^bold>}BBall\<^bold>{0 \<le> h \<and> h \<le> H\<^bold>}"
-  apply (simp add: BBall_def, rule_tac I=Inv in hoare_kstarI)
-    apply(expr_simp)
-  apply (smt (verit, ccfv_SIG) SEXP_def g_pos taut_def zero_le_mult_iff zero_le_power2)
-    \<comment> \<open> discharging second proof obligation \<close>
-  apply(simp add: wp) \<comment> \<open> we need rules to simplify ODEs with wlps too \<close>
-  (* apply(rule_tac I=Inv in diff_inv_on_rule) \<comment> \<open> should we change this rule? \<close> 
-    apply simp
-   prefer 2
-   apply(clarsimp simp: SEXP_def taut_def usubst_eval usubst, expr_auto)
-   apply (smt c_le_one c_pos mult_less_cancel_right1 power_le_one_iff power_mult_distrib zero_le_power2)
-  apply(rule diff_invariant_on_conj_rule_expr)
-apply(rule_tac \<mu>'="(0)\<^sub>e" in diff_invariant_on_leq_rule_expr; expr_auto)
-       apply(auto intro!: poly_derivatives simp: case_prod_beta) *)
-  apply (rule hoare_conseq[of Inv _ Inv]) \<comment> \<open> using invariants as an alternative to wlp of ODE \<close>
-  using l1 apply simp
-  using c_pos c_le_one
-  by (auto simp: usubst_eval, expr_simp)
-    (smt c_le_one c_pos mult_less_cancel_right1 power_le_one_iff 
-      power_mult_distrib zero_le_power2)
-
 
 text \<open> A more specific version -- the ball starts stationary and at height $h$. \<close>
 

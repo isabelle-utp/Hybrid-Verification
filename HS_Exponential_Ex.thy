@@ -1,5 +1,5 @@
 theory HS_Exponential_Ex
-  imports HS_Lens_Spartan HS_Lie_Derivatives
+  imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
 lit_vars

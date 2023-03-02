@@ -6,9 +6,7 @@ text \<open> We prove partial correctness specifications of some hybrid systems 
 verification components.\<close>
 
 theory HS_Lens_Examples
-  imports 
-    HS_Lens_Spartan 
-    HS_Lie_Derivatives
+  imports "Hybrid-Verification.Hybrid_Verification"
 
 begin
 

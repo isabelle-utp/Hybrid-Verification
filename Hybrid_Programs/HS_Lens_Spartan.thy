@@ -7,9 +7,8 @@ includes lemmas for verification condition generation. \<close>
 
 theory HS_Lens_Spartan
   imports 
-    "HS_Lens_ODEs"
-    "Matrices/MTX_Flows"
-
+    "ODE_Verify.ODE_Verify"
+    "Matrix_ODE_Verify.MTX_Flows"
 begin
 
 type_synonym 'a pred = "'a \<Rightarrow> bool"
@@ -758,6 +757,8 @@ lemma hoare_while:
 
 subsection \<open> Framing \<close>
 
+named_theorems closure
+
 definition frame :: "'s scene \<Rightarrow> 's prog \<Rightarrow> 's prog"
   where [prog_defs]: "frame a P = (\<lambda> s. {s'. s = cp\<^bsub>a\<^esub> s s' \<and> s' \<in> P s})"
 
@@ -781,8 +782,6 @@ definition not_modifies :: "'s prog \<Rightarrow> 's scene \<Rightarrow> bool" w
 
 syntax "_not_modifies" :: "logic \<Rightarrow> salpha \<Rightarrow> logic" (infix "nmods" 30)
 translations "_not_modifies P a" == "CONST not_modifies P a"
-
-named_theorems closure
 
 (* FIXME: The following rule is an inefficient way to calculate modification; 
   replace with scene membership laws. *)
@@ -1670,6 +1669,7 @@ lemma vderiv_inverse:
   unfolding has_vderiv_on_def has_vector_derivative_def
   by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
 
+(*
 lemma
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
     and y :: "'d::real_normed_vector \<Longrightarrow> 's"
@@ -1745,7 +1745,7 @@ lemma
         lens_indep_comm[of x y, OF lens_indep_sym] intro!: vderiv_intros)
   done
   oops
-
+*)
 
 lemma diff_ghost_gen_1rule:
   fixes b :: "'d :: real_normed_vector" and k :: real
@@ -2067,6 +2067,87 @@ lemma darboux:
       (* auto simp: *) eventually_principal
   oops
 
+method dInduct = (subst dInduct_hoare_diff_inv_on fbox_diff_inv_on; 
+    rule_tac lderiv_rules; simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
+method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
+method dWeaken = (rule_tac diff_weak_on_rule; expr_simp; auto simp add: field_simps)
 
+text \<open> A first attempt at a high-level automated proof strategy using differential induction.
+  A sequence of commands is tried as alternatives, one by one, and the method then iterates. \<close>
+
+method dInduct_mega uses facts = 
+  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
+  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
+  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
+  | rule_tac hoare_if_then_else_inv
+  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
+  )+
+
+
+method dInduct_mega' uses facts = 
+  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
+  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
+  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
+  | rule_tac hoare_if_then_else_inv
+  | (dDiscr ; force) \<comment> \<open> (3) Try proving as a discrete invariant \<close>
+  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
+  )+
+
+text \<open> First attempt at a system level prover \<close>
+
+method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
+
+lemma darboux: 
+  fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
+    and e e' :: "'a \<Rightarrow> real"
+    and g :: real
+  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
+    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
+    and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
+    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
+    and dbx_hyp: "(\<D>\<^bsub>a +\<^sub>L y\<^esub>\<langle>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> * $y)\<rangle> e) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
+    and deriv: "differentiable\<^sub>e e on (a +\<^sub>L y)"
+  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
+  apply (rule diff_ghost_rule_very_simple[where k="-g", OF _ vwbs(2) indeps(1) yGhost])
+  apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
+  using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
+  apply (subst SEXP_def[symmetric, of G])
+  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
+   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
+  using indeps apply (expr_simp)
+  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF _ vwbs(3) _ zGhost])
+    prefer 2 using indeps apply expr_simp
+    apply (subst hoare_diff_inv_on)
+  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: tsubst2vecf_eq)?)
+  using vwbs indeps
+    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
+  using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)
+   apply (intro vderiv_intros; force?)
+   apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
+  using vwbs indeps apply (expr_simp add: power2_eq_square)
+  apply (rule_tac I="\<lambda>\<s>. 0 \<le> e \<s> * $y" in fbox_diff_invI)
+    prefer 3 apply (expr_simp add: le_fun_def)
+   prefer 2 apply (expr_simp add: le_fun_def)
+  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof the same as in HS Lens Spartan up to here *)
+
+  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
+   apply (erule ssubst)
+   prefer 2 apply clarsimp 
+  apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
+  prefer 2 using vwbs indeps
+    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
+  using vwbs indeps deriv apply - 
+
+  apply(rule lderiv_le_rule; clarsimp?)
+    apply (rule differentiable_times; clarsimp?)
+     apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
+    apply expr_simp
+   apply (subst lframeD_zero)
+   apply (subst lframeD_times; clarsimp?)
+   apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
+  apply (subst lframeD_cont_var; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
+  using yGhost(1,2) indeps vwbs dbx_hyp apply expr_simp
+  by (clarsimp simp: framed_derivs ldifferentiable usubst 
+      unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
 end
