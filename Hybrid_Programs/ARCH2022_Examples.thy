@@ -5,10 +5,8 @@ verification components.\<close>
 
 theory ARCH2022_Examples
   imports 
-    HS_Lie_Derivatives
+    "Hybrid-Verification.Hybrid_Verification"
     Real_Arith_Tactics
-    HS_CAS_Integration
-
 begin
 
 

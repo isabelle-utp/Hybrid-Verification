@@ -1,5 +1,5 @@
 theory HS_Lens_Spartan_Ex
-  imports HS_Lens_Spartan HS_Lie_Derivatives "Matrices/MTX_Flows"
+  imports HS_Lens_Spartan
 begin
 
 subsection \<open> Matrices \<close>
