@@ -8,8 +8,9 @@ section \<open> Mathematical Preliminaries \<close>
 text \<open>This section adds useful syntax, abbreviations and theorems to the Isabelle distribution. \<close>
 
 theory MTX_Preliminaries
-  imports "../HS_Preliminaries"
-
+  imports 
+    "Ordinary_Differential_Equations.Picard_Lindeloef_Qualitative" 
+    "Hybrid-Library.Matrix_Syntax"
 begin
 
 

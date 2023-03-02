@@ -1,3 +1,22 @@
+session "ODE_Verify" = Ordinary_Differential_Equations +
+  options [document = false]
+  sessions
+    "Shallow-Expressions"
+    "Hybrid-Library"
+    Optics
+  theories
+    HS_ODEs
+    HS_Lens_ODEs
+
+session "Matrix_ODE_Verify" in Matrices = "ODE_Verify" +
+  options [document = false]
+  theories
+    MTX_Preliminaries
+    MTX_Norms
+    SQ_MTX
+    MTX_Flows
+
+(*
 session "Hybrid-Verification" = Ordinary_Differential_Equations +
   options [quick_and_dirty, document = pdf, document_output = "output"]
   sessions
@@ -24,3 +43,4 @@ session "Hybrid-Verification" = Ordinary_Differential_Equations +
     "Matrices/MTX_Examples"
   document_files
     "root.tex"
+*)
