@@ -5,10 +5,9 @@ verification components.\<close>
 
 theory ARCH2022_Examples
   imports 
-    HS_Lie_Derivatives
+    "ODE_Verify.HS_Lie_Derivatives"
     Real_Arith_Tactics
     HS_CAS_Integration
-
 begin
 
 

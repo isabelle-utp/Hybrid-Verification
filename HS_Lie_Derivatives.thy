@@ -1,8 +1,10 @@
 section \<open> Lie Derivatives \<close>
 
 theory HS_Lie_Derivatives
-  imports HS_Lens_Spartan
+  imports "ODE_Verify.HS_Lens_ODEs"
 begin
+
+named_theorems closure
 
 subsection \<open> Differentiability \<close>
 
@@ -241,6 +243,11 @@ lemma frechet_derivative_on_singleton:
   "vwb_lens x \<Longrightarrow> \<partial>\<^sub>s x [x \<leadsto> e] = [x \<leadsto> \<L>\<^bsub>[\<leadsto>]\<^esub> e on x]"
   by (simp add: frechet_derivative_subst_def expr_defs fun_eq_iff)
 
+text \<open> A postcondition of a localised ODE is a postcondition of its unique localised solution. \<close>
+
+definition local_lipschitz_on :: "('c::metric_space \<Longrightarrow> 's) \<Rightarrow> 'a::metric_space set 
+  \<Rightarrow> 'c set \<Rightarrow> ('s \<Rightarrow> 's) \<Rightarrow> bool" 
+  where "local_lipschitz_on A T S f = (\<forall> s. local_lipschitz T S (\<lambda>t c. get\<^bsub>A\<^esub> (f (put\<^bsub>A\<^esub> s c))))"
 
 lemma c1_local_lipschitz_on:
   fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
@@ -274,9 +281,9 @@ proof (unfold local_lipschitz_on_def, clarify)
     by (clarsimp simp: prod.case_eq_if)
 qed
 
-lemma c1_local_lipschitz_on:
-  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> 's"
-  assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV"
+lemma c1_local_lipschitz_on':
+  fixes a :: "('a::{heine_borel,banach,euclidean_space, times}) \<Longrightarrow> _"
+  assumes "vwb_lens a" "differentiable_subst a \<sigma> UNIV" "continuous_subst_on a (\<partial>\<^sub>s a \<sigma>) UNIV UNIV"
     "\<exists> f. \<forall> x s. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at x) = f" 
   shows "local_lipschitz_on a (UNIV :: real set) UNIV \<sigma>"
 proof (unfold local_lipschitz_on_def, clarify)
@@ -460,92 +467,6 @@ proof -
 qed
 
 lemmas lie_deriv_rules = lie_deriv_eq_rule lie_deriv_le_rule lie_deriv_less_rule
-
-thm lie_deriv_rules
-
-method dInduct = (subst dInduct_hoare_diff_inv_on fbox_diff_inv_on; 
-    rule_tac lie_deriv_rules; simp add: lie_deriv closure usubst unrest_ssubst unrest usubst_eval)
-method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
-method dWeaken = (rule_tac diff_weak_on_rule; expr_simp; auto simp add: field_simps)
-
-text \<open> A first attempt at a high-level automated proof strategy using differential induction.
-  A sequence of commands is tried as alternatives, one by one, and the method then iterates. \<close>
-
-method dInduct_mega uses facts = 
-  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
-  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
-  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
-  | rule_tac hoare_if_then_else_inv
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
-  )+
-
-
-method dInduct_mega' uses facts = 
-  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
-  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
-  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
-  | rule_tac hoare_if_then_else_inv
-  | (dDiscr ; force) \<comment> \<open> (3) Try proving as a discrete invariant \<close>
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
-  )+
-
-text \<open> First attempt at a system level prover \<close>
-
-method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
-
-lemma darboux: 
-  fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
-    and e e' :: "'a \<Rightarrow> real"
-    and g :: real
-  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
-    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
-    and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e \<ge> 0)\<^sub>e = (y > 0 \<and> e \<ge> 0)\<^sup>e \\ $y"
-    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
-    and dbx_hyp: "(\<L>\<^bsub>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> * $y)\<^esub> e on (a +\<^sub>L y)) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
-    and deriv: "differentiable\<^sub>e e on (a +\<^sub>L y)"
-  shows "(e \<ge> 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e \<ge> 0)"
-  apply (rule diff_ghost_rule_very_simple[where k="-g", OF _ vwbs(2) indeps(1) yGhost])
-  apply (rule strengthen[of "(y > 0 \<and> e * y \<ge> 0)\<^sup>e"])
-  using indeps apply (expr_simp, clarsimp simp add: zero_le_mult_iff) 
-  apply (subst SEXP_def[symmetric, of G])
-  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
-   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
-  using indeps apply (expr_simp)
-  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF _ vwbs(3) _ zGhost])
-    prefer 2 using indeps apply expr_simp
-    apply (subst hoare_diff_inv_on)
-  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: tsubst2vecf_eq)?)
-  using vwbs indeps
-    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
-  using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)
-   apply (intro vderiv_intros; force?)
-   apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
-  using vwbs indeps apply (expr_simp add: power2_eq_square)
-  apply (rule_tac I="\<lambda>\<s>. 0 \<le> e \<s> * $y" in fbox_diff_invI)
-    prefer 3 apply (expr_simp add: le_fun_def)
-   prefer 2 apply (expr_simp add: le_fun_def)
-  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof the same as in HS Lens Spartan up to here *)
-
-  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
-   apply (erule ssubst)
-   prefer 2 apply clarsimp 
-  apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
-  prefer 2 using vwbs indeps
-    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
-  using vwbs indeps deriv apply - 
-
-  apply(rule lie_deriv_le_rule; clarsimp?)
-    apply (rule differentiable_times; clarsimp?)
-     apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-  using vwbs indeps apply expr_simp
-   apply (subst lie_deriv_zero)
-   apply (subst lie_deriv_times; clarsimp?)
-     apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-  apply (subst lie_deriv_cont_var; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
-  using yGhost(1,2) indeps vwbs dbx_hyp apply expr_simp
-  by (clarsimp simp: lie_deriv closure usubst 
-      unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
-
 
 
 end

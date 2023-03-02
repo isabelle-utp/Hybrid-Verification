@@ -11,7 +11,7 @@ introduce three methods for verifying correctness specifications of the continuo
 dynamics of a HS. \<close>
 
 theory HS_VC_Spartan
-  imports HS_ODEs
+  imports "ODE_Verify.HS_ODEs"
                         
 begin
 

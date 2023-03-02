@@ -5,8 +5,7 @@ session "ODE_Verify" = Ordinary_Differential_Equations +
     "Hybrid-Library"
     Optics
   theories
-    HS_ODEs
-    HS_Lens_ODEs
+    ODE_Verify
 
 session "Matrix_ODE_Verify" in Matrices = "ODE_Verify" +
   options [document = false]
@@ -15,6 +14,14 @@ session "Matrix_ODE_Verify" in Matrices = "ODE_Verify" +
     MTX_Norms
     SQ_MTX
     MTX_Flows
+
+session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
+  options [document = false]
+  theories
+    HS_VC_Spartan
+    HS_Lens_Spartan
+    Real_Arith_Tactics
+    HS_CAS_Integration
 
 (*
 session "Hybrid-Verification" = Ordinary_Differential_Equations +
