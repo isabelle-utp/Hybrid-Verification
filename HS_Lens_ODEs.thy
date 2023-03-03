@@ -255,7 +255,7 @@ lemma diff_invariant_cnn_rule_expr:
 
 lemma diff_ghost_very_simple:
   assumes 
-    "vwb_lens y" "y \<bowtie> a" "y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B"
+    "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s \<sigma>" "$y \<sharp> B"
     "diff_invariant_on (G)\<^sub>e (a +\<^sub>L y) (\<lambda>t. \<sigma>(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) (Collect ((\<le>) 0))\<^sub>e UNIV 0 B"
   shows "diff_invariant_on (G \\ $y)\<^sub>e a (\<lambda>t. \<sigma>) (Collect ((\<le>) 0))\<^sub>e UNIV 0 B"
   using assms(5)
@@ -270,13 +270,12 @@ lemma diff_ghost_very_simple:
    apply (auto simp add: lens_defs has_vderiv_on_def)[1]
      apply (rule derivative_intros)
   using assms(1-4) apply (simp add: expr_defs)
-      apply (metis lens_indep.lens_put_irr2 lens_indep_comm)
      apply (rule has_vector_derivative_eq_rhs)
       apply (force intro: derivative_intros)
      apply (simp)
   using assms(1-4)
      apply (simp_all add: lens_defs expr_defs lens_indep.lens_put_irr2)
   apply (metis assms(1) assms(2) lens_indep_def mwb_lens.axioms(1) vwb_lens_mwb weak_lens.put_get)
-  done
+  oops
 
 end
