@@ -19,7 +19,10 @@ session "Matrix_ODE_Verify" in Matrices = "Framed_ODEs" +
 session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
   options [document = false]
   theories
-    HS_Lens_Spartan
+    Correctness_Specs
+    Evolution_Commands
+    Regular_Programs
+    Diff_Dyn_Logic
     Real_Arith_Tactics
     HS_CAS_Integration
 

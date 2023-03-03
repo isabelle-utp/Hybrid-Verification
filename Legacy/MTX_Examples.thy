@@ -8,8 +8,8 @@ section \<open> Verification examples \<close>
 
 theory MTX_Examples
   imports 
-    MTX_Flows 
-    "../Legacy/HS_VC_Spartan"
+    "Matrix_ODE_Verify.MTX_Flows"
+    HS_VC_Spartan
 
 begin
 

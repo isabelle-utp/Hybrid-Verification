@@ -1,5 +1,5 @@
 theory Hybrid_Verification
   imports
-    HS_Lens_Spartan
+    Diff_Dyn_Logic
     HS_CAS_Integration
 begin end
