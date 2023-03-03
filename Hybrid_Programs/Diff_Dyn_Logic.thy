@@ -299,7 +299,7 @@ lemma (* apparently we have to assume that (\<lambda>c. b (put\<^bsub>x + y\<^es
   using assms(2-) unfolding sol_def
   by (auto intro!: vderiv_intros)
 
-lemma has_vderiv_linear': (* y' = k * y + b *)
+lemma has_vderiv_linear':
   fixes k :: "'s \<Rightarrow> real" 
     and b :: "'s \<Rightarrow> 'd::real_normed_vector"
     and x :: "'c::real_normed_vector \<Longrightarrow> 's"
@@ -318,7 +318,6 @@ lemma vderiv_inverse:
   unfolding has_vderiv_on_def has_vector_derivative_def
   by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
 
-(*
 lemma
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's"
     and y :: "'d::real_normed_vector \<Longrightarrow> 's"
@@ -327,17 +326,16 @@ lemma
   assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (k *\<^sub>R ($y) + b))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
     and x_hyps: "vwb_lens x"
-    and expr_hyps': 
-      "\<forall>s. (\<lambda>c. k (put\<^bsub>x +\<^sub>L y\<^esub> s c)) differentiable (at (get\<^bsub>x +\<^sub>L y\<^esub> s))"
-      "\<forall>s. (\<lambda>c. b (put\<^bsub>x +\<^sub>L y\<^esub> s c)) differentiable (at (get\<^bsub>x +\<^sub>L y\<^esub> s))"
-    and expr_hyps: "\<forall>s. k s \<noteq> 0" "\<forall>s d. k (put\<^bsub>y\<^esub> s d) = k s" "\<forall>s d. b (put\<^bsub>y\<^esub> s d) = b s" 
+    and expr_hyps': "differentiable\<^bsub>x\<^esub> k" "differentiable\<^bsub>x\<^esub> b"
+    and expr_hyps: "`k \<noteq> 0`" "\<forall>s d. k (put\<^bsub>y\<^esub> s d) = k s" "\<forall>s d. b (put\<^bsub>y\<^esub> s d) = b s" 
   shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
   using hyp
+  thm y_hyps(3)[unfolded unrest_usubst_def scene_override_def, simplified] unrest_expr_def unrest_usubst_def
     (* unfolding defs *)
-  apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def)
+  apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def) thm lens_plus_def
   apply (simp add: liberate_lens'[OF vwb_lens_mwb[OF y_hyps(1)]])
     (* simplifying notation *)
-  using y_hyps x_hyps apply expr_simp
+  using y_hyps x_hyps  apply expr_simp apply (frule Lens_Laws.lens_indep_sym)
   apply (subst (asm) lens_indep_comm[of x y, OF lens_indep_sym], expr_simp?)+
   apply expr_simp
   apply (subst (asm) lens_indep_comm[of y x], expr_simp?)+
@@ -345,25 +343,72 @@ lemma
     (* proof *)
   subgoal for s X t d
     apply (erule allE[where x="put\<^bsub>y\<^esub> s d"] impE; expr_simp add: lens_indep.lens_put_irr2)
+  apply (drule_tac x="\<lambda>t. (X t, Y (X t) t)" in spec, elim conjE impE; (intro conjI)?)
+    using expr_hyps apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+
   apply (drule_tac x="\<lambda>t. (X t, sol (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)) t)" in spec, elim conjE impE; (intro conjI)?)
   prefer 3 subgoal
     apply (clarsimp simp: lens_indep.lens_put_irr2 )
     apply (erule_tac x=t in ballE; clarsimp?)
     apply (subst (asm) lens_indep_comm[of x y, OF lens_indep_sym], expr_simp)+
     by expr_auto
-    prefer 2 subgoal
+   prefer 2 subgoal
     apply  (simp_all add: lens_indep.lens_put_irr2 sol_def) (* sol_def *)
-    using expr_hyps(1) by force
+    using expr_hyps(1) by expr_simp
   subgoal
     apply (rule vderiv_pairI, force simp: lens_indep.lens_put_irr2)
    apply (subgoal_tac "D (\<lambda>t. sol (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)) t) = (\<lambda>t. (k (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t))) *\<^sub>R (sol (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)) t) + (b (put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)))) on (U (get\<^bsub>x\<^esub> s))", assumption)
-    subgoal unfolding sol_def
+    subgoal 
+      unfolding sol_def
+        using expr_hyps apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+      apply (auto simp: has_vderiv_on_def)
+
+
       apply (auto intro!: vderiv_intros)
+            apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+            apply(subst comp_def[symmetric, of _ X])
+            apply (rule has_vector_derivative_expr_sol[unfolded lframe_fun_def])
+              apply (expr_simp)
+             apply (rule differentiable_inverse)
+      using expr_hyps apply expr_simp
+      using expr_hyps expr_hyps' apply (simp add: ldifferentiable)
+            apply (simp add: lframe_subst_alt, force) (* done 7 *)
+            apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+            apply(subst comp_def[symmetric, of _ X])
+            apply (rule has_vector_derivative_expr_sol[unfolded lframe_fun_def])
+      apply expr_simp
+      using expr_hyps expr_hyps' apply (simp add: ldifferentiable)
+            apply (simp add: lframe_subst_alt, force) (* done 6 *)
+          apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+            apply(subst comp_def[symmetric, of _ X])
+            apply (rule has_vector_derivative_expr_sol[unfolded lframe_fun_def])
+      apply expr_simp
+      using expr_hyps expr_hyps' apply (simp add: ldifferentiable)
+          apply (simp add: lframe_subst_alt, force) (* done 5 *)
+            apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+            apply(subst comp_def[symmetric, of _ X])
+            apply (rule has_vector_derivative_expr_sol[unfolded lframe_fun_def])
+      apply expr_simp
+      using expr_hyps expr_hyps' apply (simp add: ldifferentiable)
+         apply (simp add: lframe_subst_alt, force) (* done 4 *)
+        apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+            apply(subst comp_def[symmetric, of _ X])
+            apply (rule has_vector_derivative_expr_sol[unfolded lframe_fun_def])
+      apply expr_simp
+      using expr_hyps expr_hyps' apply (simp add: ldifferentiable)
+        apply (simp add: lframe_subst_alt, force) (* done 3 *)
+      apply expr_simp
+        using expr_hyps apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+       prefer 2 apply expr_simp
+        using expr_hyps apply (clarsimp simp: has_vderiv_on_def lens_indep.lens_put_comm[of x y])
+        apply (simp add: field_simps)
+           apply assumption
+             apply (simp add: ldifferentiable)
             apply (rule vderiv_inverse)
       using expr_hyps'[unfolded differentiable_def] 
               apply (clarsimp simp: has_vderiv_on_iff)
       subgoal sorry
-      using expr_hyps apply force
+      using expr_hyps apply expr_simp
       using has_derivative_compose[where f="\<lambda>t. put\<^bsub>x\<^esub> (put\<^bsub>y\<^esub> s d) (X t)"]
       apply (rule has_derivative_compose)
       apply expr_simps
@@ -394,7 +439,6 @@ lemma
         lens_indep_comm[of x y, OF lens_indep_sym] intro!: vderiv_intros)
   done
   oops
-*)
 
 lemma diff_ghost_gen_1rule:
   fixes b :: "'d :: real_normed_vector" and k :: real
