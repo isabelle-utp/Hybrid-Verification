@@ -34,7 +34,7 @@ lemma mtx_circ_flow_eq: "exp (t *\<^sub>R A) *\<^sub>V s = \<phi> t s"
   apply(rule local_flow.eq_solution[OF local_flow_sq_mtx_linear, symmetric, of _ "\<lambda>s. UNIV"], simp_all)
     apply(rule ivp_solsI, simp_all add: sq_mtx_vec_mult_eq vec_eq_iff)
   unfolding UNIV_2 using exhaust_2
-  by (force intro!: poly_derivatives simp: matrix_vector_mult_def)+
+  by (force intro!: vderiv_intros simp: matrix_vector_mult_def)+
 
 lemma mtx_circ: 
   "PRE(\<lambda>s. r\<^sup>2 = (s $ 1)\<^sup>2 + (s $ 2)\<^sup>2) 

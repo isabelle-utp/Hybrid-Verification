@@ -1,5 +1,5 @@
 theory HS_Lens
-  imports Derivative_extra Optics.Optics
+  imports "Hybrid-Library.Derivative_Lib" Optics.Optics
 begin
 
 locale cont_lens = vwb_lens +

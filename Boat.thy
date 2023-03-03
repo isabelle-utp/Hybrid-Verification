@@ -1,5 +1,5 @@
 theory Boat
-  imports "HS_Lie_Derivatives" 
+  imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
 subsection \<open> Preliminaries \<close>

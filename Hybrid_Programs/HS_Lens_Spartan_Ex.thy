@@ -1,5 +1,5 @@
 theory HS_Lens_Spartan_Ex
-  imports HS_Lens_Spartan
+  imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
 subsection \<open> Matrices \<close>

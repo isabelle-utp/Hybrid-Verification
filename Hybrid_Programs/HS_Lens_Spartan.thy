@@ -1317,7 +1317,12 @@ lemma hoare_diff_inv_on:
   using fbox_diff_inv_on[of I a f G U S]
   by (simp add: SEXP_def)
 
-lemma "(I \<le> |{a` = f | G on U S @ t\<^sub>0}] I) = diff_inv_on a (\<lambda> _. [a \<leadsto> f]) (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 I"
+lemma hoare_diff_inv_on':
+  "\<^bold>{I\<^bold>} (g_orbital_on a f G U S t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv_on a f G U S t\<^sub>0 (I)\<^sub>e"
+  using fbox_diff_inv_on[of I a f G U S]
+  by (simp add: SEXP_def)
+
+lemma "(I \<le> |{a` = f | G on U S @ t\<^sub>0}] I) = diff_inv_on a (\<lambda> _. [a \<leadsto> f]) (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 (I)\<^sub>e"
   by (simp add: fbox_diff_inv_on expr_defs)
 
 lemma dInduct_hoare_diff_inv_on:
@@ -2138,7 +2143,7 @@ lemma darboux:
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps deriv apply - 
 
-  apply(rule lderiv_le_rule; clarsimp?)
+  apply(rule ldiff_inv_on_le_rule; clarsimp?)
     apply (rule differentiable_times; clarsimp?)
      apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
     apply expr_simp

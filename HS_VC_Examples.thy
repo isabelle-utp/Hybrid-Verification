@@ -9,7 +9,8 @@ text \<open> We prove partial correctness specifications of some hybrid systems 
 verification components.\<close>
 
 theory HS_VC_Examples
-  imports HS_VC_Spartan Real_Arith_Tactics
+  imports HS_VC_Spartan 
+    "Hybrid-Verification.Real_Arith_Tactics"
 
 begin
 

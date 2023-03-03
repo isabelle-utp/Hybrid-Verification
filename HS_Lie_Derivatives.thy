@@ -379,7 +379,7 @@ proof(auto simp: lens_defs expr_defs)
       (smt split_mult_pos_le)
 qed
 
-lemma lderiv_eq_rule:
+lemma ldiff_inv_on_eq_rule:
   fixes e :: "'s \<Rightarrow> 'a::real_inner" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_eq: "`G \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e = \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f` 
@@ -393,7 +393,7 @@ proof -
     by simp
 qed
 
-lemma lderiv_le_rule:
+lemma ldiff_inv_on_le_rule:
   fixes e :: "'s \<Rightarrow> real" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_le: "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` 
@@ -407,7 +407,7 @@ proof -
     by simp
 qed
 
-lemma lderiv_less_rule:
+lemma ldiff_inv_on_less_rule:
   fixes e :: "'s \<Rightarrow> real" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_less: "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` 
@@ -421,7 +421,7 @@ proof -
     by simp
 qed
 
-lemmas lderiv_rules = lderiv_eq_rule lderiv_le_rule lderiv_less_rule
+lemmas lderiv_rules = ldiff_inv_on_eq_rule ldiff_inv_on_le_rule ldiff_inv_on_less_rule
 
 
 subsection \<open> Differentiating substitutions \<close>

@@ -1,7 +1,7 @@
 section \<open> Autonomous Marine Vehicle \<close>
 
 theory AMV
-  imports "HS_Lie_Derivatives" 
+  imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
 subsection \<open> Preliminaries \<close>
@@ -443,7 +443,6 @@ proof -
         ODE
        \<^bold>{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)\<^bold>}"
     apply (dInduct_mega)
-    apply (dInduct_auto)
     using inner_commute by blast
   hence "\<^bold>{a \<bullet> v \<ge> 0 \<and> a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}
           ODE
@@ -564,11 +563,13 @@ lemma "\<^bold>{\<phi> \<ge> 0\<^bold>} ODE \<^bold>{\<phi> \<ge> 0\<^bold>}"
   oops
 
 lemma "\<^bold>{ (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 < \<phi>\<^sub>\<epsilon>\<^sup>2 \<^bold>} ODE \<^bold>{ (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 < \<phi>\<^sub>\<epsilon>\<^sup>2 \<^bold>}"
-  apply (subst fbox_diff_inv_on2)
-  apply (rule_tac lie_deriv_rules)
-     apply (simp_all add: closure)
-   apply (rule closure)
-   apply (rule closure)
+  apply (subst hoare_diff_inv_on')
+  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. t \<ge> 0})\<^sub>e")
+   prefer 2 apply simp
+  apply (erule ssubst)
+  apply (rule_tac lderiv_rules)
+     apply (simp_all add: ldifferentiable closure)
+   apply (rule ldifferentiable, simp, expr_simp)
   oops
 
 lemma "\<^bold>{ \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon> \<^bold>} ODE \<^bold>{ \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon> \<^bold>}"
