@@ -5,8 +5,8 @@ verification components.\<close>
 
 theory ARCH2020_Examples
   imports 
-    "Hybrid-Verification.HS_VC_Spartan" 
-    Real_Arith_Tactics
+    HS_VC_Spartan
+    "Hybrid-Verification.Real_Arith_Tactics"
 begin
 
 

@@ -7,7 +7,7 @@ includes lemmas for verification condition generation. \<close>
 
 theory HS_Lens_Spartan
   imports 
-    "ODE_Verify.ODE_Verify"
+    "Framed_ODEs.Framed_ODEs"
     "Matrix_ODE_Verify.MTX_Flows"
 begin
 

@@ -12,7 +12,7 @@ is affine. The end goal of this section is to prove that every affine system of 
 solution, and to obtain a characterization of said solution. \<close>
 
 theory MTX_Flows
-  imports SQ_MTX "ODE_Verify.HS_ODEs"
+  imports SQ_MTX "Framed_ODEs.Dynamical_Systems"
 
 begin
 

@@ -5,9 +5,9 @@ section \<open> ODEs with lenses \<close>
 text \<open> We use shallow expressions to rephrase the properties for hybrid systems in a 
 cleaner presentation. \<close>
 
-theory HS_Lens_ODEs
+theory Framed_Dyn_Sys
   imports 
-    "HS_ODEs" 
+    Dynamical_Systems 
     "Hybrid-Library.Cont_Lens"
     "Shallow-Expressions.Shallow_Expressions"
 begin

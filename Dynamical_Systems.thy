@@ -14,7 +14,7 @@ orbit. If the orbit of each @{text "s \<in> I"} is conatined in @{text I}, then 
 invariant set of this system. This section formalises these concepts with a focus on hybrid 
 systems (HS) verification.\<close>
 
-theory HS_ODEs
+theory Dynamical_Systems
   imports "HS_Preliminaries"
 begin
 

@@ -1,6 +1,6 @@
 
-theory HS_Lie_Derivatives
-  imports "ODE_Verify.HS_Lens_ODEs"
+theory Framed_Derivatives
+  imports "Framed_ODEs.Framed_Dyn_Sys"
 begin
 
 subsection \<open> framed differentiation \<close>

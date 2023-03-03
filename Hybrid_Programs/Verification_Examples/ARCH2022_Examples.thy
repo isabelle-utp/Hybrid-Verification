@@ -6,7 +6,7 @@ verification components.\<close>
 theory ARCH2022_Examples
   imports 
     "Hybrid-Verification.Hybrid_Verification"
-    Real_Arith_Tactics
+    "Hybrid-Verification.Real_Arith_Tactics"
 begin
 
 

@@ -1,4 +1,4 @@
-session "ODE_Verify" = Ordinary_Differential_Equations +
+session "Framed_ODEs" = Ordinary_Differential_Equations +
   options [document = false]
   sessions
     "Shallow-Expressions"
@@ -6,9 +6,9 @@ session "ODE_Verify" = Ordinary_Differential_Equations +
     Optics
     CAS_Integration
   theories
-    ODE_Verify
+    Framed_ODEs
 
-session "Matrix_ODE_Verify" in Matrices = "ODE_Verify" +
+session "Matrix_ODE_Verify" in Matrices = "Framed_ODEs" +
   options [document = false]
   theories
     MTX_Preliminaries
@@ -19,7 +19,6 @@ session "Matrix_ODE_Verify" in Matrices = "ODE_Verify" +
 session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
   options [document = false]
   theories
-    HS_VC_Spartan
     HS_Lens_Spartan
     Real_Arith_Tactics
     HS_CAS_Integration
