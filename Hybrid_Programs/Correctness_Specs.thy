@@ -132,5 +132,11 @@ lemma hoare_conseq:
   using assms 
   by (auto simp add: fbox_def expr_defs)
 
+lemma fdia_conseq:
+  assumes "P\<^sub>2 \<le> |X\<rangle> Q\<^sub>2" "`P\<^sub>1 \<longrightarrow> P\<^sub>2`" "`Q\<^sub>2 \<longrightarrow> Q\<^sub>1`"
+  shows "P\<^sub>1 \<le> |X\<rangle> Q\<^sub>1"
+  using assms 
+  by (auto simp add: fdia_def expr_defs le_fun_def)
+    blast
 
 end

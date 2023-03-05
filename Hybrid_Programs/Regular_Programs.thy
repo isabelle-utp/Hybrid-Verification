@@ -488,13 +488,13 @@ qed
 lemma fdia_kstar_convergence:
   fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
   defines "Q \<equiv> (\<lambda>s. \<exists>r::real\<le>0. P r s)"
-  assumes init: "`\<exists>r. @(P r)`"
+  assumes init: "P r s"
     and iter: "`\<forall>r>0. @(P r) \<longrightarrow> ( |F\<rangle> @(P (r - 1)))`"
   shows "( |F\<^sup>*\<rangle> Q) s"
 proof-
   have iter': "\<And>s. \<forall>r>0. P r s \<longrightarrow> ( |F\<rangle> @(P (r - 1))) s"
     using iter by (auto simp: taut_def)
-  have init': "\<forall>\<s>. \<exists>r. P r \<s>"
+  have init': "P r s"
     using init by expr_simp
   then obtain r where "P r s"
     by blast
@@ -571,14 +571,26 @@ proof-
     using case1 by linarith
 qed
 
-lemma fdia_kstar_variantI:
+lemma fdia_kstar_real_variantI:
   fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
-  assumes init: "`\<exists>r. @(P r)`"
+  assumes init: "P r s"
     and iter: "`\<forall>r>0. @(P r) \<longrightarrow> ( |F\<rangle> @(P (r - 1)))`"
     and "`(\<exists>r\<le>0. @(P r)) \<longrightarrow> Q`"
   shows "( |F\<^sup>*\<rangle> Q) s"
   by (rule fdia_mono(1)[OF fdia_kstar_convergence[OF assms(1,2)] assms(3)])
 
+lemma fdia_kstar_variantI: "`P \<longrightarrow> @(V k)` \<Longrightarrow> `\<forall>k. @(V k) \<le> |F\<rangle> (@(V (k-1)))` 
+  \<Longrightarrow> `(\<exists>k\<le>0. @(V k)) \<longrightarrow> Q` \<Longrightarrow> P \<le> |F\<^sup>*\<rangle> Q" for k::int
+  apply (subst impl_eq_leq[symmetric])
+  apply (subst taut_def, subst SEXP_def)
+  apply (clarify)
+  apply (rule_tac P="\<lambda>r s. V \<lfloor>r\<rfloor> s" and r="real_of_int k" in fdia_kstar_real_variantI)
+    apply (clarsimp simp: taut_def)
+   apply (clarsimp simp: taut_def)
+  apply (thin_tac "`P \<longrightarrow> @(V k)`", thin_tac "`\<forall>k. @(V k) \<le> |F\<rangle> (@(V (k-1)))`")
+  apply (clarsimp simp: taut_def)
+  apply (erule_tac x=s in allE)
+  by (erule impE, rule_tac x="\<lfloor>r\<rfloor>" in exI, simp_all)
 
 subsection \<open> Loops with annotated invariants \<close>
 
@@ -604,7 +616,11 @@ lemma fbox_loopI': "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<
 lemma hoare_loopI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} LOOP F INV I \<^bold>{Q\<^bold>}"
   by (rule fbox_loopI) (auto simp: SEXP_def taut_def)
 
-lemma hoare_loop_seqI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} G \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} LOOP (F ; G) INV I \<^bold>{Q\<^bold>}"
+lemma fdia_loopI: "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> |F\<rangle> I \<Longrightarrow> P \<le> |LOOP F INV I\<rangle> Q"
+  unfolding loopi_def using le_fdia_kstarI[of "P"] by (auto simp: SEXP_def)
+
+lemma hoare_loop_seqI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} G \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` 
+  \<Longrightarrow> \<^bold>{P\<^bold>} LOOP (F ; G) INV I \<^bold>{Q\<^bold>}"
   by (rule fbox_loopI, simp_all add: wp refine_iff_implies)
      (metis (full_types) fbox_iso order.trans refine_iff_implies)
 
@@ -638,6 +654,63 @@ lemma hoare_while:
    apply expr_simp
   apply (rule_tac R="(I \<and> T)\<^sup>e" in hoare_kcomp)
   by (auto simp: fbox_test fbox_kcomp)
+
+lemma fdia_while_variantI:
+  fixes V :: "int \<Rightarrow> 's \<Rightarrow> bool" and T :: "'s \<Rightarrow> bool"
+  shows "`P \<longrightarrow> @(V k)` 
+  \<Longrightarrow> `\<forall>k>0. @(V k) \<longrightarrow> T`
+  \<Longrightarrow> `\<forall>k::int. @(V k) \<le> |X\<rangle> @(V (k-1))` 
+  \<Longrightarrow> `(\<exists>k\<le>0. @(V k)) \<longrightarrow> \<not> T \<and> Q` \<Longrightarrow> P \<le> |WHILE T DO X\<rangle> Q"
+proof (simp add: while_def fdia_kcomp fdia_test impl_eq_leq[symmetric])
+  assume prec: "`P \<longrightarrow> @(V k)`" 
+    and variant: "`\<forall>k. @(V k) \<longrightarrow> |X\<rangle> @(V (k - 1))`" 
+    and test: "`\<forall>k>0. @(V k) \<longrightarrow> T`" 
+    and posc: "`(\<exists>k\<le>0. @(V k)) \<longrightarrow> \<not> T \<and> Q`"
+  show "`P \<longrightarrow> |(\<questiondown>T? ; X)\<^sup>*\<rangle> (\<not> T \<and> Q)`"
+  proof (clarsimp simp: fdia_kstar taut_def)
+    fix s
+    assume "P s"
+    hence "V k s"
+      using prec by expr_simp
+    hence "k \<le> 0 \<Longrightarrow> ( |kpower (\<questiondown>T? ; X) 0\<rangle> (\<not> T \<and> Q)) s"
+      using posc prec
+      by (simp add: taut_def fdia_kpower_0)
+        force
+    moreover {assume "k > 0"
+      then obtain n where "k = int n" and "n = nat k"
+        using zero_le_imp_eq_int 
+        by auto
+      hence "( |kpower (\<questiondown>T? ; X) n\<rangle> (\<not> T \<and> Q)) s"
+        using \<open>V k s\<close>
+      proof (induct n arbitrary: k s)
+        case 0
+        then show ?case
+          using posc
+          by (simp only: taut_def fdia_kpower_0, simp add: taut_def)
+            force
+      next
+        case (Suc m)
+        have m_eq: "k - 1 = int m" "m = nat (k - 1)"
+          and k_pos: "k > 0"
+          using Suc.prems by auto
+        obtain s' where "T s" and "s' \<in> X s" and "V (k-1) s'"
+          using variant Suc.prems(3) test \<open>k > 0\<close>
+          by (simp only: fdia_kpower_Suc fdia_kpower_0 fdia_kcomp fdia_test taut_def)
+            (force simp add: fdia_def)
+        have "( |kpower (\<questiondown>T? ; X) m\<rangle> (\<not> T \<and> Q)) s'"
+          using Suc.hyps[OF m_eq \<open>V (k-1) s'\<close>] by blast
+        thus "( |kpower (\<questiondown>T? ; X) (Suc m)\<rangle> (\<not> T \<and> Q)) s "
+          unfolding fdia_kpower_Suc fdia_kcomp fdia_test
+          using \<open>T s \<close> \<open>s' \<in> X s\<close> 
+          by (simp, subst fdia_def) 
+            force
+      qed
+      hence "( |kpower (\<questiondown>T? ; X) (nat k)\<rangle> (\<not> T \<and> Q)) s"
+        using \<open> n = nat k \<close> by simp}
+    ultimately show "\<exists>n. ( |kpower (\<questiondown>T? ; X) n\<rangle> (\<not> T \<and> Q)) s"
+      by force
+  qed
+qed
 
 
 subsection \<open> Framing \<close>
