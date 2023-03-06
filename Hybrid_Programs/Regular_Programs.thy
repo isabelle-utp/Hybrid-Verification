@@ -485,6 +485,77 @@ proof-
     by blast
 qed
 
+lemma nat_strong_induct[case_names zero induct]:
+  assumes "P 0"
+    and "(\<And>n. (\<And>m. m \<le> n \<Longrightarrow> P m) \<Longrightarrow> P (Suc n))"
+  shows "P n"
+  using assms
+  apply (induct n rule: full_nat_induct)
+  by simp (metis Suc_le_mono not0_implies_Suc)
+
+lemma fdia_kstar_variant':
+  assumes init: "I (n::nat) s"
+    and iter: "`\<forall>m>0. \<exists>n. @(I m) \<le> |F\<rangle> @(I n) \<and> n < m`"
+  shows "( |F\<^sup>*\<rangle> @(I 0)) s"
+proof(simp add: fdia_kstar)
+  have "n = 0 \<Longrightarrow> ( |F\<^sup>*\<rangle> @(I 0)) s"
+    using init 
+    by (simp add: fdia_kstar)
+      (metis fdia_kpower_0)
+  have "\<forall>ms. fst ms > 0 \<and> I (fst ms) (snd ms) 
+    \<longrightarrow> (\<exists>ns. snd ns \<in> F (snd ms) \<and> I (fst ns) (snd ns) \<and> fst ns < fst ms)"
+    using iter apply (clarsimp simp: taut_def fdia_def)
+    by (erule_tac x=b in allE, erule_tac x=a in allE, force)
+  then obtain f where f_hyp: "\<forall>ms. fst ms > 0 \<and> I (fst ms) (snd ms)
+    \<longrightarrow> (snd (f ms) \<in> F (snd ms) \<and> I (fst (f ms)) (snd (f ms)) \<and> fst (f ms) < fst ms)"
+    using iter
+    apply (atomize_elim)
+    by (rule choice_iff'[of "\<lambda>x. fst x > 0 \<and> I (fst x) (snd x)"
+          "\<lambda>ms ns. (snd ns) \<in> F (snd ms) \<and> I (fst ns) (snd ns) \<and> fst ns < fst ms", THEN iffD1])
+      (auto simp: taut_def SEXP_def)
+(* I n s \<Longrightarrow> f (n, s) = (n\<^sub>1, s\<^sub>1) \<and> I n\<^sub>1 s\<^sub>1 \<and> n\<^sub>1 < n \<and> s\<^sub>1 \<in> F s
+         \<Longrightarrow> f (n\<^sub>1, s\<^sub>1) = (n\<^sub>2, s\<^sub>2) \<and> I n\<^sub>2 s\<^sub>2 \<and> n\<^sub>2 < n\<^sub>1 \<and> s\<^sub>2 \<in> F s\<^sub>1
+         \<Longrightarrow> ...
+         \<Longrightarrow> f (n\<^sub>m\<^sub>-\<^sub>1, s\<^sub>m\<^sub>-\<^sub>1) = (n\<^sub>m, s\<^sub>m) \<and> I n\<^sub>m s\<^sub>m \<and> 0 = n\<^sub>m < n\<^sub>m\<^sub>-\<^sub>1 \<and> s\<^sub>m \<in> F s\<^sub>m\<^sub>-\<^sub>1 *)
+  have "\<exists>m\<le>n. fst ((f^^m) (n, s)) = 0 \<and> (\<forall>l\<le>m. \<forall>ms. (f ^^ l) (n, s) = ms 
+    \<longrightarrow> (snd ms) \<in> kpower F l s \<and> I (fst ms) (snd ms))"
+    using init
+  proof (induct n arbitrary: s rule: nat_strong_induct)
+    case zero
+    then show ?case
+      by (rule_tac x=0 in exI, simp add: kpower_0)
+  next
+    case (induct n)
+    then obtain m and s' where "s' \<in> F s" "I m s'" "m \<le> n"
+      and f_Suc: "(m, s') = f (Suc n, s)"
+      using f_hyp[rule_format, of "(Suc n, s)"] 
+      by auto
+    then obtain k and s'' where "((f ^^ k) (m, s')) = (0, s'')" and "k \<le> m"
+      and "\<forall>l\<le>k. snd ((f ^^ l) (m, s')) \<in> kpower F l s' 
+        \<and> I (fst ((f ^^ l) (m, s'))) (snd ((f ^^ l) (m, s')))"
+      using induct.hyps[OF \<open>m \<le> n\<close> \<open>I m s'\<close>, simplified]
+      by auto (metis prod.collapse)
+    thus ?case 
+      using \<open>m \<le> n\<close>
+      apply (rule_tac x="Suc k" in exI)
+      apply (clarsimp simp add: funpow_Suc_right f_Suc simp del: funpow.simps(2))
+      subgoal for l
+        apply (cases l; simp add: kpower_0 kpower_Suc kcomp_def 
+            funpow_Suc_right del: funpow.simps(2))
+        using induct.prems apply blast
+        using \<open>s' \<in> F s\<close> by blast
+      done
+  qed
+  then obtain m where "fst ((f^^m) (n, s)) = 0" 
+    and "\<forall>l\<le>m. \<forall>ms. (f ^^ l) (n, s) = ms \<longrightarrow> (snd ms) \<in> kpower F l s \<and> I (fst ms) (snd ms)"
+    and "m \<le> n"
+    by blast
+  then show "\<exists>n. ( |kpower F n\<rangle> @(I 0)) s"
+    by (rule_tac x=m in exI)
+      (metis SEXP_def dual_order.refl fdia_def)
+qed
+
+
 lemma fdia_kstar_convergence:
   fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
   defines "Q \<equiv> (\<lambda>s. \<exists>r::real\<le>0. P r s)"
@@ -591,6 +662,7 @@ lemma fdia_kstar_variantI: "`P \<longrightarrow> @(V k)` \<Longrightarrow> `\<fo
   apply (clarsimp simp: taut_def)
   apply (erule_tac x=s in allE)
   by (erule impE, rule_tac x="\<lfloor>r\<rfloor>" in exI, simp_all)
+
 
 subsection \<open> Loops with annotated invariants \<close>
 
@@ -711,6 +783,7 @@ proof (simp add: while_def fdia_kcomp fdia_test impl_eq_leq[symmetric])
       by force
   qed
 qed
+
 
 
 subsection \<open> Framing \<close>
