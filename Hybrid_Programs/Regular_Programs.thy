@@ -733,57 +733,24 @@ lemma fdia_while_variantI:
   \<Longrightarrow> `\<forall>k>0. @(V k) \<longrightarrow> T`
   \<Longrightarrow> `\<forall>k::int. @(V k) \<le> |X\<rangle> @(V (k-1))` 
   \<Longrightarrow> `(\<exists>k\<le>0. @(V k)) \<longrightarrow> \<not> T \<and> Q` \<Longrightarrow> P \<le> |WHILE T DO X\<rangle> Q"
-proof (simp add: while_def fdia_kcomp fdia_test impl_eq_leq[symmetric])
-  assume prec: "`P \<longrightarrow> @(V k)`" 
-    and variant: "`\<forall>k. @(V k) \<longrightarrow> |X\<rangle> @(V (k - 1))`" 
-    and test: "`\<forall>k>0. @(V k) \<longrightarrow> T`" 
-    and posc: "`(\<exists>k\<le>0. @(V k)) \<longrightarrow> \<not> T \<and> Q`"
-  show "`P \<longrightarrow> |(\<questiondown>T? ; X)\<^sup>*\<rangle> (\<not> T \<and> Q)`"
-  proof (clarsimp simp: fdia_kstar taut_def)
-    fix s
-    assume "P s"
-    hence "V k s"
-      using prec by expr_simp
-    hence "k \<le> 0 \<Longrightarrow> ( |kpower (\<questiondown>T? ; X) 0\<rangle> (\<not> T \<and> Q)) s"
-      using posc prec
-      by (simp add: taut_def fdia_kpower_0)
-        force
-    moreover {assume "k > 0"
-      then obtain n where "k = int n" and "n = nat k"
-        using zero_le_imp_eq_int 
-        by auto
-      hence "( |kpower (\<questiondown>T? ; X) n\<rangle> (\<not> T \<and> Q)) s"
-        using \<open>V k s\<close>
-      proof (induct n arbitrary: k s)
-        case 0
-        then show ?case
-          using posc
-          by (simp only: taut_def fdia_kpower_0, simp add: taut_def)
-            force
-      next
-        case (Suc m)
-        have m_eq: "k - 1 = int m" "m = nat (k - 1)"
-          and k_pos: "k > 0"
-          using Suc.prems by auto
-        obtain s' where "T s" and "s' \<in> X s" and "V (k-1) s'"
-          using variant Suc.prems(3) test \<open>k > 0\<close>
-          by (simp only: fdia_kpower_Suc fdia_kpower_0 fdia_kcomp fdia_test taut_def)
-            (force simp add: fdia_def)
-        have "( |kpower (\<questiondown>T? ; X) m\<rangle> (\<not> T \<and> Q)) s'"
-          using Suc.hyps[OF m_eq \<open>V (k-1) s'\<close>] by blast
-        thus "( |kpower (\<questiondown>T? ; X) (Suc m)\<rangle> (\<not> T \<and> Q)) s "
-          unfolding fdia_kpower_Suc fdia_kcomp fdia_test
-          using \<open>T s \<close> \<open>s' \<in> X s\<close> 
-          by (simp, subst fdia_def) 
-            force
-      qed
-      hence "( |kpower (\<questiondown>T? ; X) (nat k)\<rangle> (\<not> T \<and> Q)) s"
-        using \<open> n = nat k \<close> by simp}
-    ultimately show "\<exists>n. ( |kpower (\<questiondown>T? ; X) n\<rangle> (\<not> T \<and> Q)) s"
-      by force
-  qed
-qed
-
+  apply (simp add: while_def fdia_kcomp fdia_test)
+  apply (cases "k \<le> 0", clarsimp simp: taut_def fdia_kstar)
+  apply (erule_tac P="\<lambda>s. (\<exists>k\<le>0. V k s) \<longrightarrow> \<not> T s \<and> Q s" and x=x in allE)
+  apply (erule impE, force, rule_tac x=0 in exI, simp add: fdia_kpower_0)
+  apply (rule_tac P\<^sub>2="V k" and Q\<^sub>2="V 0" in fdia_conseq)
+    prefer 3 apply (fastforce simp: taut_def)
+   prefer 2 apply simp
+  apply (clarsimp simp: impl_eq_leq[symmetric] taut_def)
+  apply (rule fdia_kstar_variant'[of V _ _ "\<questiondown>T? ; X", simplified, of "nat k"])
+   apply simp
+  apply (clarsimp simp add: taut_def)
+  apply (rule_tac x="m - 1" in exI, clarsimp)
+  apply (rename_tac s s' m)
+  apply (erule_tac P="\<lambda>s. \<forall>k. V k s \<longrightarrow> ( |X\<rangle> @(V (k - 1))) s" and x=s' in allE)
+  apply (erule_tac x="int m" in allE, simp add: fdia_kcomp fdia_test)
+  apply (rule conjI)
+  by force 
+    (metis One_nat_def Suc_leI of_nat_1 of_nat_diff)
 
 
 subsection \<open> Framing \<close>
