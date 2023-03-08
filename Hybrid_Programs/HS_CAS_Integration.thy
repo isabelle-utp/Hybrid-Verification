@@ -1,5 +1,5 @@
 theory HS_CAS_Integration
-  imports "Diff_Dyn_Logic" "CAS_Integration.Subst_ODE"
+  imports Proof_Automation "CAS_Integration.Subst_ODE"
   keywords "find_local_flow" :: diag
 begin
 

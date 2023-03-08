@@ -494,86 +494,9 @@ lemma diff_ghost_rule_very_simple:
 no_notation Union ("\<mu>")
 
 
-subsection \<open> Proof Methods \<close>
+subsection \<open> Darboux rule \<close>
 
-thm fbox_g_ode_frame_flow fbox_solve fbox_g_dL_easiest
-(* most used solution theorems in arch2022:
-  * fbox_g_ode_frame_flow
-  * fbox_solve (which is essentially the one above)
-  * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
-*)
-
-text \<open> A simple tactic for Hoare logic that uses weakest liberal precondition calculations \<close>
-
-method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst 
-    var_alpha_combine wp usubst usubst_eval 
-    refine_iff_implies fbox_g_dL_easiest[OF local_flow])
-
-method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
-
-method diff_inv_on_single_eq_intro = 
-  (rule diff_inv_on_eqI
-  | rule diff_inv_on_raw_eqI
-  ) \<comment> \<open> applies @{term diff_inv_on}-rule \<close>
-
-method diff_inv_on_eq = (
-    (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?, 
-    (diff_inv_on_single_eq_intro; expr_auto),
-    (force simp: power2_eq_square intro!: vderiv_intros)?)
-
-method diff_inv_on_single_ineq_intro for dnu dmu::"'a \<Rightarrow> real" = 
-  (rule diff_inv_on_leqI[where \<mu>'=dmu and \<nu>'=dnu]
-  | rule diff_inv_on_lessI[where \<mu>'=dmu and \<nu>'=dnu]
-  | rule diff_inv_on_raw_leqI[where \<mu>'=dmu and \<nu>'=dnu]
-  | rule diff_inv_on_raw_lessI[where \<mu>'=dmu and \<nu>'=dnu]
-  ) \<comment> \<open> applies @{term diff_inv_on}-rule \<close>
-
-method diff_inv_on_ineq for dnu dmu::"'a \<Rightarrow> real" = (
-    (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?, 
-    diff_inv_on_single_ineq_intro dnu dmu;
-    (force intro!: vderiv_intros)?)
-
-method vderiv = ((expr_simp)?; force intro!: vderiv_intros simp: vec_eq_iff field_simps)
-
-method lipschitz for L :: real = 
-  (unfold local_lipschitz_on_def local_lipschitz_def lipschitz_on_def dist_norm, clarify, 
-    rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
-
-method lens_c1_lipschitz for df uses typeI =
- ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: typeI intro!: derivative_intros, 
-   fastforce intro: typeI continuous_intros)
-
-method local_flow for L :: real =
-  ((auto simp add: local_flow_on_def)?, (unfold_locales, auto), (lipschitz L, vderiv, expr_auto))
-
-method local_flow_auto =
-  (local_flow "1/4" | local_flow "1/2" | local_flow "1" | local_flow "2")
-
-method dDiscr = (rule_tac nmods_invariant[OF nmods_g_orbital_on_discrete']; unrest)
-
-method diff_inv_on_weaken_ineq for I::"'a \<Rightarrow> bool" 
-  and dLeq dGeg::"'a \<Rightarrow> real" = (
-    (rule fbox_inv[where I=I]),
-    (expr_simp add: le_fun_def),
-    (diff_inv_on_ineq dLeq dGeg),
-    vderiv,
-    (expr_simp add: le_fun_def)
-    )
-
-method diff_cut_ineq for I::"'a \<Rightarrow> bool" (* create tactic move to guard where nmods... *)
-  and dLeq dGeg::"'a \<Rightarrow> real" = (
-    (rule diff_cut_on_rule[where C=I]),
-    (diff_inv_on_weaken_ineq I dLeq dGeg)
-    )
-
-method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
-  = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"]
-    ,simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
-
-
-(**** DARBOUX ****)
-
-
+(* ongoing work *)
 thm derivative_quotient_bound derivative_quotient_bound_left
 thm gronwall_general gronwall_general_left
 
@@ -714,37 +637,7 @@ lemma darboux:
       (* unfold *) nhds_def 
       (* subst *) eventually_INF_base 
       (* auto simp: *) eventually_principal
-  oops
-
-method dInduct = (subst dInduct_hoare_diff_inv_on fbox_diff_inv_on; 
-    rule_tac lderiv_rules; simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
-method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
-method dWeaken = (rule_tac diff_weak_on_rule; expr_simp; auto simp add: field_simps)
-
-text \<open> A first attempt at a high-level automated proof strategy using differential induction.
-  A sequence of commands is tried as alternatives, one by one, and the method then iterates. \<close>
-
-method dInduct_mega uses facts = 
-  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
-  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
-  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
-  | rule_tac hoare_if_then_else_inv
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
-  )+
-
-
-method dInduct_mega' uses facts = 
-  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
-  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
-  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
-  | rule_tac hoare_if_then_else_inv
-  | (dDiscr ; force) \<comment> \<open> (3) Try proving as a discrete invariant \<close>
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
-  )+
-
-text \<open> First attempt at a system level prover \<close>
-
-method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
+    oops
 
 lemma darboux: 
   fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"

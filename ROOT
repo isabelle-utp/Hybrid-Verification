@@ -23,7 +23,7 @@ session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
     Evolution_Commands
     Regular_Programs
     Diff_Dyn_Logic
-    Real_Arith_Tactics
+    Proof_Automation
     HS_CAS_Integration
 
 (*

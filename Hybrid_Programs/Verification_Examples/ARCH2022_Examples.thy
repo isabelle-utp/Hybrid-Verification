@@ -4,9 +4,7 @@ text \<open> We prove partial correctness specifications of some hybrid systems 
 verification components.\<close>
 
 theory ARCH2022_Examples
-  imports 
-    "Hybrid-Verification.Hybrid_Verification"
-    "Hybrid-Verification.Real_Arith_Tactics"
+  imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
 

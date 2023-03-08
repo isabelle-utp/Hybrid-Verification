@@ -86,6 +86,11 @@ lemma fdia_mono:
   "`P \<longrightarrow> Q` \<Longrightarrow> `|F\<rangle> P` \<Longrightarrow> `|F\<rangle> Q`"
   by (auto simp: taut_def fdia_def) blast
 
+lemma determ_fdia_fboxI: "\<forall>s. \<exists>s'. F s \<subseteq> {s'} \<Longrightarrow> |F\<rangle> Q \<le> |F] Q"
+  using subset_singletonD
+  by (auto simp: fdia_def fbox_def taut_def)
+    fastforce
+
 
 subsection \<open> Hoare triple \<close>
 

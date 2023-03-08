@@ -555,7 +555,6 @@ proof(simp add: fdia_kstar)
       (metis SEXP_def dual_order.refl fdia_def)
 qed
 
-
 lemma fdia_kstar_convergence:
   fixes P::"real \<Rightarrow> 'a \<Rightarrow> bool"
   defines "Q \<equiv> (\<lambda>s. \<exists>r::real\<le>0. P r s)"
