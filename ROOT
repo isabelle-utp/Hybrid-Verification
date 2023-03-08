@@ -1,5 +1,5 @@
 session "Framed_ODEs" = Ordinary_Differential_Equations +
-  options [document = false]
+  options [quick_and_dirty, document = pdf, document_output = "output"]
   sessions
     "Shallow-Expressions"
     "Hybrid-Library"
@@ -7,9 +7,11 @@ session "Framed_ODEs" = Ordinary_Differential_Equations +
     CAS_Integration
   theories
     Framed_ODEs
+(*  document_files
+    "root.tex" *)
 
 session "Matrix_ODE_Verify" in Matrices = "Framed_ODEs" +
-  options [document = false]
+  options [quick_and_dirty, document = pdf, document_output = "output"]
   theories
     MTX_Preliminaries
     MTX_Norms
@@ -17,7 +19,7 @@ session "Matrix_ODE_Verify" in Matrices = "Framed_ODEs" +
     MTX_Flows
 
 session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
-  options [document = false]
+  options [quick_and_dirty, document = pdf, document_output = "output"]
   theories
     Correctness_Specs
     Evolution_Commands
@@ -25,32 +27,17 @@ session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
     Diff_Dyn_Logic
     Proof_Automation
     HS_CAS_Integration
+(*  document_files
+    "root.tex" *)
 
-(*
-session "Hybrid-Verification" = Ordinary_Differential_Equations +
+(*session "Verification_Examples" = "Hybrid-Verification" +
   options [quick_and_dirty, document = pdf, document_output = "output"]
-  sessions
-    "Shallow-Expressions"
-    "Hybrid-Library"
-    Optics
-    CAS_Integration
   directories
-    Matrices
-  (*theories [document = false]
-    HS_Preliminaries
-    HS_ODEs
-    HS_VC_Spartan
-    HS_Lens_ODEs
-    HS_Lens_Spartan
-    HS_Lie_Derivatives
-    Real_Arith_Tactics
-    "Matrices/MTX_Preliminaries"
-    "Matrices/MTX_Norms"
-    "Matrices/SQ_MTX"
-    "Matrices/MTX_Flows"*)
+    Hybrid_Programs/Verification_Examples
+    Legacy
   theories
-    ARCH2022_Examples
-    "Matrices/MTX_Examples"
+    "Hybrid_Programs/Verification_Examples/ARCH2022_Examples"
+    "Legacy/MTX_Examples"
   document_files
-    "root.tex"
-*)
+    "root.tex"*)
+
