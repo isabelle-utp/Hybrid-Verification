@@ -446,10 +446,10 @@ abbreviation (input) tank_flow :: "real \<Rightarrow> real \<Rightarrow> 'st \<R
   where "tank_flow k \<tau> \<equiv> [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t]"
 
 lemma lflow_tank [local_flow]: "local_flow_on (f k) (h+\<^sub>Lt) UNIV UNIV (\<phi> k)"
-  by (local_flow_auto)
+  by local_flow_on_auto
 
 lemma lf: "local_flow_on [h \<leadsto> k, t \<leadsto> 1] (h+\<^sub>Lt) UNIV UNIV (\<lambda>\<tau>. [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t])"
-  by local_flow_auto
+  by local_flow_on_auto
 
 abbreviation "ctrl \<equiv> (t, h\<^sub>m) ::= (0, h);
      IF \<not>flw \<and> h\<^sub>m \<le> H\<^sub>l + 1 THEN flw ::= True ELSE 

@@ -4,7 +4,7 @@ theory HS_CAS_Integration
 begin
 
 method fbox_solve for \<phi> :: "real \<Rightarrow> 's \<Rightarrow> 's" =
-  ((subst fbox_solve[where \<phi>="\<phi>"]; simp?), (local_flow_auto)[1])
+  ((subst fbox_solve[where \<phi>="\<phi>"]; simp?), (local_flow_Lconst)[1])
 
 ML \<open>
 fun match_term (top, _) = case top of

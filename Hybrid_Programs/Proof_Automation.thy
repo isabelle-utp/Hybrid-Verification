@@ -186,18 +186,6 @@ lemma STTexample6_arith:
   oops
 
 
-subsection \<open> Hoare Logic \<close>
-
-text \<open> A simple tactic for Hoare logic that uses weakest liberal precondition calculations \<close>
-
-(* Formally, this is not Hoare logic, rename? *)
-method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst 
-    var_alpha_combine wp usubst usubst_eval 
-    refine_iff_implies fbox_g_dL_easiest[OF local_flow])
-
-method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
-
-
 subsection \<open> Derivative certification \<close>
 
 method vderiv = ((expr_simp)?; force intro!: vderiv_intros simp: vec_eq_iff field_simps)
@@ -280,7 +268,153 @@ method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bo
     ,simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
 
 
-subsection \<open> Certification of existence and uniqueness \<close>
+subsection \<open> Continuity \<close>
+
+named_theorems continuity_intros "optimised compilation of continuity rules."
+
+thm continuous_intros
+
+declare continuous_on_const [continuity_intros]
+    and continuous_on_id [continuity_intros]
+    and continuous_on_add [continuity_intros]
+    and continuous_on_diff [continuity_intros]
+    and continuous_on_mult [continuity_intros]
+    and continuous_on_ln [continuity_intros]
+    and continuous_on_minus [continuity_intros]
+    and continuous_on_power [continuity_intros]
+    and continuous_on_divide [continuity_intros]
+    and continuous_on_cos [continuity_intros]
+    and continuous_on_sin [continuity_intros]
+    and continuous_on_exp [continuity_intros]
+    and continuous_on_Pair [continuity_intros]
+    and continuous_on_fst [continuity_intros]
+    and continuous_on_snd [continuity_intros]
+    and continuous_on_scaleR [continuity_intros]
+    and continuous_on_inverse [continuity_intros]
+
+lemma continuous_on_divideR: "continuous_on T f \<Longrightarrow> continuous_on T g 
+  \<Longrightarrow> \<forall>t\<in>T. g t \<noteq> 0 \<Longrightarrow> continuous_on T (\<lambda>t. f t /\<^sub>R g t)" 
+  for f::"'a::topological_space \<Rightarrow> 'b::real_normed_div_algebra"
+  by (auto intro!: continuity_intros)
+
+
+subsection \<open> Certification of uniqueness \<close>
+
+method lipschitz_const for L :: real = 
+  (unfold local_lipschitz_on_def local_lipschitz_def lipschitz_on_def dist_norm, clarify, 
+    rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
+
+method c1_lipschitz =
+  (expr_simp; (auto intro!: c1_local_lipschitz derivative_eq_intros continuity_intros)?)
+
+method c1_lipschitzI for df uses derivsI =
+  (expr_simp, (rule_tac \<DD>=df in c1_local_lipschitz; expr_auto)?; 
+    (auto intro!: c1_local_lipschitz derivative_eq_intros continuity_intros derivsI)?)
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 2] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> - $x] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> $y] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (z::real \<Longrightarrow> 's) 
+  \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x \<Longrightarrow> x \<bowtie> z \<Longrightarrow> z \<bowtie> x \<Longrightarrow> z \<bowtie> y \<Longrightarrow> y \<bowtie> z
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> $y, y \<leadsto> $z] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x +\<^sub>L y\<^esub> s)"
+  by c1_lipschitz
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - $x] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> - ($y * $x)] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> - $y, y \<leadsto> $x] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x +\<^sub>L y\<^esub> s)"
+  by c1_lipschitz
+
+lemma trivia_prod_subst: "(\<lambda>x. case x of (t, a) \<Rightarrow> f t a) = (\<lambda>(t,a). f t a)"
+  by simp
+
+(* fails on nonlinear inputs *)
+lemma "vwb_lens (x::real \<Longrightarrow> 's) 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - ($x)\<^sup>2] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  apply expr_simp
+  apply (rule_tac f'="\<lambda>(t,a). Blinfun (\<lambda>c. - (2 * c * a))" in c1_implies_local_lipschitz; clarsimp?)
+   apply (auto intro!: derivative_eq_intros)                          
+   apply (subst Blinfun_inverse; clarsimp)
+  using bounded_linear_minus bounded_linear_mult_const bounded_linear_mult_right apply blast
+  apply (subst trivia_prod_subst)
+  apply (subst comp_def[symmetric, of Blinfun])
+  apply (auto intro: continuity_intros split: prod.splits)
+  find_theorems "_ \<Longrightarrow> continuous_on _ _" name: comp
+  thm blinfun_apply_inverse Blinfun_inverse term Blinfun
+  oops
+
+(* fails on nonlinear inputs *)
+lemma "vwb_lens (x::real \<Longrightarrow> 's) 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - exp ($x)] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  oops
+
+
+subsection \<open> Certification of solutions \<close>
+
+method local_flow for L :: real =
+  ((auto simp add: local_flow_on_def)?, 
+    (unfold_locales, auto), 
+    (lipschitz_const L, vderiv, expr_auto))
+
+method local_flow_Lconst =
+  (local_flow "1/4" | local_flow "1/2" | local_flow "1" | local_flow "2")
+
+method local_flow_on_auto =
+  (((clarsimp simp: local_flow_on_def)?, unfold_locales; clarsimp?), c1_lipschitz, vderiv+)
+
+lemma "vwb_lens x \<Longrightarrow> local_flow_on [x \<leadsto> 2] x UNIV UNIV (\<lambda>t. [x \<leadsto> 2 * \<guillemotleft>t\<guillemotright> + $x])"
+  by local_flow_on_auto
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) 
+  \<Longrightarrow> local_flow_on [x \<leadsto> - $x] x UNIV UNIV (\<lambda>t. [x \<leadsto> $x * exp (- \<guillemotleft>t\<guillemotright>)])"
+  by local_flow_on_auto
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_flow_on [x \<leadsto> $y] x UNIV UNIV (\<lambda>t. [x \<leadsto> $y * \<guillemotleft>t\<guillemotright> + $x])"
+  by local_flow_on_auto
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (z::real \<Longrightarrow> 's) 
+  \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x \<Longrightarrow> x \<bowtie> z \<Longrightarrow> z \<bowtie> x \<Longrightarrow> z \<bowtie> y \<Longrightarrow> y \<bowtie> z
+  \<Longrightarrow> local_flow_on [x \<leadsto> $y, y \<leadsto> $z] (x +\<^sub>L y) UNIV UNIV 
+  (\<lambda>t. [x \<leadsto> $z * \<guillemotleft>t\<guillemotright>\<^sup>2 / 2 + $y * \<guillemotleft>t\<guillemotright> + $x, y \<leadsto> $z * \<guillemotleft>t\<guillemotright> + $y])"
+  by local_flow_on_auto
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_flow_on [x \<leadsto> - $x + 1] x UNIV UNIV (\<lambda>t. [x \<leadsto> 1 - exp (- \<guillemotleft>t\<guillemotright>) + $x * exp (- \<guillemotleft>t\<guillemotright>)])"
+  by local_flow_on_auto
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_flow_on [x \<leadsto> - $y * $x] x UNIV UNIV (\<lambda>t. [x \<leadsto> $x * exp (- \<guillemotleft>t\<guillemotright> * $y)])"
+  by local_flow_on_auto
+
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens y \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_flow_on [x \<leadsto> - $y, y \<leadsto> $x] (x +\<^sub>L y) UNIV UNIV 
+  (\<lambda>t. [x \<leadsto> $x * cos \<guillemotleft>t\<guillemotright> + - 1 * $y * sin \<guillemotleft>t\<guillemotright>, y \<leadsto> $y * cos \<guillemotleft>t\<guillemotright> + $x * sin \<guillemotleft>t\<guillemotright>])"
+  by local_flow_on_auto
+
+
+subsection \<open> Hoare Logic \<close>
+
+text \<open> A simple tactic for Hoare logic that uses weakest liberal precondition calculations \<close>
+
+(* Formally, this is not Hoare logic, rename? *)
+method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst 
+    var_alpha_combine wp usubst usubst_eval 
+    refine_iff_implies fbox_g_dL_easiest[OF local_flow])
+
+method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
 
 thm fbox_g_ode_frame_flow fbox_solve fbox_g_dL_easiest
 (* most used solution theorems in arch2022:
@@ -289,20 +423,12 @@ thm fbox_g_ode_frame_flow fbox_solve fbox_g_dL_easiest
   * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
 *)
 
-method lipschitz for L :: real = 
-  (unfold local_lipschitz_on_def local_lipschitz_def lipschitz_on_def dist_norm, clarify, 
-    rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
+lemma "(P \<le> |Y ; (LOOP X INV I)] Q) = K"
+  oops
 
-method lens_c1_lipschitz for df uses typeI =
- ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: typeI intro!: derivative_intros, 
-   fastforce intro: typeI continuous_intros)
-
-method local_flow for L :: real =
-  ((auto simp add: local_flow_on_def)?, (unfold_locales, auto), (lipschitz L, vderiv, expr_auto))
-
-method local_flow_auto =
-  (local_flow "1/4" | local_flow "1/2" | local_flow "1" | local_flow "2")
-
+lemma "(P \<le> |Y ; (LOOP X INV I)] Q) = K"
+  apply (simp add: wp)
+  oops
 
 subsection \<open> Full proof automation \<close>
 

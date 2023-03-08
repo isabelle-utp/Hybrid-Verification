@@ -170,7 +170,6 @@ declare has_vderiv_on_const [vderiv_intros]
     and has_vderiv_on_add[THEN has_vderiv_on_eq_rhs, vderiv_intros]
     and has_vderiv_on_diff[THEN has_vderiv_on_eq_rhs, vderiv_intros]
     and has_vderiv_on_mult[THEN has_vderiv_on_eq_rhs, vderiv_intros]
-    and has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs, vderiv_intros]
     and has_vderiv_on_ln[vderiv_intros]
 
 lemma vderiv_compI:
@@ -269,14 +268,24 @@ lemma vderiv_sndI [vderiv_intros]:
   subgoal for x by (rule_tac has_vector_derivative_snd''[of _ "(fst \<circ> X') x"], force)
   done
 
-lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow>  D g = g' on T 
-  \<Longrightarrow> D (\<lambda>t. f t /\<^sub>R g t) = (\<lambda>t. (f' t *\<^sub>R g t - f t *\<^sub>R (g' t)) /\<^sub>R (g t)^2) on T"
-  unfolding has_vderiv_on_def has_vector_derivative_def
-  by (auto simp: fun_eq_iff field_simps  intro!: derivative_eq_intros)
+lemma has_vderiv_on_inverse: "D f = f' on T \<Longrightarrow> \<forall>t\<in>T. f t \<noteq> 0 
+  \<Longrightarrow> D (\<lambda>t. inverse (f t)) = (\<lambda>t. - (inverse (f t)) * (f' t) * (inverse (f t))) on T"
+  for f :: "real \<Rightarrow> 'b :: real_normed_div_algebra"
+  unfolding has_vderiv_on_def apply (clarsimp simp: )
+  unfolding has_vector_derivative_def
+  apply (subst has_derivative_eq_rhs; clarsimp?)
+  by (rule Deriv.has_derivative_inverse) auto
 
 lemmas vderiv_scaleR[vderiv_intros] = has_vderiv_on_scaleR[THEN has_vderiv_on_eq_rhs]
+  and vderiv_inverse[vderiv_intros] = has_vderiv_on_inverse[THEN has_vderiv_on_eq_rhs]
 
-lemmas vderiv_divideRI[vderiv_intros] = has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs]
+lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrightarrow> D f = f' on T \<Longrightarrow>  D g = g' on T 
+  \<Longrightarrow> D (\<lambda>t. f t /\<^sub>R g t) = (\<lambda>t. (f' t *\<^sub>R g t - f t *\<^sub>R (g' t)) /\<^sub>R (g t)^2) on T"
+  by (auto intro!: vderiv_intros)
+    (clarsimp simp: field_simps)
+
+(* should we add this one?*)
+lemmas vderiv_divideRI[vderiv_intros] = has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs] 
 
 lemmas vderiv_ivl_integralI[vderiv_intros] = ivl_integral_has_vderiv_on[OF vderiv_on_continuous_on]
 
@@ -825,7 +834,7 @@ qed
 
 lemma continuous_derivative_local_lipschitz: (* This should be generalised *)
   fixes f :: "real \<Rightarrow> 'a::real_inner"
-  assumes "\<exists>f'. (D f = f' on UNIV) \<and> (continuous_on UNIV f')"
+  assumes "(D f = f' on UNIV)" and "(continuous_on UNIV f')"
   shows "local_lipschitz UNIV UNIV (\<lambda>t::real. f)"
 proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
   fix x and t

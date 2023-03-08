@@ -313,7 +313,7 @@ lemma fbox_g_ode_frame_flow:
   apply (subst local_flow.fbox_g_ode_subset[OF assms(1,3)[unfolded local_flow_on_def lframe_subst_def lframe_fun_def, rule_format]])
   using assms(2) by expr_auto+
 
-lemmas fbox_solve = fbox_g_ode_frame_flow[where T=UNIV]
+lemmas fbox_solve = fbox_g_ode_frame_flow[where T=UNIV, simplified]
 
 lemma fdia_g_ode_frame_flow:
   fixes a::"'c::{heine_borel,banach} \<Longrightarrow> 's"
