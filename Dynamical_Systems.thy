@@ -115,11 +115,12 @@ lemma "diff_inv U S (\<lambda>s. True) f t\<^sub>0 I \<Longrightarrow> diff_inv 
 
 named_theorems diff_inv_rules "rules for certifying differential invariants"
 
+(* changing dom of derivation to down (U (X t\<^sub>0)) t makes this rule imply the lens version *)
 lemma diff_inv_eq0I:
   fixes \<mu>::"'a::real_normed_vector \<Rightarrow> 'b::real_inner"
   assumes ivl: "\<And>s. s \<in> S \<Longrightarrow> is_interval (U s)"
     and dX: "\<And>X t. D X = (\<lambda>\<tau>. f \<tau> (X \<tau>)) on U (X t\<^sub>0) \<Longrightarrow> \<forall>\<tau>\<in>(down (U (X t\<^sub>0)) t). G (X \<tau>) 
-    \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U (X t\<^sub>0)"
+    \<Longrightarrow> D (\<lambda>\<tau>. \<mu> (X \<tau>)) = (\<lambda>\<tau>. \<tau> *\<^sub>R 0) on U (X t\<^sub>0)" 
   shows "diff_inv U S G f t\<^sub>0 (\<lambda>s. \<mu> s = 0)"
 proof(clarsimp simp: diff_inv_eq ivp_sols_def)
   fix X t
