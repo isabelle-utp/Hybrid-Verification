@@ -272,8 +272,6 @@ subsection \<open> Continuity \<close>
 
 named_theorems continuity_intros "optimised compilation of continuity rules."
 
-thm continuous_intros
-
 declare continuous_on_const [continuity_intros]
     and continuous_on_id [continuity_intros]
     and continuous_on_add [continuity_intros]
@@ -344,6 +342,7 @@ lemma trivia_prod_subst: "(\<lambda>x. case x of (t, a) \<Rightarrow> f t a) = (
 lemma "vwb_lens (x::real \<Longrightarrow> 's) 
   \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - ($x)\<^sup>2] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
   apply expr_simp
+  thm c1_implies_local_lipschitz
   apply (rule_tac f'="\<lambda>(t,a). Blinfun (\<lambda>c. - (2 * c * a))" in c1_implies_local_lipschitz; clarsimp?)
    apply (auto intro!: derivative_eq_intros)                          
    apply (subst Blinfun_inverse; clarsimp)
