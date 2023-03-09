@@ -188,7 +188,12 @@ lemma STTexample6_arith:
 
 subsection \<open> Derivative certification \<close>
 
-method vderiv = ((expr_simp)?; force intro!: vderiv_intros simp: vec_eq_iff field_simps)
+method vderiv_single uses simp intro 
+  = (auto intro!: vderiv_intros intro simp: field_simps simp)[1]
+
+method vderiv uses simp intro 
+  = ((expr_simp)?; 
+    force intro!: vderiv_intros intro simp: vec_eq_iff field_simps simp)
 
 
 subsection \<open> Differential invariance \<close>
@@ -354,10 +359,20 @@ lemma "vwb_lens (x::real \<Longrightarrow> 's)
   thm blinfun_apply_inverse Blinfun_inverse term Blinfun
   oops
 
+(* but we can make it linear *)
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - $y, y \<leadsto> 2 * $x] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
+
 (* fails on nonlinear inputs *)
 lemma "vwb_lens (x::real \<Longrightarrow> 's) 
   \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - exp ($x)] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
   oops
+
+(* but we can make it linear *)
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::real \<Longrightarrow> 's) \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x 
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> 1 - $y, y \<leadsto> $y] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x\<^esub> s)"
+  by c1_lipschitz
 
 
 subsection \<open> Certification of solutions \<close>

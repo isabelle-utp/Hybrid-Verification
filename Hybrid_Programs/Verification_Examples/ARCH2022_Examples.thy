@@ -3074,9 +3074,7 @@ lemma my_subst: "[x \<leadsto> y, y \<leadsto> a * x + b * y] =
 
 lemma local_lipschitz_hosc: 
   "local_lipschitz UNIV UNIV (tsubst2vecf (x +\<^sub>L y) (\<lambda>t::real. [x \<leadsto> y, y \<leadsto> a * x + b * y]) s)"
-  apply expr_simp
-  by (rule_tac \<DD>="(\<lambda>c. (snd c, a * fst c + b * snd c))" in c1_local_lipschitz)
-    (auto intro!: derivative_eq_intros continuity_intros)
+  by c1_lipschitz
 
 lemma sols_to_Phi: "(x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) / discr - x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2) / discr 
       + y1 * exp (t * \<iota>\<^sub>2) / discr - y1 * exp (t * \<iota>\<^sub>1) / discr,
@@ -3090,17 +3088,15 @@ lemma sols_to_Phi: "(x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) / discr - 
     (simp add: mult.left_commute)
 
 lemma vecf_to_A: "(
-        x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
+    x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
       + y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) / discr - y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1) / discr,
-   a * (x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) / discr - x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2) / discr 
+    a * (x1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>1) / discr - x1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>2) / discr 
       + y1 * exp (t * \<iota>\<^sub>2) / discr - y1 * exp (t * \<iota>\<^sub>1) / discr) 
- + b * (x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
-      + y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) / discr - y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1) / discr)
-    ) = 
-    (
-      (A *\<^sub>V (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]))) $ (1::2), 
-      (A *\<^sub>V (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]))) $ (2::2)
-    )"
+      + b * (x1 * a * exp (t * \<iota>\<^sub>2) / discr - x1 * a * exp (t * \<iota>\<^sub>1) / discr 
+      + y1 * \<iota>\<^sub>2 * exp (t * \<iota>\<^sub>2) / discr - y1 * \<iota>\<^sub>1 * exp (t * \<iota>\<^sub>1) / discr)) 
+    = (
+     (A *\<^sub>V (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]))) $ (1::2), 
+     (A *\<^sub>V (((1/discr) *\<^sub>R \<Phi> t) *\<^sub>V (vector [x1,y1]))) $ (2::2))"
   apply (clarsimp simp: sq_mtx_vec_mult_eq UNIV_2)
   apply distribute
   apply (clarsimp simp: add_divide_distrib diff_divide_distrib mult.commute)
@@ -3114,34 +3110,25 @@ lemma local_flow_mtx_hosc:
   unfolding assms using local_flow_sq_mtx_linear[of "A"] assms
   apply(subst (asm) exp_scaleR_diagonal2[OF invertible_mtx_chB_hosc mtx_hosc_diagonalizable])
      apply(simp add: iota1_def iota2_def discr_def, simp, simp)
-  by (subst (asm) mtx_hosc_solution_eq) simp_all
+  by (subst (asm) mtx_hosc_solution_eq) assumption
 
 lemma has_vderiv_Phi_A: "0 < b\<^sup>2 + a * 4 \<Longrightarrow> a \<noteq> 0 
   \<Longrightarrow> ((\<lambda>t. ((1 / discr) *\<^sub>R \<Phi> t) *\<^sub>V s) has_vderiv_on (\<lambda>t. A *\<^sub>V (((1 / discr) *\<^sub>R \<Phi> t) *\<^sub>V s))) {0--t}"
   using conjunct1[OF conjunct2[OF local_flow_mtx_hosc[unfolded local_flow_def local_flow_axioms_def]]] 
   by clarsimp
 
+lemmas vderiv_vec_nthI = iffD1[OF has_vderiv_on_component, rule_format]
+
 lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   \<Longrightarrow> local_flow_on [x \<leadsto> y, y \<leadsto> a * x + b * y] (x +\<^sub>L y) UNIV UNIV
   (\<lambda>t. [x \<leadsto> x_sol t x y, y \<leadsto> y_sol t x y])"
-  unfolding local_flow_on_def 
-  unfolding local_flow_def local_flow_axioms_def apply safe
-  using local_lipschitz_hosc
-     apply (unfold_locales; (clarsimp simp: tsubst2vecf_eq)?)
-    apply (expr_simp add: x_sol_eq y_sol_eq)
-    apply (subst sols_to_Phi)
-    apply (subst vecf_to_A)
-    prefer 3 subgoal by expr_simp
-   prefer 2 subgoal 
-    apply (expr_simp add: iota1_def iota2_def)
-    by distribute (clarsimp simp: add_divide_distrib diff_divide_distrib discr_def)
-  apply (rename_tac x1 y1)
-  apply (rule vderiv_intros)
-    prefer 3 apply force
-  apply (rule iffD1[OF has_vderiv_on_component, rule_format]) (* name this lemma *)
-   apply (rule has_vderiv_Phi_A, simp, simp)
-  apply (rule iffD1[OF has_vderiv_on_component, rule_format]) (* name this lemma *)
-  by (rule has_vderiv_Phi_A, simp, simp)
+  apply (((clarsimp simp: local_flow_on_def)?, unfold_locales; clarsimp?), c1_lipschitz)
+   apply (expr_simp add: x_sol_eq y_sol_eq)
+  apply (subst sols_to_Phi, subst vecf_to_A)
+   apply (vderiv_single intro: vderiv_vec_nthI has_vderiv_Phi_A)
+  apply (expr_simp add: iota1_def iota2_def)
+  by distribute 
+    (clarsimp simp: add_divide_distrib diff_divide_distrib discr_def)
 
 
 lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 \<Longrightarrow>
