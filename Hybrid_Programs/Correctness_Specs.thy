@@ -56,6 +56,12 @@ lemma fbox_mono:
 lemma fbox_anti: "\<forall>s. F\<^sub>1 s \<subseteq> F\<^sub>2 s \<Longrightarrow> |F\<^sub>2] P \<le> |F\<^sub>1] P"
   unfolding fbox_def by auto
 
+lemma fbox_inv:
+  assumes "P \<le> I" and "I \<le> |F] I" and "I \<le> Q"
+  shows "P \<le> |F] Q"
+  by (rule order.trans[OF assms(1) order.trans[OF assms(2)]])
+    (rule fbox_iso[OF assms(3)])
+
 lemma fbox_invs: 
   assumes "(I)\<^sub>e \<le> |F] I" and "(J)\<^sub>e \<le> |F] J"
   shows "(I \<and> J)\<^sub>e \<le> |F] (I \<and> J)"

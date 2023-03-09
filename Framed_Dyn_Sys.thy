@@ -105,8 +105,8 @@ lemma g_orbital_onI:
 
 subsection \<open> Framed differential invariants \<close>
 
-definition diff_inv_on :: "('c:: real_normed_vector \<Longrightarrow> 'a) \<Rightarrow> (real \<Rightarrow> 'a \<Rightarrow> 'a) 
-  \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" 
+definition diff_inv_on :: "('c:: real_normed_vector \<Longrightarrow> 's) \<Rightarrow> (real \<Rightarrow> 's \<Rightarrow> 's) 
+  \<Rightarrow> ('s \<Rightarrow> bool) \<Rightarrow> ('c \<Rightarrow> real set) \<Rightarrow> 'c set \<Rightarrow> real \<Rightarrow> ('s \<Rightarrow> bool) \<Rightarrow> bool" 
   where "diff_inv_on x f G U S t\<^sub>0 I \<equiv> (\<Union> \<circ> (\<P> (g_orbital_on x f G U S t\<^sub>0))) {s. I s} \<subseteq> {s. I s}"
 
 lemma diff_inv_on_eq: "diff_inv_on x f G U S t\<^sub>0 I = 

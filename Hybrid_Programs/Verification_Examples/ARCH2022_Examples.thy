@@ -278,7 +278,7 @@ begin
 (* proof with invariants *)
 (* x=0->[{x'=1}]x>=0 *)
 lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
-  by (rule hoare_diff_inv_on_post_inv, simp, dInduct)
+  by (rule_tac I="(x\<ge>0)\<^sup>e" in fbox_diff_invI; (dInduct | expr_auto))
 
 (* proof with solutions *)
 (* x=0->[{x'=1}]x>=0 *)
@@ -2476,7 +2476,7 @@ lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0
       fdia_g_ode_frame_flow[OF local_flow_LICS2])
   apply (hol_clarsimp) *)
   thm taut_def fdia_skip fdia_abort fdia_test fdia_assign 
-      fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on
+      fdia_nondet_assign fdia_choice fdia_kcomp
   thm fdia_g_ode_frame_flow[OF local_flow_LICS2]
   oops
 

@@ -39,6 +39,8 @@ subsection \<open> Derivation of the rules of dL \<close>
 text \<open> We derive rules of differential dynamic logic (dL). First we present a
 general version, then we show the rules as instances of the general ones.\<close>
 
+notation g_orbital ("(1x\<acute>=_ & _ on _ _ @ _)")
+
 abbreviation g_dl_ode ::"(('a::banach)\<Rightarrow>'a) \<Rightarrow> 'a pred \<Rightarrow> 'a \<Rightarrow> 'a set" 
   ("(1x\<acute>=_ & _)") where "(x\<acute>=f & G) \<equiv> (x\<acute>=(\<lambda>t. f) & G on (\<lambda>s. {t. t \<ge> 0}) UNIV @ 0)"
 
