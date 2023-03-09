@@ -3,4 +3,10 @@ theory Hybrid_Verification
     Diff_Dyn_Logic
     Proof_Automation
     HS_CAS_Integration
-begin end
+begin
+
+(* People will mainly be using this theory for doing verification, so we turn on literal variables *)
+
+lit_vars
+
+end
