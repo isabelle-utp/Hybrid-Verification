@@ -241,14 +241,26 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
   by (wp_solve_one "\<lambda>t. [x \<leadsto> x * exp t]")
     expr_auto
 
+(* proof with darboux rule *)
+(* x>0 -> [{x'=5};{x'=2};{x'=x}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
   apply (rule_tac R="(x > 0)\<^sup>e" in hoare_kcomp)+
     apply dInduct
-  apply dInduct[1]
-  apply (rule darboux_less[of x y z]; 
-      expr_simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
-  oops
-
+   apply dInduct[1]
+  apply (rule darboux_less[of x y z _ _ _ 1]; expr_simp add: framed_derivs 
+      ldifferentiable closure usubst unrest_ssubst unrest usubst_eval; clarsimp?)
+  subgoal for s
+    by expr_auto
+      (rule_tac x="put\<^bsub>y\<^esub> s 1" in exI, simp)
+  subgoal
+    by (subst lens_indep_comm; expr_simp)
+  subgoal for s
+    apply expr_auto
+     apply (rule_tac x="put\<^bsub>z\<^esub> s (1/sqrt (get\<^bsub>y\<^esub> s))" in exI, simp add: field_simps)
+    using exp_ghost_arith by expr_auto
+  subgoal
+    by (simp add: frechet_derivative_fst)
+  using bounded_linear_fst bounded_linear_imp_differentiable by blast
 
 end
 

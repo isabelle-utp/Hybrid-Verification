@@ -226,6 +226,34 @@ lemma lframeD_cos [framed_derivs]:
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (cos expr) = (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr * - sin expr)\<^sub>e"
   using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_cos)
 
+lemma lframeD_pair [framed_derivs]:
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 
+    and expr1 :: "'s \<Rightarrow> 'v::real_normed_field"
+    and expr2 :: "'s \<Rightarrow> 'v::real_normed_field"
+  assumes  "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1, expr2) = ((\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 , \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2))\<^sub>e"
+  using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_Pair)
+
+lemma lframeD_fst [framed_derivs]:
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 
+    and expr :: "'s \<Rightarrow> ('v1::real_normed_field) \<times> ('v2::real_normed_field)"
+  assumes  "vwb_lens x" "vwb_lens y" "differentiable\<^bsub>x +\<^sub>L y\<^esub> expr"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (fst expr) = (fst (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr))\<^sub>e"
+  using assms 
+  using frechet_derivative_fst
+  (* by (simp add: expr_defs fun_eq_iff frechet_derivative_fst) *)
+  oops
+
+lemma lframeD_snd [framed_derivs]:
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 
+    and expr :: "'s \<Rightarrow> ('v1::real_normed_field) \<times> ('v2::real_normed_field)"
+  assumes  "vwb_lens x" "vwb_lens y" "differentiable\<^bsub>x +\<^sub>L y\<^esub> expr"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (snd expr) = (snd (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr))\<^sub>e"
+  using assms 
+  using frechet_derivative_snd
+  (* by (simp add: expr_defs fun_eq_iff frechet_derivative_snd) *)
+  oops
+
 declare lens_quotient_plus_den1 [simp]
 declare lens_quotient_plus_den2 [simp]
 
