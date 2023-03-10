@@ -63,18 +63,8 @@ begin
 (* Proof using differential induction. Can this be better automated? *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
-proof -
-  have 1: "\<^bold>{x \<ge> 1\<^bold>} {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
-    by dInduct
-  show ?thesis
-    apply (rule hoare_fwd_assign)
-     apply (simp)
-    apply (subst_eval)
-    apply (rule hoare_conseq[OF 1])
-     apply (expr_simp)
-    apply simp
-    done
-qed
+  apply (rule_tac R="(x \<ge> 1)\<^sup>e" in hoare_kcomp)
+  by (hoare_wp_auto) dInduct
 
 (* Proof using the solution *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
@@ -143,10 +133,7 @@ lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x 
        apply (rule nmods_assign)
          apply (simp_all add: unrest)
       apply unrest
-     apply (rule hoare_loopI)
-       apply (hoare_wp_auto)
-      apply (expr_auto)
-     apply (expr_auto)
+     apply wp_full
     apply (hoare_wp_auto)
    apply (dInduct_mega)
   apply (hoare_wp_auto)
@@ -190,11 +177,9 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
   apply(subst fbox_kcomp[symmetric])
   apply(rule_tac R="(x > 0 \<and> y > 0)\<^sup>e" in hoare_kcomp)
-  apply (simp add: expr_defs, rule fbox_invs_raw)
-  apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 5")
-   apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
-  apply (rule hoare_choice)
-  by hoare_wp_auto+
+  apply dInduct
+  by (rule hoare_choice) 
+    hoare_wp_auto+
 
 end
 
@@ -235,20 +220,17 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0)
   apply (subst fbox_kcomp[symmetric])
   apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
    apply (dGhost "z" "(x*z\<^sup>2 = 1 \<and> y > 0)\<^sub>e" "1/2")
-    apply (rule fbox_invs(1))
-  apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-    apply (diff_inv_on_eq)
-    apply (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 0")
-    apply (expr_auto add: exp_ghost_arith)
-  apply (rule hoare_choice)
-  by hoare_wp_auto+
+    apply dInduct_auto
+   apply (expr_auto add: exp_ghost_arith)
+  by (rule hoare_choice)
+    hoare_wp_auto+
 
 end
 
 
 subsubsection \<open> Dynamics: Cascaded \<close>
 
-context two_vars
+context three_vars
 begin
 
 (* x>0 -> [{x'=5};{x'=2};{x'=x}]x>0 *)
@@ -258,6 +240,15 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
   apply (wp_solve_one "\<lambda>t. [x \<leadsto> 2 * t + x]")
   by (wp_solve_one "\<lambda>t. [x \<leadsto> x * exp t]")
     expr_auto
+
+lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
+  apply (rule_tac R="(x > 0)\<^sup>e" in hoare_kcomp)+
+    apply dInduct
+  apply dInduct[1]
+  apply (rule darboux_less[of x y z]; 
+      expr_simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
+  oops
+
 
 end
 

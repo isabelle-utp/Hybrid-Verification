@@ -240,8 +240,9 @@ text \<open> A first attempt at a high-level automated proof strategy using diff
 
 method dDiscr = (rule_tac nmods_invariant[OF nmods_g_orbital_on_discrete']; unrest)
 
-method dInduct = (subst hoare_diff_inv_on' fbox_diff_inv_on; 
-    rule_tac lderiv_rules; 
+(* hoare_diff_inv_on' *)
+method dInduct = ((intro hoare_invs)?; subst fbox_diff_inv_on; 
+    intro lderiv_rules; 
     simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
 
 method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)

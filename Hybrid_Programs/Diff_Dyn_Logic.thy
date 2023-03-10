@@ -641,8 +641,8 @@ lemma darboux:
       (* auto simp: *) eventually_principal
     oops
 
-lemma darboux: 
-  fixes a y z :: "real \<Longrightarrow> ('a::real_normed_vector)"
+lemma darboux_leq: 
+  fixes a y z :: "real \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> real"
     and g :: real
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
@@ -683,6 +683,59 @@ lemma darboux:
   using vwbs indeps deriv apply - 
 
   apply(rule ldiff_inv_on_le_rule; clarsimp?)
+    apply (rule differentiable_times; clarsimp?)
+     apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
+    apply expr_simp
+   apply (subst lframeD_zero)
+   apply (subst lframeD_times; clarsimp?)
+   apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
+  apply (subst lframeD_cont_var; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
+  using yGhost(1,2) indeps vwbs dbx_hyp apply expr_simp
+  by (clarsimp simp: framed_derivs ldifferentiable usubst 
+      unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
+
+lemma darboux_less: 
+  fixes a y z :: "real \<Longrightarrow> 'a"
+    and e e' :: "'a \<Rightarrow> real"
+    and g :: real
+  assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
+    and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
+    and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e > 0)\<^sub>e = (y > 0 \<and> e > 0)\<^sup>e \\ $y"
+    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e" "(0 < y)\<^sub>e = (y*z\<^sup>2 = 1)\<^sup>e \\ $z"
+    and dbx_hyp: "(\<D>\<^bsub>a +\<^sub>L y\<^esub>\<langle>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> * $y)\<rangle> e) \<ge> (\<guillemotleft>g\<guillemotright> * e)\<^sub>e"
+    and deriv: "differentiable\<^sub>e e on (a +\<^sub>L y)"
+  shows "(e > 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e > 0)"
+  apply (rule diff_ghost_rule_very_simple[where k="-g", OF _ vwbs(2) indeps(1) yGhost])
+  apply (rule strengthen[of "(y > 0 \<and> e * y > 0)\<^sup>e"])
+  using indeps apply (expr_simp, clarsimp simp add: zero_less_mult_iff) 
+  apply (subst SEXP_def[symmetric, of G])
+  apply (rule_tac C="(y > 0)\<^sup>e" in diff_cut_on_rule)
+   apply (rule_tac weaken[of _ "(y > 0)\<^sub>e"])
+  using indeps apply (expr_simp)
+  apply (rule diff_ghost_rule_very_simple[where k="g/2", OF _ vwbs(3) _ zGhost])
+    prefer 2 using indeps apply expr_simp
+    apply (subst hoare_diff_inv_on)
+  apply (rule diff_inv_on_raw_eqI; (clarsimp simp: tsubst2vecf_eq)?)
+  using vwbs indeps
+    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
+  using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)
+   apply (intro vderiv_intros; force?)
+   apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
+  using vwbs indeps apply (expr_simp add: power2_eq_square)
+  apply (rule_tac I="\<lambda>\<s>. 0 < e \<s> * $y" in fbox_diff_invI)
+    prefer 3 apply (expr_simp add: le_fun_def)
+   prefer 2 apply (expr_simp add: le_fun_def)
+  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof the same as in HS Lens Spartan up to here *)
+
+  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
+   apply (erule ssubst)
+   prefer 2 apply clarsimp 
+  apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
+  prefer 2 using vwbs indeps
+    apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
+  using vwbs indeps deriv apply - 
+
+  apply(rule ldiff_inv_on_less_rule; clarsimp?)
     apply (rule differentiable_times; clarsimp?)
      apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
     apply expr_simp

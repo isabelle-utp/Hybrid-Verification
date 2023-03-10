@@ -383,7 +383,7 @@ lemma ldiff_inv_on_eq_rule:
   fixes e :: "'s \<Rightarrow> 'a::real_inner" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_eq: "`G \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e = \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f` 
-  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (G)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e = f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis1")
+  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (G)\<^sub>e (Collect ((\<le>) 0))\<^sub>e UNIV 0 (e = f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis1")
 proof -
   have "`G \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e = \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f` \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (G)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e - f = 0)\<^sub>e"
     by (rule ldiff_inv_on_eq, simp_all add: framed_derivs ldifferentiable assms)
@@ -397,7 +397,7 @@ lemma ldiff_inv_on_le_rule:
   fixes e :: "'s \<Rightarrow> real" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_le: "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` 
-  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e \<ge> f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
+  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e (Collect ((\<le>) 0))\<^sub>e UNIV 0 (e \<ge> f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
 proof -
   have "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e  ({t. t \<ge> 0})\<^sub>e UNIV 0 (e - f \<ge> 0)\<^sub>e"
     by (rule ldiff_inv_on_leq, simp_all add: framed_derivs ldifferentiable assms)
@@ -411,7 +411,7 @@ lemma ldiff_inv_on_less_rule:
   fixes e :: "'s \<Rightarrow> real" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_less: "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` 
-  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e > f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
+  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e (Collect ((\<le>) 0))\<^sub>e UNIV 0 (e > f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
 proof -
   have "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e - f > 0)\<^sub>e "
     by (rule ldiff_inv_on_less, simp_all add: framed_derivs ldifferentiable assms)
