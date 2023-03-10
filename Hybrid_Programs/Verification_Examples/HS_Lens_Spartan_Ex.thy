@@ -156,7 +156,9 @@ text \<open> As a consequence, it is an invariant of the whole system. \<close>
 
 lemma l3: "\<^bold>{@Inv\<^bold>}BBall\<^bold>{@Inv\<^bold>}"
   unfolding BBall_def
-  using hoare_kcomp_inv kstar_inv_rule l1 l2 by blast
+  using hoare_kcomp_inv hoare_kstar_inv l1 l2
+  by blast
+
 
 text \<open> We can now show the safety property we desire using the consequence rule and sledgehammer. \<close>
 

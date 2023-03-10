@@ -424,31 +424,86 @@ subsection \<open> Hoare Logic \<close>
 text \<open> A simple tactic for Hoare logic that uses weakest liberal precondition calculations \<close>
 
 (* Formally, this is not Hoare logic, rename? *)
-method hoare_wp_simp uses local_flow = ((rule_tac hoare_loopI)?; simp add: unrest_ssubst 
-    var_alpha_combine wp usubst usubst_eval 
-    refine_iff_implies fbox_g_dL_easiest[OF local_flow])
+method hoare_wp_simp uses local_flow 
+  = (((rule_tac hoare_loopI) | (rule hoare_loopI_break))?; 
+    simp add: unrest_ssubst var_alpha_combine wp usubst usubst_eval 
+    refine_iff_implies fbox_solve[OF local_flow])
 
 method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
 
-thm fbox_g_ode_frame_flow fbox_solve fbox_g_dL_easiest
+text \<open> First attempt at a system level prover \<close>
+
+method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
+
+
+subsection \<open> Weakest liberal preconditions \<close>
+
 (* most used solution theorems in arch2022:
   * fbox_g_ode_frame_flow
   * fbox_solve (which is essentially the one above)
   * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
 *)
+method intro_loops = (rule hoare_loopI hoare_whileI hoare_loopI_break hoare_whileI_break)
 
-lemma "(P \<le> |Y ; (LOOP X INV I)] Q) = K"
-  oops
+method wp_simp uses simp = (intro_loops?; (simp add: wp simp)?)
 
-lemma "(P \<le> |Y ; (LOOP X INV I)] Q) = K"
-  apply (simp add: wp)
-  oops
+method wp_flow uses simp local_flow = (wp_simp simp: simp fbox_solve[OF local_flow]) 
 
-subsection \<open> Full proof automation \<close>
+method wp_full uses simp local_flow = ((wp_flow simp: simp local_flow: local_flow)?; expr_auto)
 
-text \<open> First attempt at a system level prover \<close>
+method wp_solve_one for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" = (subst fbox_solve[where \<phi>=\<phi>], local_flow_on_auto?)
 
-method dProve = (rule_tac hoare_loop_seqI, hoare_wp_auto, dInduct_mega', (expr_auto)+)
+method wp_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
+  = ((wp_simp simp: simp)?, (wp_solve_one \<phi>)+)
+
+method wp_expr_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
+  = ((wp_solve \<phi> simp: simp); expr_auto?)
+
+dataspace testing_wp_tactic =
+  constants A::real B::real S::real V::real \<epsilon>::real
+  variables x::real v::real a::real c::real d::real
+
+lit_vars
+no_notation (ASCII) disj (infixr "|" 30)
+
+context testing_wp_tactic
+begin
+
+lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S \<and> \<epsilon> > 0)\<^sub>e \<le>
+  |LOOP 
+    ((\<questiondown>x + v\<^sup>2/(2*B) + (A/B + 1)*(A/2*\<epsilon>\<^sup>2 + \<epsilon> * v) \<le> S?; a ::= A) 
+      \<sqinter> (\<questiondown>v=0?; a ::= 0) 
+      \<sqinter> (a ::= - B; d ::= ?)
+    );(
+      (c ::= 0); 
+      {x` = v, v` = a, c` = 1 | (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)}
+    )
+   INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
+  ] (x \<le> S)"
+  apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
+  apply (wp_expr_solve "(\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])")
+  by (smt (verit) divide_nonneg_nonneg zero_le_power)
+
+lemma local_flow_test: "local_flow_on [c \<leadsto> 1, v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v +\<^sub>L c) UNIV UNIV
+  (\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])"
+  by local_flow_on_auto
+
+lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S \<and> \<epsilon> > 0)\<^sub>e \<le>
+  |LOOP 
+    ((\<questiondown>x + v\<^sup>2/(2*B) + (A/B + 1)*(A/2*\<epsilon>\<^sup>2 + \<epsilon> * v) \<le> S?; a ::= A) 
+      \<sqinter> (\<questiondown>v=0?; a ::= 0) 
+      \<sqinter> (a ::= - B; d ::= ?)
+    );(
+      (c ::= 0); 
+      {x` = v, v` = a, c` = 1 | (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)}
+    )
+   INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
+  ] (x \<le> S)"
+  apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
+  by (wp_full local_flow: local_flow_test)
+    (smt (verit) divide_nonneg_nonneg zero_le_power)
+
+end
 
 
 end

@@ -123,6 +123,9 @@ lemma fbox_choice [wp]: "|F \<sqinter> G] P = ( |F] P \<and> |G] P)\<^sub>e"
 lemma le_fbox_choice_iff: "P \<le> |F \<sqinter> G] Q \<longleftrightarrow> P \<le> |F] Q \<and> P \<le> |G] Q"
   unfolding fbox_def nondet_choice_def by auto
 
+lemma le_fbox_choice_iff': "P \<le> ( |F \<sqinter> G] Q)\<^sub>e \<longleftrightarrow> P \<le> |F] Q \<and> P \<le> |G] Q"
+  unfolding fbox_def nondet_choice_def by expr_auto
+
 lemma hoare_choice: 
   "\<^bold>{P\<^bold>} F \<^bold>{Q\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} G \<^bold>{Q\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} (F \<sqinter> G) \<^bold>{Q\<^bold>}"
   by (subst le_fbox_choice_iff, simp)
@@ -186,6 +189,22 @@ lemma hoare_fwd_assign:
   using assms
   unfolding kcomp_def assigns_def fbox_def le_fun_def
   by (expr_simp) (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
+
+lemma fbox_invI_break: 
+  "P \<le> |Y] I \<Longrightarrow> I \<le> |X] I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I] Q"
+  apply(subst fbox_to_hoare, rule hoare_kcomp, force)
+  by (rule fbox_invI) auto
+
+lemma hoare_invI_break: 
+  "\<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> I \<le> Q \<Longrightarrow> \<^bold>{P\<^bold>} Y ; X INV I\<^bold>{Q\<^bold>}"
+  by (rule fbox_invI_break; expr_auto)
+
+lemma fdia_invI_break: 
+  "P \<le> |Y\<rangle> I \<Longrightarrow> I \<le> |X\<rangle> I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I\<rangle> Q"
+  apply(subst fdia_kcomp)
+  apply (rule_tac Q\<^sub>2=I in fdia_conseq, force, expr_auto)
+  by (unfold impl_eq_leq invar_def, rule_tac P\<^sub>2=I in fdia_conseq, force)
+    (auto simp: taut_def)
 
 
 subsection \<open> Conditional statement \<close>
@@ -355,7 +374,7 @@ lemma fbox_kstar_inv: "I \<le> |F] I \<Longrightarrow> I \<le> |F\<^sup>*] I"
   apply(unfold le_fun_def, subgoal_tac "\<forall>x. I x \<longrightarrow> (\<forall>s'. s' \<in> F x \<longrightarrow> I s')")
   using kpower_inv[of I F] by blast simp
 
-lemma kstar_inv_rule: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} F\<^sup>* \<^bold>{I\<^bold>}"
+lemma hoare_kstar_inv: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} F\<^sup>* \<^bold>{I\<^bold>}"
   by (metis SEXP_def fbox_kstar_inv)
 
 lemma fdia_kstar_inv: "I \<le> |F\<rangle> I \<Longrightarrow> I \<le> |F\<^sup>*\<rangle> I"
@@ -701,7 +720,7 @@ lemma fbox_loopI_break:
   by (rule hoare_loopI, auto simp: SEXP_def taut_def)
 
 lemma hoare_loopI_break: 
-  "\<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} (Y ; (LOOP X INV I)) \<^bold>{Q\<^bold>}"
+  "\<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} (Y ; (LOOP X INV I)) \<^bold>{Q\<^bold>}"
   by (rule hoare_kcomp, force) (rule hoare_loopI, simp_all)
 
 
@@ -710,11 +729,11 @@ subsection \<open> While loop \<close>
 definition while :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "while T X \<equiv> (\<questiondown>T? ; X)\<^sup>* ; \<questiondown>\<not>T?"
 
-syntax "_while" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("WHILE _ DO _" [0,63] 64)
+syntax "_while" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("WHILE _ DO _" [0,64] 64)
 translations "WHILE T DO X" == "CONST while (T)\<^sub>e X"
 
 lemma hoare_while:
-  "\<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} (WHILE T DO X) \<^bold>{\<not> T \<and> I\<^bold>}"
+  "\<^bold>{I \<and> T\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} (WHILE T DO X) \<^bold>{\<not> T \<and> I\<^bold>}"
   unfolding while_def 
   apply (simp add: fbox_test fbox_kcomp)
   apply (rule_tac p\<^sub>2=I and q\<^sub>2=I in hoare_conseq)
@@ -725,6 +744,21 @@ lemma hoare_while:
    apply expr_simp
   apply (rule_tac R="(I \<and> T)\<^sup>e" in hoare_kcomp)
   by (auto simp: fbox_test fbox_kcomp)
+
+lemma hoare_whileI: "\<^bold>{I \<and> T\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q`
+  \<Longrightarrow> \<^bold>{P\<^bold>} WHILE T DO X INV I \<^bold>{Q\<^bold>}"
+  by (rule hoare_conseq, subst invar_def)
+    (rule hoare_while, assumption, auto simp: taut_def)
+
+lemma fbox_whileI: "P \<le> I \<Longrightarrow> (I \<and> T)\<^sub>e \<le> |X] I \<Longrightarrow> (I \<and> \<not> T)\<^sub>e \<le> Q 
+  \<Longrightarrow> P \<le> |WHILE T DO X INV I] Q"
+  using hoare_whileI[unfolded fbox_to_hoare[symmetric], of I T X P Q] 
+  by expr_auto
+
+lemma hoare_whileI_break: 
+  "\<^bold>{I \<and> T\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} Y ; WHILE T DO X INV I \<^bold>{Q\<^bold>}"
+  by (rule hoare_kcomp, force)
+    (rule hoare_whileI; expr_auto)
 
 lemma fdia_while_variantI:
   fixes V :: "int \<Rightarrow> 's \<Rightarrow> bool" and T :: "'s \<Rightarrow> bool"

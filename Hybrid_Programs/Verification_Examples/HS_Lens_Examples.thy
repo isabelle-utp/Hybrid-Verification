@@ -28,8 +28,7 @@ declare [[coercion real_of_bool]]
 
 lemma differentiable_of_bool [closure]:
   "\<lbrakk> vwb_lens a; $a \<sharp> (e)\<^sub>e \<rbrakk> \<Longrightarrow> differentiable\<^sub>e (of_bool e) on a"
-  apply (rule differentiable_discr_expr, simp, unrest)
-  by (metis SEXP_def)
+  by (rule differentiable_discr_expr, simp, unrest)
 
 definition vec_lens :: "'i \<Rightarrow> ('a \<Longrightarrow> 'a^'i)" where
 [lens_defs]: "vec_lens k = \<lparr> lens_get = (\<lambda> s. vec_nth s k)
@@ -79,7 +78,7 @@ lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^s
 \<comment> \<open>Verified with differential invariants as cartesian product \<close>
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
-  apply(simp add: dInduct_hoare_diff_inv_on)
+  apply(simp add: hoare_diff_inv_on')
   apply(rule diff_inv_on_eqI)
   by clarsimp+ (expr_auto, auto intro!: vderiv_intros simp: case_prod_beta)
 
