@@ -926,6 +926,10 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
 
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
+  (* apply (expr_simp)
+  using darboux_eq[of _ y z, simplified expr_defs, where e="(x + z)\<^sup>e",
+      of "\<lparr>lens_get = \<lambda>\<sigma>. (get\<^bsub>x\<^esub> \<sigma>, get\<^bsub>z\<^esub> \<sigma>), lens_put = \<lambda>\<sigma> (u, v). put\<^bsub>x\<^esub> (put\<^bsub>z\<^esub> \<sigma> v) u\<rparr>"]
+  apply (rule darboux_eq) *)
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on fbox_diff_inv_on')
   apply (expr_simp add: diff_inv_on_eq ivp_sols_def, clarsimp)
   subgoal for s X t
