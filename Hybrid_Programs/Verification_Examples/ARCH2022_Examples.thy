@@ -471,8 +471,7 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 
   by (diff_inv_on_eq)
 
 lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 + y\<^sup>2 = 1)"
-  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> $x * cos t + - 1 * $y * sin t, y \<leadsto> $y * cos t + $x * sin t]"])
-     apply local_flow_on_auto
+  apply (wp_solve "\<lambda>t. [x \<leadsto> $x * cos t + - 1 * $y * sin t, y \<leadsto> $y * cos t + $x * sin t]")
   by (expr_simp add: abs_minus_commute norm_Pair le_fun_def)
     (smt (verit, ccfv_SIG) norm_rotate_eq(1))
 
