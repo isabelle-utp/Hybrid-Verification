@@ -254,10 +254,6 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
       (rule_tac x="put\<^bsub>y\<^esub> s 1" in exI, simp)
   subgoal
     by (subst lens_indep_comm; expr_simp)
-  subgoal for s
-    apply expr_auto
-     apply (rule_tac x="put\<^bsub>z\<^esub> s (1/sqrt (get\<^bsub>y\<^esub> s))" in exI, simp add: field_simps)
-    using exp_ghost_arith by expr_auto
   subgoal
     by (simp add: frechet_derivative_fst)
   using bounded_linear_fst bounded_linear_imp_differentiable by blast
