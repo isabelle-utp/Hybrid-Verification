@@ -64,7 +64,7 @@ lemma differentiable_minus [ldifferentiable]:
   using assms by (simp add: expr_defs)
 
 lemma differentiable_times [ldifferentiable]:
-  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_field"
+  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_algebra"
   assumes "differentiable\<^bsub>x\<^esub> expr1 within S when G"  
     and "differentiable\<^bsub>x\<^esub> expr2 within S when G"
   shows "differentiable\<^bsub>x\<^esub> (expr1 * expr2) within S when G"
@@ -169,7 +169,7 @@ lemma lframeD_minus [framed_derivs]:
   by (simp add: expr_defs fun_eq_iff frechet_derivative_minus)
 
 lemma lframeD_times [framed_derivs]:
-  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_field"
+  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_algebra"
   assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2"
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1 * expr2) = (expr1 * \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2 + \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 * expr2)\<^sub>e"
   using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_mult assms)
