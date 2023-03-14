@@ -553,16 +553,11 @@ lemma darboux_leq:
   apply (rule_tac I="\<lambda>\<s>. 0 \<le> e \<s> * $y" in fbox_diff_invI)
     prefer 3 apply (expr_simp add: le_fun_def)
    prefer 2 apply (expr_simp add: le_fun_def)
-  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof the same as in HS Lens Spartan up to here *)
-
-  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
-   apply (erule ssubst)
-   prefer 2 apply clarsimp 
+  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on)
   apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
   prefer 2 using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps deriv apply - 
-
   apply(rule ldiff_inv_on_le_rule; clarsimp?)
     apply (rule differentiable_times; clarsimp?)
      apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
@@ -610,16 +605,11 @@ lemma darboux_less:
   apply (rule_tac I="\<lambda>\<s>. 0 < e \<s> * $y" in fbox_diff_invI)
     prefer 3 apply (expr_simp add: le_fun_def)
    prefer 2 apply (expr_simp add: le_fun_def)
-  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof the same as in HS Lens Spartan up to here *)
-
-  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
-   apply (erule ssubst)
-   prefer 2 apply clarsimp 
+  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on)
   apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
   prefer 2 using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps deriv apply - 
-
   apply(rule ldiff_inv_on_less_rule; clarsimp?)
     apply (rule differentiable_times; clarsimp?)
      apply (rule differentiable_cvar; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
@@ -633,23 +623,23 @@ lemma darboux_less:
       unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
 lemma darboux_eq: 
-  fixes a y z :: "'s :: {real_normed_field, real_inner, banach} \<Longrightarrow> 'a"
-    and e e' :: "'a \<Rightarrow> 's"
+  fixes a y z :: "'v::{real_inner, banach, real_normed_field} \<Longrightarrow> 'a"
+    and e e' :: "'a \<Rightarrow> 'v"
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
     and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
     and yGhost: "$y \<sharp>\<^sub>s f" "$y \<sharp> G" "(e = 0)\<^sub>e = (y \<noteq> 0 \<and> e * y = 0)\<^sup>e \\ $y"
-    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> 0 *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e"
-    and dbx_hyp: "(\<D>\<^bsub>a +\<^sub>L y\<^esub>\<langle>f(y \<leadsto> 0 * $y)\<rangle> e) = (\<guillemotleft>0\<guillemotright> * e)\<^sub>e"
+    and zGhost: "$z \<sharp>\<^sub>s f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)" "$z \<sharp> (G)\<^sub>e"
+    and dbx_hyp: "(\<D>\<^bsub>a +\<^sub>L y\<^esub>\<langle>f(y \<leadsto> - \<guillemotleft>g\<guillemotright> *\<^sub>R $y)\<rangle> e) = (\<guillemotleft>g\<guillemotright> *\<^sub>R e)\<^sub>e"
     and deriv: "differentiable\<^sub>e e on (a +\<^sub>L y)"
   shows "(e = 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e = 0)"
-  apply (rule diff_ghost_rule_very_simple[where k="0", OF _ vwbs(2) indeps(1) yGhost])
+  apply (rule diff_ghost_rule_very_simple[where k="-g", OF _ vwbs(2) indeps(1) yGhost])
   apply (rule strengthen[of "(y \<noteq> 0 \<and> e * y = 0)\<^sup>e"])
   using indeps apply (expr_auto add: zero_less_mult_iff)
   apply (subst SEXP_def[symmetric, of G])
   apply (rule_tac C="(y \<noteq> 0)\<^sup>e" in diff_cut_on_rule)
    apply (rule_tac weaken[of _ "(y \<noteq> 0)\<^sub>e"])
   using indeps apply (expr_simp)
-  apply (rule diff_ghost_rule_very_simple[where k="0" and J="($y * $z = 1)\<^sup>e", OF _ vwbs(3) _ zGhost])
+  apply (rule diff_ghost_rule_very_simple[where k="g" and J="($y * $z = 1)\<^sup>e", OF _ vwbs(3) _ zGhost])
     prefer 2 using indeps apply expr_simp
    apply (subst hoare_diff_inv_on)
   apply (rule diff_inv_on_raw_eqI; (clarsimp simp: tsubst2vecf_eq)?)
@@ -665,11 +655,7 @@ lemma darboux_eq:
   apply (rule_tac I="\<lambda>\<s>. 0 = e \<s> * $y" in fbox_diff_invI)
     prefer 3 apply (expr_auto add: le_fun_def)
    prefer 2 apply (expr_auto add: le_fun_def)
-
-  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on) (* proof the same as in HS Lens Spartan up to here *)
-  apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. 0 \<le> t})\<^sub>e")
-   apply (erule ssubst)
-   prefer 2 apply clarsimp 
+  apply (simp only: hoare_diff_inv_on fbox_diff_inv_on)
   apply (subgoal_tac "vwb_lens (a +\<^sub>L y)")
   prefer 2 using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
