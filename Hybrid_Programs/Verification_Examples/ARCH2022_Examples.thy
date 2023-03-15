@@ -247,7 +247,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
   apply (rule_tac R="(x > 0)\<^sup>e" in hoare_kcomp)+
     apply dInduct
    apply dInduct[1]
-  apply (rule darboux_less[of x y z _ _ _ 1]; expr_simp add: framed_derivs 
+  apply (rule darboux_ge[of x y z _ _ _ 1]; expr_simp add: framed_derivs 
       ldifferentiable closure usubst unrest_ssubst unrest usubst_eval; clarsimp?)
   subgoal for s
     by expr_auto

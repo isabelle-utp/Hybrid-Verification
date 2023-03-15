@@ -518,7 +518,7 @@ lemma darboux:
       (* auto simp: *) eventually_principal
     oops
 
-lemma darboux_leq: 
+lemma darboux_geq: 
   fixes a y z :: "real \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> real"
     and g :: real
@@ -570,7 +570,7 @@ lemma darboux_leq:
   by (clarsimp simp: framed_derivs ldifferentiable usubst 
       unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
-lemma darboux_less: 
+lemma darboux_ge: 
   fixes a y z :: "real \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> real"
     and g :: real
@@ -623,7 +623,7 @@ lemma darboux_less:
       unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
 lemma darboux_eq: 
-  fixes a y z :: "'v::{real_inner, banach, real_normed_field} \<Longrightarrow> 'a"
+  fixes a y z :: "'v::{real_inner, banach, real_normed_algebra_1, division_ring} \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> 'v"
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
     and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"
@@ -646,12 +646,13 @@ lemma darboux_eq:
   using vwbs indeps
     apply (meson lens_indep_sym plus_pres_lens_indep plus_vwb_lens) 
   using vwbs indeps apply (expr_simp add: lens_indep.lens_put_irr2)
-   apply (intro vderiv_intros; force?)
+    apply (intro vderiv_intros; force?)
    apply (rule has_vderiv_on_const[THEN has_vderiv_on_eq_rhs])
   using vwbs indeps apply (expr_simp add: power2_eq_square)
   using vwbs indeps apply expr_auto
      apply (rule_tac x="put\<^bsub>z\<^esub> x (1/get\<^bsub>y\<^esub> x)" in exI, expr_simp add: field_simps lens_indep.lens_put_irr2)
     apply (expr_simp add: lens_indep.lens_put_irr2)
+
   apply (rule_tac I="\<lambda>\<s>. 0 = e \<s> * $y" in fbox_diff_invI)
     prefer 3 apply (expr_auto add: le_fun_def)
    prefer 2 apply (expr_auto add: le_fun_def)
