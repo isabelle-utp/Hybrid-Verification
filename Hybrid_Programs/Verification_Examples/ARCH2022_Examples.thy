@@ -24,7 +24,7 @@ begin
 
 (* x>=0 -> [x:=x+1;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] (x \<ge> 1)"
-  by hoare_wp_simp
+  by wlp_full
 
 end
 
@@ -36,7 +36,7 @@ begin
 
 (* x>=0 -> [x:=x+1;][x:=x+1; ++ y:=x+1;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |x ::= x + 1 \<sqinter> y ::= x + 1] (x \<ge> 1)"
-  by hoare_wp_simp
+  by wlp_full
 
 end
 
@@ -49,7 +49,7 @@ begin
 (* x>=0 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1)]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |LOOP x ::= x + 1 INV (x \<ge> 1)] (x \<ge> 1)"
   by (subst fbox_kcomp[symmetric])
-    hoare_wp_simp
+    wlp_full
 
 end
 
@@ -60,23 +60,23 @@ subsubsection \<open> Overwrite assignment in ODE \<close>
 context two_vars
 begin
 
-(* Proof using differential induction. Can this be better automated? *)
+(* using differential induction. Can this be better automated? *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
   apply (rule_tac R="(x \<ge> 1)\<^sup>e" in hoare_kcomp)
-  by (hoare_wp_auto) dInduct
+  by wlp_full dInduct
+
+(* usind differential invariants (alternative version) *)
+(* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
+lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
+  unfolding fbox_kcomp[symmetric]
+  apply (rule_tac R="($x \<ge> 1)\<^sup>e" in hoare_kcomp)
+  by wlp_full (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2")
 
 (* Proof using the solution *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
   by (wlp_solve "\<lambda>t. [x \<leadsto> 2 * t + x]")
-
-(* usind differential invariants *)
-(* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
-lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
-  unfolding fbox_kcomp[symmetric]
-  apply (rule_tac R="($x \<ge> 1)\<^sup>e" in hoare_kcomp)
-  by hoare_wp_simp (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2")
 
 end
 
@@ -178,8 +178,8 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<
   apply(subst fbox_kcomp[symmetric])
   apply(rule_tac R="(x > 0 \<and> y > 0)\<^sup>e" in hoare_kcomp)
   apply dInduct
-  by (rule hoare_choice) 
-    hoare_wp_auto+
+  by (rule hoare_choice)
+    wlp_full+
 
 end
 
@@ -213,7 +213,7 @@ lemma exp_ghost_arith: "0 < (a::real) \<longleftrightarrow> (\<exists>b. a * b\<
 context three_vars
 begin
 
-(* proof with solutions *)
+(* proof with ghosts *)
 (* x>0 & y>0 -> [{x'=-x}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
 lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0) \<sqinter> y::=x] (x > 0 \<and> y > 0)"
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
@@ -1396,7 +1396,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) < S)\<^su
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S)\<^sup>e"])
   apply (wlp_flow local_flow: local_flow_STTT; expr_simp)
   apply (expr_auto add: refine_iff_implies STTexample3a_arith)
-  by expr_simp (smt (verit, ccfv_threshold) divide_eq_0_iff divide_pos_pos 
+  by (smt (verit, ccfv_threshold) divide_eq_0_iff divide_pos_pos 
       zero_less_power zero_power2)
 
 end
@@ -1427,7 +1427,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
     )
    INV (v \<le> V)
   ] (v \<le> V)"
-  by (hoare_wp_auto local_flow: local_flow_STTT)
+  by (wlp_full local_flow: local_flow_STTT)
 
 end
 
@@ -1449,7 +1449,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
     {x` = v, v` = a | (v \<le> V)}
    INV (v \<le> V)
   ] (v \<le> V)"
-  by (hoare_wp_auto local_flow: local_flow_STTT)
+  by (wlp_full local_flow: local_flow_STTT)
 
 end
  
@@ -1481,7 +1481,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
     )
    INV (v \<le> V)
   ] (v \<le> V)"
-  by (hoare_wp_auto local_flow: local_flow_STTT)
+  by (wlp_full local_flow: local_flow_STTT)
 
 end
 
