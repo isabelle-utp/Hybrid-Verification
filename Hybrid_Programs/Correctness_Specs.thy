@@ -31,7 +31,7 @@ subsection \<open> Forward box operator \<close>
 
 named_theorems prog_defs
 
-named_theorems wp "simplification rules for equational reasoning with weakest liberal preconditions"
+named_theorems wlp "simplification rules for equational reasoning with weakest liberal preconditions"
 
 definition fbox :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred"
   where "fbox F P = (\<lambda>s. (\<forall>s'. s' \<in> F s \<longrightarrow> P s'))"

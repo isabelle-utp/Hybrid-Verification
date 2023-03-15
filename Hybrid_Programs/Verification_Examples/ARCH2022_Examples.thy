@@ -69,7 +69,7 @@ lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^b
 (* Proof using the solution *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
-  by (wp_solve "\<lambda>t. [x \<leadsto> 2 * t + x]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> 2 * t + x]")
 
 (* usind differential invariants *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
@@ -88,7 +88,7 @@ begin
 
 (* x>=0 -> [x:=x+1;][x:=*; ?x>=1;]x>=1 *)
 lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; x ::= ? ; \<questiondown>x\<ge>1? \<^bold>{x \<ge> 1\<^bold>}"
-  by wp_full
+  by wlp_full
 
 end
 
@@ -100,7 +100,7 @@ begin
 
 (* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
-  by wp_full
+  by wlp_full
 
 end
 
@@ -112,12 +112,12 @@ begin
 
 (* x>=0 & y>=1 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1) ++ y:=x+1;][{y'=2}][x:=y;]x>=1 *)
 lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1] |{y` = 2}] |x ::= y] (x \<ge> 1)"
-  apply (wp_solve_one "\<lambda>t. [y \<leadsto> 2 * t + y]")
+  apply (wlp_solve_one "\<lambda>t. [y \<leadsto> 2 * t + y]")
   apply (subst change_loopI[where I="(1 \<le> x \<and> 1 \<le> y)\<^sub>e"])
   apply (subst fbox_kcomp[symmetric], rule hoare_kcomp)
    apply (subst fbox_assign[where Q="(1 \<le> x \<and> 1 \<le> y)\<^sub>e"], expr_simp)
   apply(subst le_fbox_choice_iff, rule conjI)
-  by (subst fbox_loopI, auto simp: wp)
+  by (subst fbox_loopI, auto simp: wlp)
     expr_simp+
 
 lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y) \<^bold>{x \<ge> 1\<^bold>}"
@@ -133,7 +133,7 @@ lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x 
        apply (rule nmods_assign)
          apply (simp_all add: unrest)
       apply unrest
-     apply wp_full
+     apply wlp_full
     apply (hoare_wp_auto)
    apply (dInduct_mega)
   apply (hoare_wp_auto)
@@ -170,8 +170,8 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
   apply(subst fbox_kcomp[symmetric])
   apply(rule_tac R="(x > 0 \<and> y > 0)\<^sup>e" in hoare_kcomp)
-  by (wp_solve "\<lambda>t. [x \<leadsto> 5 * t + x]")
-    (rule hoare_choice; wp_full)
+  by (wlp_solve "\<lambda>t. [x \<leadsto> 5 * t + x]")
+    (rule hoare_choice; wlp_full)
 
 lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x] (x \<ge> 0 \<and> y \<ge> 0)"
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
@@ -195,8 +195,8 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0)
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
   apply (subst fbox_kcomp[symmetric])
   apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
-  by (wp_solve "\<lambda>t. [x \<leadsto> x * exp (- t)]")
-    (rule hoare_choice; wp_full)
+  by (wlp_solve "\<lambda>t. [x \<leadsto> x * exp (- t)]")
+    (rule hoare_choice; wlp_full)
 
 end
 
@@ -235,10 +235,10 @@ begin
 
 (* x>0 -> [{x'=5};{x'=2};{x'=x}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
-  apply (simp add: wp)
-  apply (wp_solve_one "\<lambda>t. [x \<leadsto> 5 * t + x]")
-  apply (wp_solve_one "\<lambda>t. [x \<leadsto> 2 * t + x]")
-  by (wp_solve_one "\<lambda>t. [x \<leadsto> x * exp t]")
+  apply (simp add: wlp)
+  apply (wlp_solve_one "\<lambda>t. [x \<leadsto> 5 * t + x]")
+  apply (wlp_solve_one "\<lambda>t. [x \<leadsto> 2 * t + x]")
+  by (wlp_solve_one "\<lambda>t. [x \<leadsto> x * exp t]")
     expr_auto
 
 (* proof with darboux rule *)
@@ -274,7 +274,7 @@ lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
 (* proof with solutions *)
 (* x=0->[{x'=1}]x>=0 *)
 lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
-  by (wp_solve "\<lambda>t. [x \<leadsto> t + x]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> t + x]")
 
 end
 
@@ -286,7 +286,7 @@ begin
 
 (* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
 lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
-  by (wp_solve "\<lambda>t. [x \<leadsto> y * t + x]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> y * t + x]")
 
 (* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
 lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
@@ -307,7 +307,7 @@ begin
 
 (* x>=0 & y>=0 & z>=0 -> [{x'=y,y'=z}]x>=0 *)
 lemma "(x \<ge> 0 \<and> y \<ge>0 \<and> z \<ge> 0)\<^sub>e \<le> |{x` = y, y` = z}] (x \<ge> 0)"
-  by (wp_solve "\<lambda>t. [x \<leadsto> z * t\<^sup>2 / 2 + y * t + x, y \<leadsto> z * t + y]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> z * t\<^sup>2 / 2 + y * t + x, y \<leadsto> z * t + y]")
 
 end
 
@@ -342,7 +342,7 @@ begin
 (* proof with solutions *)
 (* x>0 -> [{x'=-x}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
-  by (wp_solve "\<lambda>t. [x \<leadsto> x * exp (- t)]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> x * exp (- t)]")
  
 (* proof with ghosts *)
 (* x>0 -> [{x'=-x}]x>0 *)
@@ -362,7 +362,7 @@ begin
 (* proof with solutions *)
 (* x>0 -> [{x'=-x+1}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
-  apply (wp_solve "\<lambda>t. [x \<leadsto> 1 - exp (- t) + x * exp (- t)]")
+  apply (wlp_solve "\<lambda>t. [x \<leadsto> 1 - exp (- t) + x * exp (- t)]")
   by expr_auto (metis add_pos_nonneg diff_gt_0_iff_gt exp_eq_one_iff exp_ge_zero 
       exp_less_one_iff less_eq_real_def mult.commute mult_1 neg_equal_zero 
       real_0_less_add_iff right_minus_eq zero_le_mult_iff)
@@ -385,7 +385,7 @@ begin
 
 (* x>0 & y>0->[{x'=-y*x}]x>0 *)
 lemma "`y > 0` \<Longrightarrow> (x > 0)\<^sub>e \<le> |{x` = - y * x}] (x > 0)"
-  by (wp_solve "\<lambda>t. [x \<leadsto> x * exp (- t * y)]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> x * exp (- t * y)]")
 
 end
 
@@ -397,7 +397,7 @@ begin
 
 (* x>=0 -> [{x'=x}]x>=0 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |{x` = x}] (x \<ge> 0)"
-  by (wp_solve "\<lambda>t. [x \<leadsto> x * exp t]")
+  by (wlp_solve "\<lambda>t. [x \<leadsto> x * exp t]")
 
 (* proof with ghosts *)
 (* x>=0 -> [{x'=x}]x>=0 *)
@@ -470,7 +470,7 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 
   by (diff_inv_on_eq)
 
 lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 + y\<^sup>2 = 1)"
-  apply (wp_solve "\<lambda>t. [x \<leadsto> $x * cos t + - 1 * $y * sin t, y \<leadsto> $y * cos t + $x * sin t]")
+  apply (wlp_solve "\<lambda>t. [x \<leadsto> $x * cos t + - 1 * $y * sin t, y \<leadsto> $y * cos t + $x * sin t]")
   by (expr_simp add: abs_minus_commute norm_Pair le_fun_def)
     (smt (verit, ccfv_SIG) norm_rotate_eq(1))
 
@@ -561,7 +561,7 @@ lemma "w \<noteq> 0 \<Longrightarrow> (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<
   |{x1` = d1, x2` = d2, d1` = - w * d2, d2` = w * d1}] 
   (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)"
   (* find_local_flow *)
-  apply (wp_solve "\<lambda>t. [d1 \<leadsto> $d1 * cos (t * w) + - 1 * $d2 * sin (t * w), 
+  apply (wlp_solve "\<lambda>t. [d1 \<leadsto> $d1 * cos (t * w) + - 1 * $d2 * sin (t * w), 
     d2 \<leadsto> $d2 * cos (t * w) + $d1 * sin (t * w), 
     x1 \<leadsto> $x1 + 1 / w * $d2 * (- 1 + cos (t * w)) + 1 / w * $d1 * sin (t * w), 
     x2 \<leadsto> $x2 + 1 / w * $d1 * (1 + - 1 * cos (t * w)) + 1 / w * $d2 * sin (t * w)]")
@@ -1163,7 +1163,7 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
    prefer 2 apply expr_simp
   apply (rule_tac hoare_kcomp[where R="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c \<and> 0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
   prefer 2 using dyn_param_switch_arith1 dyn_param_switch_arith2
-   apply (simp add: wp; expr_auto)[1]
+   apply (simp add: wlp; expr_auto)[1]
     apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
          apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
   apply (expr_simp add: le_fun_def)
@@ -1353,7 +1353,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0)\<^sub>e \<le>
     ({x` = v, v` = a | (v \<ge> 0)})) 
    INV (v\<ge> 0)
   ] (v \<ge> 0)"
-  by (wp_full local_flow: local_flow_STTT)
+  by (wlp_full local_flow: local_flow_STTT)
 
 end
 
@@ -1401,7 +1401,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) < S)\<^su
    INV (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)
   ] (x \<le> S)"
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S)\<^sup>e"])
-  apply (wp_flow local_flow: local_flow_STTT; expr_simp)
+  apply (wlp_flow local_flow: local_flow_STTT; expr_simp)
   apply (expr_auto add: refine_iff_implies STTexample3a_arith)
   by expr_simp (smt (verit, ccfv_threshold) divide_eq_0_iff divide_pos_pos 
       zero_less_power zero_power2)
@@ -1547,7 +1547,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
    INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
   ] (x \<le> S)"
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
-  by (wp_full local_flow: local_flow_STTT2)
+  by (wlp_full local_flow: local_flow_STTT2)
     (smt (verit) divide_nonneg_nonneg zero_le_power)
 
 end
@@ -1855,10 +1855,10 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
    apply (intro conjI[rotated])
   subgoal
     using STTT_9b_arith1[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
-    by (simp add: wp, expr_simp, force)
+    by (simp add: wlp, expr_simp, force)
   subgoal
     using STTT_9b_arith1[of "get\<^bsub>v\<^esub> _" "get\<^bsub>xm\<^esub> _" "get\<^bsub>x\<^esub> _"]
-    by (simp add: wp, expr_simp, force)
+    by (simp add: wlp, expr_simp, force)
   apply (rule_tac C="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" in diff_cut_on_rule)
   subgoal
     apply (rule_tac a="(xm \<le> x \<and> xr = (xm + S) / 2)\<^sup>e" and b="(v \<ge> 0 \<and> x \<le> S 
@@ -2156,7 +2156,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
     \<and> ((\<bar>y - ly\<bar> + v\<^sup>2/(2*b) + (A/b+1)*(A/2*\<epsilon>\<^sup>2+\<epsilon>* v) < lw \<and> -B \<le> a \<and> a \<le> A \<and> w*r = v)
       \<or> (v = 0 \<and> a = 0 \<and> w = 0)
       \<or> (-B \<le> a \<and> a \<le> -b)))\<^sup>e" in fbox_kcompI)
-   apply (clarsimp simp: wp, expr_simp, hol_clarsimp)
+   apply (clarsimp simp: wlp, expr_simp, hol_clarsimp)
   apply (rule_tac x=v in new_varI(2))
   apply (rule_tac x=y in new_varI(2))
   apply (rename_tac v0 y0)
@@ -2261,7 +2261,7 @@ lemma local_flow_LICS: "local_flow_on [v \<leadsto> $a, x \<leadsto> $v] (x +\<^
 
 (* v>=0 & a>=0 -> [{x'=v, v'=a & v>=0}] v>=0 *)
 lemma "(v \<ge> 0 \<and> a \<ge> 0)\<^sub>e \<le> |{x` = v, v` = a | (v \<ge> 0)}] (v \<ge> 0)"
-  by (wp_full local_flow: local_flow_LICS)
+  by (wlp_full local_flow: local_flow_LICS)
 
 end
  
@@ -2286,7 +2286,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> b > 0)\<^sub>e \<le>
     )
    INV (v \<ge> 0)
   ] (v \<ge> 0)"
-  by (wp_full local_flow: local_flow_LICS)
+  by (wlp_full local_flow: local_flow_LICS)
 
 end
 
@@ -2318,7 +2318,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> b > 0)\<^sub>e \<le>
     )
    INV (v \<ge> 0)
   ] (v \<ge> 0)"
-  by (wp_full local_flow: local_flow_LICS)
+  by (wlp_full local_flow: local_flow_LICS)
 
 end
 
@@ -2370,7 +2370,7 @@ lemma "(v\<^sup>2 \<le> 2*b*(m-x) \<and> v\<ge>0 \<and> A \<ge> 0 \<and> b>0)\<^
   (x \<le> m)"
   apply (subst change_loopI[where I="(v\<^sup>2 \<le> 2*b*(m-x) \<and> A \<ge> 0 \<and> b > 0)\<^sup>e"])
   apply (rule hoare_loopI)
-    apply (clarsimp simp add: wp fbox_g_dL_easiest[OF local_flow_LICS2] 
+    apply (clarsimp simp add: wlp fbox_g_dL_easiest[OF local_flow_LICS2] 
       unrest_ssubst var_alpha_combine  usubst usubst_eval refine_iff_implies)
   using LICSexample4a_arith[of A b "get\<^bsub>v\<^esub> _" m "get\<^bsub>x\<^esub> _" _ \<epsilon>]
      apply (force simp: field_simps)
@@ -2470,7 +2470,7 @@ lemma local_flow_LICS3: "local_flow_on [v \<leadsto> c, x \<leadsto> $v] (x +\<^
 lemma "`|{x` = v, v` = -b}](x\<le>m \<and> v \<ge> 0 \<and> A \<ge> 0 \<and> b > 0) 
   \<longrightarrow> |LOOP ((\<questiondown>(2*b*(m-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
   {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)} INV (v\<^sup>2 \<le> 2*b*(m - x))](x\<le>m)`"
-  apply (clarsimp simp: wp fbox_g_dL_easiest[OF local_flow_LICS3] taut_def)
+  apply (clarsimp simp: wlp fbox_g_dL_easiest[OF local_flow_LICS3] taut_def)
   apply (rule in_fbox_loopI)
     apply (expr_simp, frule bspec[where x=0]; clarsimp)
     apply (erule_tac x="get\<^bsub>v\<^esub> s/b" in ballE; clarsimp simp: field_simps)
@@ -2546,7 +2546,7 @@ begin
 
 (* v>=0 & b>0 -> ( v^2<=2*b*(m-x) <-> [{x'=v, v'=-b}]x<=m ) *)
 lemma "`v \<ge> 0 \<and> b > 0 \<longrightarrow> (v\<^sup>2 \<le> 2*b*(m-x) \<longleftrightarrow> |{x` = v, v` = -b}](x\<le>m))`"
-  by (clarsimp simp: taut_def wp fbox_g_dL_easiest[OF local_flow_LICS3]; expr_simp)
+  by (clarsimp simp: taut_def wlp fbox_g_dL_easiest[OF local_flow_LICS3]; expr_simp)
     (auto simp: LICSexample5_arith1 LICSexample5_arith2)
 
 end
@@ -2603,7 +2603,7 @@ lemma "`v \<ge> 0 \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0 \<long
     ( |t::=0; {x` = v, v` = A, t` = 1| (t \<le> \<epsilon>)}]|{x` = v, v` = -b}](x\<le>m))
     \<longleftrightarrow> 
     2*b*(m-x) \<ge> v\<^sup>2 + (A + b)*(A*\<epsilon>\<^sup>2 + 2*\<epsilon>* v)`"
-  apply (clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS3] 
+  apply (clarsimp simp: wlp taut_def fbox_g_dL_easiest[OF local_flow_LICS3] 
       fbox_g_dL_easiest[OF local_flow_LICS4], safe; expr_simp; clarsimp?)
   using LICSexample6_arith1[of "get\<^bsub>v\<^esub> _" b A \<epsilon> "get\<^bsub>x\<^esub> _" m]
    apply (force simp: field_simps)
@@ -2669,9 +2669,9 @@ lemma "`(( |{x` = v, v` = -b}](x \<le> m))
   apply (subst change_loopI[where I="( |{x `= v, v `= -b}](x \<le> m) \<and> A \<ge> 0 \<and> b > 0)\<^sup>e"])
   apply (rule fbox_loopI)
     apply (clarsimp)
-  apply (wp_flow local_flow: local_flow_LICS3, clarsimp simp: le_fun_def)
+  apply (wlp_flow local_flow: local_flow_LICS3, clarsimp simp: le_fun_def)
    apply (erule_tac x=0 in allE, expr_simp)
-  apply (wp_simp simp: fbox_solve[OF local_flow_LICS7] fbox_solve[OF local_flow_LICS4] 
+  apply (wlp_simp simp: fbox_solve[OF local_flow_LICS7] fbox_solve[OF local_flow_LICS4] 
       fbox_solve[OF local_flow_LICS3], clarsimp, safe; expr_simp?, clarsimp?)
   using LICSexample7_arith[of "get\<^bsub>v\<^esub> _" b]
   by auto
@@ -2802,7 +2802,7 @@ lemma "initial \<le> |LOOP ctrl;drive INV @loopInv] (z \<le> m)"
   apply (subst change_loopI[where I="(@loopInv \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0)\<^sup>e"])
   apply (rule hoare_loopI)
   using ETCS_arith1[of b A "get\<^bsub>v\<^esub> _" _ \<epsilon> m "get\<^bsub>z\<^esub> _"]
-  by (auto simp: unrest_ssubst var_alpha_combine wp usubst usubst_eval 
+  by (auto simp: unrest_ssubst var_alpha_combine wlp usubst usubst_eval 
       fbox_g_dL_easiest[OF local_flow_LICS1] field_simps taut_def)
     (smt (verit, best) mult_left_le_imp_le zero_le_square)
 
@@ -2826,7 +2826,7 @@ lemma "`@(Assumptions d) \<and> z \<le> m \<longrightarrow>
   ( |{z` = v, v` = -b | (v \<ge> 0)}] (z \<ge> m \<longrightarrow> v \<le> d)
   \<longleftrightarrow>
   v\<^sup>2 -d\<^sup>2 \<le> 2*b*(m-z))`"
-  apply (clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS2], safe; expr_simp)
+  apply (clarsimp simp: wlp taut_def fbox_g_dL_easiest[OF local_flow_LICS2], safe; expr_simp)
   using ETCS_Prop1_arith1 apply (force simp: closed_segment_eq_real_ivl)
   using ETCS_Prop1_arith2 by (force simp: closed_segment_eq_real_ivl)
 
@@ -2849,7 +2849,7 @@ lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 
   \<longrightarrow> ((\<forall>m.\<forall>z. m - z \<ge> sb \<and> @(Controllable d) \<longrightarrow> |a ::= A; drive]@(Controllable d)) 
     \<longleftrightarrow> (sb \<ge> (v\<^sup>2 - d\<^sup>2)/(2*b) + (A/b + 1) * (A/2 * \<epsilon>\<^sup>2 + \<epsilon> * v)))`"
   apply (simp only: taut_def)
-  apply (hol_clarsimp simp: wp taut_def fbox_g_dL_easiest[OF local_flow_LICS1]; expr_simp)
+  apply (hol_clarsimp simp: wlp taut_def fbox_g_dL_easiest[OF local_flow_LICS1]; expr_simp)
    apply (safe; clarsimp simp: dlo_simps)
       apply (metis diff_zero)
   sorry
@@ -3063,7 +3063,7 @@ lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   apply (rule hoare_loopI)
     prefer 3 apply expr_simp
    prefer 2 apply expr_simp
-  apply (clarsimp simp add: wp fbox_g_dL_easiest[OF local_flow_hosc])
+  apply (clarsimp simp add: wlp fbox_g_dL_easiest[OF local_flow_hosc])
   apply expr_simp
   apply (clarsimp simp: iota1_def iota2_def discr_def)
   using hosc_arith[of b a] by force

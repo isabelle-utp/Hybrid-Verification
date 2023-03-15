@@ -16,7 +16,7 @@ subsection \<open> Skip \<close>
 
 definition [prog_defs]: "skip = (\<lambda>s. {s})"
 
-lemma fbox_skip [wp]: "|skip] P = P"
+lemma fbox_skip [wlp]: "|skip] P = P"
   unfolding fbox_def skip_def by simp
 
 lemma fdia_skip: "|skip\<rangle> P = P"
@@ -30,7 +30,7 @@ subsection \<open> Abort \<close>
 
 definition [prog_defs]: "abort = (\<lambda>s. {})"
 
-lemma fbox_abort [wp]: "|abort] P = (True)\<^sub>e"
+lemma fbox_abort [wlp]: "|abort] P = (True)\<^sub>e"
   unfolding fbox_def abort_def by auto
 
 lemma fdia_abort: "|abort\<rangle> P = (False)\<^sub>e"
@@ -51,7 +51,7 @@ syntax
 translations
   "_test P" == "CONST test (P)\<^sub>e"
 
-lemma fbox_test [wp]: "|\<questiondown>P?] Q = (P \<longrightarrow> Q)\<^sub>e"
+lemma fbox_test [wlp]: "|\<questiondown>P?] Q = (P \<longrightarrow> Q)\<^sub>e"
   unfolding fbox_def test_def by (simp add: expr_defs)
 
 lemma fdia_test: "|\<questiondown>P?\<rangle> Q = (P \<and> Q)\<^sub>e"
@@ -82,13 +82,13 @@ lemma fbox_assign: "|x ::= e] Q = (Q\<lbrakk>e/x\<rbrakk>)\<^sub>e"
 lemma hoare_assign: "\<^bold>{Q\<lbrakk>e/x\<rbrakk>\<^bold>} (x ::= e) \<^bold>{Q\<^bold>}"
   by (auto simp: fbox_assign)
 
-lemma fbox_assigns [wp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (Q)\<^sub>e"
+lemma fbox_assigns [wlp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (Q)\<^sub>e"
   by (simp add: assigns_def expr_defs fbox_def)
 
 lemma H_assign_floyd_hoare:
   assumes "vwb_lens x"
   shows "\<^bold>{p\<^bold>} x ::= e \<^bold>{\<exists> v . p\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk> \<and> $x = e\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk>\<^bold>}"
-  using assms apply (simp add: wp, expr_auto)
+  using assms apply (simp add: wlp, expr_auto)
   by (metis vwb_lens_def wb_lens.source_stability)
 
 lemma fdia_assign: "|x ::= e\<rangle> P = (P\<lbrakk>e/x\<rbrakk>)\<^sub>e"
@@ -100,7 +100,7 @@ subsection \<open> Nondeterministic assignments \<close>
 definition nondet_assign :: "('a \<Longrightarrow> 's) \<Rightarrow> 's prog" ("(2_ ::= ?)" [64] 65)
   where [prog_defs]: "(x ::= ?) = (\<lambda>s. {(put\<^bsub>x\<^esub> s k)|k. True})"
 
-lemma fbox_nondet_assign [wp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>k/x\<rbrakk>)\<^sub>e"
+lemma fbox_nondet_assign [wlp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>k/x\<rbrakk>)\<^sub>e"
   unfolding fbox_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)
 
@@ -117,7 +117,7 @@ subsection \<open> Nondeterministic choice \<close>
 definition nondet_choice :: "'s prog \<Rightarrow> 's prog \<Rightarrow> 's prog" (infixr "\<sqinter>" 60) 
   where [prog_defs]: "nondet_choice F G = (\<lambda> s. F s \<union> G s)"
 
-lemma fbox_choice [wp]: "|F \<sqinter> G] P = ( |F] P \<and> |G] P)\<^sub>e"
+lemma fbox_choice [wlp]: "|F \<sqinter> G] P = ( |F] P \<and> |G] P)\<^sub>e"
   unfolding fbox_def nondet_choice_def by auto
 
 lemma le_fbox_choice_iff: "P \<le> |F \<sqinter> G] Q \<longleftrightarrow> P \<le> |F] Q \<and> P \<le> |G] Q"
@@ -141,7 +141,7 @@ syntax
 
 translations "_Nondet_choice i I P" == "CONST Nondet_choice (\<lambda> i. P) I"
 
-lemma fbox_Choice [wp]: "|\<Sqinter> i\<in>I. F(i)] P = (\<forall> i\<in>\<guillemotleft>I\<guillemotright>. |F(i)] P)\<^sub>e"
+lemma fbox_Choice [wlp]: "|\<Sqinter> i\<in>I. F(i)] P = (\<forall> i\<in>\<guillemotleft>I\<guillemotright>. |F(i)] P)\<^sub>e"
   by (auto simp add: fbox_def Nondet_choice_def fun_eq_iff)
 
 
@@ -165,7 +165,7 @@ lemma kcomp_assoc: "f ; g ; h = f ; (g ; h)"
   unfolding kcomp_eq 
   by (auto simp: fun_eq_iff)
 
-lemma fbox_kcomp[wp]: "|G ; F] P = |G] |F] P"
+lemma fbox_kcomp[wlp]: "|G ; F] P = |G] |F] P"
   unfolding fbox_def kcomp_def by auto
 
 lemma hoare_kcomp:
@@ -711,7 +711,7 @@ lemma fdia_loopI: "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<l
 
 lemma hoare_loop_seqI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} G \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` 
   \<Longrightarrow> \<^bold>{P\<^bold>} LOOP (F ; G) INV I \<^bold>{Q\<^bold>}"
-  by (rule fbox_loopI, simp_all add: wp refine_iff_implies)
+  by (rule fbox_loopI, simp_all add: wlp refine_iff_implies)
      (metis (full_types) fbox_iso order.trans refine_iff_implies)
 
 lemma fbox_loopI_break: 

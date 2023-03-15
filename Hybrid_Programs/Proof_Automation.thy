@@ -270,8 +270,8 @@ method dInduct_mega' uses facts =
 subsection \<open> Differential ghosts \<close>
 
 method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
-  = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"]
-    ,simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
+  = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"],
+    simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
 
 
 subsection \<open> Continuity \<close>
@@ -341,7 +341,7 @@ lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::re
   \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> - $y, y \<leadsto> $x] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x +\<^sub>L y\<^esub> s)"
   by c1_lipschitz
 
-lemma trivia_prod_subst: "(\<lambda>x. case x of (t, a) \<Rightarrow> f t a) = (\<lambda>(t,a). f t a)"
+lemma trivial_prod_subst: "(\<lambda>x. case x of (t, a) \<Rightarrow> f t a) = (\<lambda>(t,a). f t a)"
   by simp
 
 (* fails on nonlinear inputs *)
@@ -353,7 +353,7 @@ lemma "vwb_lens (x::real \<Longrightarrow> 's)
    apply (auto intro!: derivative_eq_intros)                          
    apply (subst Blinfun_inverse; clarsimp)
   using bounded_linear_minus bounded_linear_mult_const bounded_linear_mult_right apply blast
-  apply (subst trivia_prod_subst)
+  apply (subst trivial_prod_subst)
   apply (subst comp_def[symmetric, of Blinfun])
   apply (auto intro: continuity_intros split: prod.splits)
   find_theorems "_ \<Longrightarrow> continuous_on _ _" name: comp
@@ -427,7 +427,7 @@ text \<open> A simple tactic for Hoare logic that uses weakest liberal precondit
 (* Formally, this is not Hoare logic, rename? *)
 method hoare_wp_simp uses local_flow 
   = (((rule_tac hoare_loopI) | (rule hoare_loopI_break))?; 
-    simp add: unrest_ssubst var_alpha_combine wp usubst usubst_eval 
+    simp add: unrest_ssubst var_alpha_combine wlp usubst usubst_eval 
     refine_iff_implies fbox_solve[OF local_flow])
 
 method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
@@ -446,19 +446,19 @@ subsection \<open> Weakest liberal preconditions \<close>
 *)
 method intro_loops = (rule hoare_loopI hoare_whileI hoare_loopI_break hoare_whileI_break)
 
-method wp_simp uses simp = (intro_loops?; (simp add: wp simp)?)
+method wlp_simp uses simp = (intro_loops?; (simp add: wlp simp)?)
 
-method wp_flow uses simp local_flow = (wp_simp simp: simp fbox_solve[OF local_flow]) 
+method wlp_flow uses simp local_flow = (wlp_simp simp: simp fbox_solve[OF local_flow]) 
 
-method wp_full uses simp local_flow = ((wp_flow simp: simp local_flow: local_flow)?; expr_auto)
+method wlp_full uses simp local_flow = ((wlp_flow simp: simp local_flow: local_flow)?; expr_auto)
 
-method wp_solve_one for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" = (subst fbox_solve[where \<phi>=\<phi>], local_flow_on_auto?)
+method wlp_solve_one for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" = (subst fbox_solve[where \<phi>=\<phi>], local_flow_on_auto?)
 
-method wp_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
-  = ((wp_simp simp: simp)?, (wp_solve_one \<phi>)+)
+method wlp_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
+  = ((wlp_simp simp: simp)?, (wlp_solve_one \<phi>)+)
 
-method wp_expr_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
-  = ((wp_solve \<phi> simp: simp); expr_auto?)
+method wlp_expr_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
+  = ((wlp_solve \<phi> simp: simp); expr_auto?)
 
 dataspace testing_wp_tactic =
   constants A::real B::real S::real V::real \<epsilon>::real
@@ -482,7 +482,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
    INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
   ] (x \<le> S)"
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
-  apply (wp_expr_solve "(\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])")
+  apply (wlp_expr_solve "(\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])")
   by (smt (verit) divide_nonneg_nonneg zero_le_power)
 
 lemma local_flow_test: "local_flow_on [c \<leadsto> 1, v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v +\<^sub>L c) UNIV UNIV
@@ -501,7 +501,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
    INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
   ] (x \<le> S)"
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
-  by (wp_full local_flow: local_flow_test)
+  by (wlp_full local_flow: local_flow_test)
     (smt (verit) divide_nonneg_nonneg zero_le_power)
 
 end

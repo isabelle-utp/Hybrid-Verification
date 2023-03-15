@@ -30,7 +30,7 @@ text \<open> Step-by-step Proof Strategy Example \<close>
 
 lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
   \<comment> \<open> (1) Apply the simplification laws for @{const fbox} \<close>
-  apply (simp add: wp)
+  apply (simp add: wlp)
   \<comment> \<open> (2) Evaluate the substitution laws \<close>
   apply (simp add: usubst_eval)
   \<comment> \<open> (3) Unfold into a pure lens expression and apply introduction laws \<close>
@@ -43,7 +43,7 @@ lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
   done
     
 lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
-  apply (simp add: wp usubst_eval taut_def)
+  apply (simp add: wlp usubst_eval taut_def)
   \<comment> \<open> (4) Expand out lenses and split state space \<close>
   apply (simp add:  lens_defs)
   \<comment> \<open> (5) Discharge the remaining proof obligation \<close>
@@ -52,7 +52,7 @@ lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
   done
 
 lemma "(r\<^sup>2 = x\<^sup>2 + y\<^sup>2)\<^sub>e \<le> |x ::= 4; y ::= 3] (5\<^sup>2 = x\<^sup>2 + y\<^sup>2)"
-  by (auto simp: wp usubst_eval)
+  by (auto simp: wlp usubst_eval)
 
 lemma pendulum: "\<^bold>{r\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{r\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   by dInduct
