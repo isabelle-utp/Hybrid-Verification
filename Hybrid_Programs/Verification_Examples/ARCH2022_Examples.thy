@@ -940,9 +940,7 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
       by (auto simp: field_simps intro!: vderiv_intros)
     apply (unfold_locales; clarsimp?) \<comment> \<open> set is not open \<close>
     oops
-
-value "2 \<noteq> 2"
-(* check if diff-ghosts works (darboux tactic), otherwise requires picard-lindeloef for closed intervals *)
+(* need to generalise darboux rules, otherwise requires picard-lindeloef for closed intervals *)
 
 end
 
@@ -1123,8 +1121,7 @@ lemma dyn_param_switch_arith2: "w\<^sup>2 * (y * b)\<^sup>2 + y\<^sup>2 \<le> (c
   apply (mon_simp_vars w b)
   apply (mon_simp_vars c w)
   apply ferrack
-  sorry
-
+  sorry (* verified with the help of a CAS *)
 
 dataspace dyn_param_switch =
   variables 
@@ -1180,10 +1177,6 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
   apply (auto simp: field_simps)[1]
   apply expr_simp
   by (auto intro!: vderiv_intros)
-
-
-(* verified with the help of a CAS *)
-value "2 \<noteq> 2"
 
 end
 
@@ -1772,7 +1765,7 @@ lemma STTT_9b_arith1:
   assumes "0 \<le> (v::real)" and "xm \<le> x" and "xr * 2 = xm + S" 
     and "5 * (x - xr)\<^sup>2 / 4 + (x - xr) * v / 2 + v\<^sup>2 / 4 < ((S - xm) / 2)\<^sup>2" 
   shows "x \<le> S"
-  sorry
+  sorry (* verified with the help of a CAS *)
 
 dataspace STTT_9b =
   constants S::real Kp::real Kd::real
@@ -1890,9 +1883,6 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
 
 
 end
-
-(* verified with the help of a CAS *)
-value "2 \<noteq> 2"
 
 
 subsubsection \<open> STTT Tutorial: Example 10 \<close> (*N 51 *)
@@ -2415,9 +2405,7 @@ lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0
   thm taut_def fdia_skip fdia_abort fdia_test fdia_assign 
       fdia_nondet_assign fdia_choice fdia_kcomp
   thm fdia_g_ode_frame_flow[OF local_flow_LICS2]
-  oops
-
-value "2 \<noteq> 2" (* do not understand the test yet *)
+  oops (* do not understand the test yet *)
 
 end
 
@@ -2612,10 +2600,7 @@ lemma "`v \<ge> 0 \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0 \<long
   apply distribute
   apply (mon_simp_vars A \<epsilon>)
   apply (mon_simp_vars \<epsilon> b)
-  sorry
-
-(* verified with the help of a CAS *)
-value "2 \<noteq> 2"
+  sorry (* verified with the help of a CAS *)
 
 end
 
@@ -2629,7 +2614,7 @@ lemma LICSexample7_arith: "\<forall>t\<ge>0. v * t - b * t\<^sup>2 / 2 + x \<le>
        0 \<le> (t::real) \<Longrightarrow>
        \<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> b * \<tau> \<le> v \<and> \<tau> \<le> \<epsilon> \<Longrightarrow>
        0 \<le> \<tau> \<Longrightarrow> (v - b * t) * \<tau> - b * \<tau>\<^sup>2 / 2 + (v * t - b * t\<^sup>2 / 2 + x) \<le> m"
-  sorry
+  sorry (* verified with the help of a CAS *)
 
 
 context LICS
@@ -2677,9 +2662,6 @@ lemma "`(( |{x` = v, v` = -b}](x \<le> m))
   by auto
 
 end
-
-value "2 \<noteq> 2" (* verified with the help of a CAS *)
-
 
 
 subsection \<open>Advanced\<close>
@@ -2807,7 +2789,7 @@ lemma "initial \<le> |LOOP ctrl;drive INV @loopInv] (z \<le> m)"
     (smt (verit, best) mult_left_le_imp_le zero_le_square)
 
 
-subsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
+subsubsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)
 
 (* Bool Assumptions(Real v, Real d) <-> ( v>=0 & d>=0 & b>0 ) *)
 abbreviation "Assumptions d \<equiv> (v \<ge> 0 \<and> d \<ge> 0 \<and> b > 0)\<^sub>e"
@@ -2831,7 +2813,7 @@ lemma "`@(Assumptions d) \<and> z \<le> m \<longrightarrow>
   using ETCS_Prop1_arith2 by (force simp: closed_segment_eq_real_ivl)
 
 
-subsection \<open> ETCS: Proposition 4 (Reactivity) \<close> (*N 63 *)
+subsubsection \<open> ETCS: Proposition 4 (Reactivity) \<close> (*N 63 *)
 
 (* Bool Controllable(Real m, Real z, Real v, Real d) <-> (v^2-d^2 <= 2*b*(m-z) & Assumptions(v, d)) *)
 abbreviation "Controllable d \<equiv> (v\<^sup>2 -d\<^sup>2 \<le> 2*b*(m-z) \<and> @(Assumptions d))\<^sub>e"
@@ -2852,9 +2834,7 @@ lemma "`em = 0 \<and> d \<ge> 0 \<and> b > 0 \<and> \<epsilon> > 0 \<and> A > 0 
   apply (hol_clarsimp simp: wlp taut_def fbox_g_dL_easiest[OF local_flow_LICS1]; expr_simp)
    apply (safe; clarsimp simp: dlo_simps)
       apply (metis diff_zero)
-  sorry
-
-value "2 \<noteq> 2" (* could not even prove it with KeYmaera X *)
+  sorry  (* could not even prove it with KeYmaera X *)
 
 end
 
@@ -3074,14 +3054,21 @@ end
 
 (*
 
-% Unsolved problems
-% 1. Requires darboux rule
-% 2. verified with the help of a CAS
-% 3. verified with the help of a CAS
-% 4. not solved yet (existential)
-% 5. verified with the help of a CAS
-% 6. verified with the help of a CAS
-% 7. not solved yet (not dedicated enough time)
+% Report/summary of unsolved problems
+% 1. Dynamics: Fractional Darboux equality: 
+      Requires darboux rule
+% 2. Dynamics: Parametric switching between two different damped oscillators: 
+      verified with the help of a CAS
+% 3. STTT Tutorial: Example 9b:
+      verified with the help of a CAS
+% 4. LICS: Example 4b progress of time-triggered car: 
+      not solved yet (existential)
+% 5. LICS: Example 6 MPC Acceleration Equivalence:
+      verified with the help of a CAS
+% 6. LICS: Example 7 Model-Predictive Control Design Car:
+      verified with the help of a CAS
+% 7. ETCS: Proposition 4 (Reactivity):
+      not solved yet (not dedicated enough time)
 
 *)
 
