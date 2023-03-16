@@ -45,12 +45,6 @@ lemma has_derivative_discr_expr: "\<lbrakk>vwb_lens x; $x \<sharp> (expr)\<^sub>
   \<Longrightarrow> ((\<lambda>c. expr (put\<^bsub>x\<^esub> s c)) has_derivative (\<lambda>c. 0)) (at (get\<^bsub>x\<^esub> s) within S)"
   by expr_auto
 
-lemma differentiable_discr_expr [ldifferentiable]:
-  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> differentiable\<^bsub>x\<^esub> expr within S when G"
-  using differentiable_def has_derivative_discr_expr
-  unfolding ldifferentiable_expr_def lframe_fun_def
-  by fastforce
-
 lemma differentiable_plus [ldifferentiable]:
   assumes "differentiable\<^bsub>x\<^esub> expr1 within S when G" 
     and "differentiable\<^bsub>x\<^esub> expr2 within S when G"
@@ -118,6 +112,12 @@ lemma differentiable_dvar [ldifferentiable]:
   shows "differentiable\<^bsub>y\<^esub> $x within S when G"
   using assms by (auto simp add: expr_defs)
 
+lemma differentiable_discr_expr [ldifferentiable]:
+  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> differentiable\<^bsub>x\<^esub> expr within S when G"
+  using differentiable_def has_derivative_discr_expr
+  unfolding ldifferentiable_expr_def lframe_fun_def
+  by fastforce
+
 declare lens_plus_right_sublens [simp] 
 
 (* should we generalise and make it "at (get\<^bsub>x\<^esub> s) within S"? It does not seem 
@@ -153,10 +153,6 @@ lemma lframeD_numeral [framed_derivs]: "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<
 
 lemma lframeD_const [framed_derivs]: "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> \<guillemotleft>k\<guillemotright> = (0)\<^sub>e"
   by (simp add: expr_defs)
-
-lemma lframeD_discr_expr [framed_derivs]:
-  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr = (0)\<^sub>e"
-  by expr_simp
 
 lemma lframeD_plus [framed_derivs]:
   "\<lbrakk>differentiable\<^bsub>x\<^esub> expr1 ; differentiable\<^bsub>x\<^esub> expr2\<rbrakk> 
@@ -274,6 +270,10 @@ lemma lframeD_disc_var [framed_derivs]:
   shows "\<D>\<^bsub>y\<^esub>\<langle>\<sigma>\<rangle> $x = (0)\<^sub>e"
   using assms
   by (auto simp add: expr_defs lens_quotient_def fun_eq_iff)
+
+lemma lframeD_discr_expr [framed_derivs]:
+  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr = (0)\<^sub>e"
+  by expr_simp
 
 
 subsection \<open> framed differential invariants revisited \<close>

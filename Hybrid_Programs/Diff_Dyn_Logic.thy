@@ -519,7 +519,7 @@ lemma darboux:
     oops
 
 lemma darboux_geq: 
-  fixes a y z :: "real \<Longrightarrow> 'a"
+  fixes y z :: "real \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> real"
     and g :: real
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
@@ -571,7 +571,7 @@ lemma darboux_geq:
       unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
 lemma darboux_ge: 
-  fixes a y z :: "real \<Longrightarrow> 'a"
+  fixes y z :: "real \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> real"
     and g :: real
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
@@ -623,7 +623,7 @@ lemma darboux_ge:
       unrest_ssubst unrest usubst_eval le_fun_def mult.commute)
 
 lemma darboux_eq: 
-  fixes a y z :: "'v::{real_inner, banach, real_normed_algebra_1, division_ring} \<Longrightarrow> 'a"
+  fixes y z :: "'v::{real_inner, banach, real_normed_algebra_1, division_ring} \<Longrightarrow> 'a"
     and e e' :: "'a \<Rightarrow> 'v"
   assumes vwbs: "vwb_lens a" "vwb_lens y" "vwb_lens z" 
     and indeps: "y \<bowtie> a" "z \<bowtie> a" "z \<bowtie> y"

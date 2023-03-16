@@ -7,6 +7,20 @@ theory ARCH2022_Examples
   imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
+lemma lens_plus_ubR [simp]: "X \<bowtie> Y \<Longrightarrow> vwb_lens X \<Longrightarrow> Y \<subseteq>\<^sub>L X +\<^sub>L Y"
+  unfolding sublens_def 
+  apply (rule_tac x="snd\<^sub>L" in exI)
+  apply (rule conjI)
+   apply expr_simp
+  apply (expr_simp add: comp_def)
+  using lens_indep_comm by fastforce
+
+lemma lens_plus_sub_lens:
+  "X \<bowtie> Y \<Longrightarrow> vwb_lens Y \<Longrightarrow> vwb_lens Z \<Longrightarrow> Z \<subseteq>\<^sub>L X \<Longrightarrow> Z \<subseteq>\<^sub>L X +\<^sub>L Y"
+  "X \<bowtie> Y \<Longrightarrow> vwb_lens X \<Longrightarrow> vwb_lens Z \<Longrightarrow> Z \<subseteq>\<^sub>L Y \<Longrightarrow> Z \<subseteq>\<^sub>L X +\<^sub>L Y"
+  apply (rule sublens_trans[OF _ lens_plus_ub]; simp)
+  using lens_plus_right_sublens[of X Y Z] by blast
+
 
 subsection \<open> Basic \<close>
 
@@ -842,7 +856,12 @@ lemma picard_lindeloef_first_order_linear: "t\<^sub>0 \<in> T \<Longrightarrow> 
 
 dataspace darboux =
   constants A::real B::real
-  variables x::real y::real z::real w::real
+  variables x::real y::real z::real w1::real w2::real
+
+lemma darboux_arith: 
+  (* x' + z' = A*x^2 + B*x + A*z*x + B*z = (A*x+B)*x + (A*x+B)*z = (A * x + B) * (x + z) *)
+  "A * x\<^sup>2 + B * x + (A * z * x + B * z) = (A * x + B) * (x + z)" for x::real
+  by (auto simp: field_simps)
 
 context darboux
 begin
@@ -854,7 +873,8 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillem
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on fbox_diff_inv_on')
   apply (expr_simp add: diff_inv_on_eq ivp_sols_def, clarsimp)
   subgoal for s X t
-    apply (rule picard_lindeloef.ivp_unique_solution[of "(\<lambda>t r. r * (A * (fst (X t)) + B))" UNIV UNIV 0 "get\<^bsub>x\<^esub> s + get\<^bsub>z\<^esub> s" "\<lambda>s. UNIV" t 
+    apply (rule picard_lindeloef.ivp_unique_solution[of "(\<lambda>t r. r * (A * (fst (X t)) + B))" 
+          UNIV UNIV 0 "get\<^bsub>x\<^esub> s + get\<^bsub>z\<^esub> s" "\<lambda>s. UNIV" t 
           _ "\<lambda>t. 0"]; (clarsimp simp: ivp_sols_def)?)
       prefer 2 apply (intro vderiv_intros, force, force, force, force)
       apply (distribute, mon_pow_simp)
@@ -862,7 +882,8 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillem
     apply (unfold_locales; clarsimp?)
      apply (force intro!: vderiv_on_continuous_on vderiv_intros)
     apply distribute
-    apply (rule_tac f'="\<lambda>(t, r). Blinfun (\<lambda>r. r * (A * fst (X t)) + r * B) " in c1_implies_local_lipschitz; clarsimp?)
+    apply (rule_tac f'="\<lambda>(t, r). Blinfun (\<lambda>r. r * (A * fst (X t)) + r * B) " 
+        in c1_implies_local_lipschitz; clarsimp?)
     apply (rule has_derivative_Blinfun)
      apply (auto intro!: derivative_eq_intros vderiv_on_continuous_on split: prod.splits)[1]
     apply (rule continuous_on_blinfun_componentwise)
@@ -875,11 +896,43 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillem
         continuous_on_compose[of UNIV fst X, unfolded comp_def] )
   done
 
-lemma has_derivative_id_prod: "D (\<lambda>x. x) \<mapsto> (\<lambda>x. (fst x, snd x)) F"
-  by (rule derivative_eq_intros)
-    auto
+lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillemotright>*x, z` = A*z*x+B*z}] (0= -x - z)"
+  apply (subgoal_tac "(0= -x - z)\<^sup>e = (x + z = 0)\<^sup>e"; force?)
+  apply (erule ssubst)
+  apply (rule darboux_eq[where a="x +\<^sub>L z" and y=w1 and z=w2 and g="A * get\<^bsub>x\<^esub> _ + B"])
+              apply expr_simp
+             apply expr_simp
+            apply expr_simp
+           apply expr_simp
+          apply expr_simp
+         apply expr_simp
+  subgoal by expr_simp (metis indeps(15) indeps(6) lens_indep.lens_put_comm)
+       apply expr_simp
+  subgoal by expr_auto (metis vwb_lens.axioms(1) vwbs(4) wb_lens.axioms(1) weak_lens.put_get)
+  subgoal by expr_auto (smt (verit, ccfv_threshold) indeps(17) indeps(19) indeps(8) lens_indep.lens_put_comm)
+    apply expr_simp
+  prefer 2 subgoal
+      apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+      using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp by expr_auto+
+    apply (subst framed_derivs)
+      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
+    apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+     apply expr_simp
+    apply clarsimp
+    apply (subst darboux_arith)
+    oops
 
-lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillemotright>*x, z` = A*z*x+B*z | G on UNIV UNIV @ 0}] (0= -x - z)"
+lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillemotright>*x, z` = A*z*x+B*z}] (0= -x - z)"
   (* find_local_flow *)
   apply (subst fbox_solve[where \<phi>="\<lambda>t. [
     x \<leadsto> - 1 * B * exp (B * t + B * $x) * (1 / (- 1 + A * exp (B * t + B * $x))), 
@@ -906,14 +959,14 @@ begin
 
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
-  apply (rule diff_ghost_rule_very_simple[where y="w" and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w + z*w = 0 \<and> w \<noteq> 0)\<^sup>e"])
+  apply (rule diff_ghost_rule_very_simple[where y="w1" and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w1 + z*w1 = 0 \<and> w1 \<noteq> 0)\<^sup>e"])
   defer
        apply expr_simp
   apply expr_simp
-  using lens_indep_comm[of w z] lens_indep_comm[of w x] indeps  apply expr_auto
+  using lens_indep_comm[of w1 z] lens_indep_comm[of w1 x] indeps  apply expr_auto
     apply expr_simp
    apply expr_auto
-  apply(subst cross3_simps(23)[symmetric, of "get\<^bsub>x\<^esub> _" "get\<^bsub>w\<^esub> _" "get\<^bsub>z\<^esub> _"])
+  apply(subst cross3_simps(23)[symmetric, of "get\<^bsub>x\<^esub> _" "get\<^bsub>w1\<^esub> _" "get\<^bsub>z\<^esub> _"])
     apply (auto simp: field_simps)[1]
   apply (metis (full_types) bgauge_existence_lemma get_put_put_indep indeps(11) mem_Collect_eq verit_comp_simplify1(1) vwbs(4))
    apply (clarsimp simp: field_simps, simp add: factorR(1))
@@ -922,10 +975,6 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
 
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
-  (* apply (expr_simp)
-  using darboux_eq[of _ y z, simplified expr_defs, where e="(x + z)\<^sup>e",
-      of "\<lparr>lens_get = \<lambda>\<sigma>. (get\<^bsub>x\<^esub> \<sigma>, get\<^bsub>z\<^esub> \<sigma>), lens_put = \<lambda>\<sigma> (u, v). put\<^bsub>x\<^esub> (put\<^bsub>z\<^esub> \<sigma> v) u\<rparr>"]
-  apply (rule darboux_eq) *)
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on fbox_diff_inv_on')
   apply (expr_simp add: diff_inv_on_eq ivp_sols_def, clarsimp)
   subgoal for s X t
@@ -939,6 +988,41 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
       apply (frule has_vderiv_on_subset[where T="{0..t}"]; clarsimp?)
       by (auto simp: field_simps intro!: vderiv_intros)
     apply (unfold_locales; clarsimp?) \<comment> \<open> set is not open \<close>
+    oops
+
+(* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
+lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
+  apply (rule darboux_eq[where a="x +\<^sub>L z" and y=w1 and z=w2])
+              apply expr_simp
+             apply expr_simp
+            apply expr_simp
+           apply expr_simp
+          apply expr_simp
+         apply expr_simp
+  subgoal by expr_simp (metis indeps(15) indeps(6) lens_indep.lens_put_comm)
+       apply expr_simp
+  subgoal by expr_auto (metis (full_types) exp_gt_zero linorder_not_le order.refl vwb_lens.axioms(1) 
+        vwbs(4) wb_lens.axioms(1) weak_lens.put_get)
+  subgoal by expr_auto (smt (verit, best) indeps(18) indeps(19) indeps(7) lens_indep.lens_put_comm)
+  apply expr_auto
+  prefer 2 subgoal
+      apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+      using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp by expr_auto+
+  apply (subst framed_derivs)
+      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
+    apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+     apply expr_simp
+    apply clarsimp
     oops
 (* need to generalise darboux rules, otherwise requires picard-lindeloef for closed intervals *)
 
@@ -3052,6 +3136,168 @@ lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
 end
 
 
+subsection \<open> Nonlinear \<close>
+
+
+subsubsection \<open> Benchmarks/Nonlinear/Ahmadi Parrilo Krstic \<close>
+
+thm exp_ghost_arith
+lemma exp_ghost_arith2: "0 \<le> y \<longleftrightarrow> (\<exists>z. 0 < z \<and> 0 \<le> z * y)" for y::real
+  apply (intro iffI; clarsimp?)
+  by (rule_tac x=1 in exI; clarsimp)
+    (simp add: zero_le_mult_iff)
+
+lemma exp_ghost_arith2':
+  fixes y z :: "real \<Longrightarrow> 's"
+  shows "vwb_lens z \<Longrightarrow> y \<bowtie> z \<Longrightarrow> (0 \<le> get\<^bsub>y\<^esub> s) = (\<exists>s'. 0 < get\<^bsub>z\<^esub> s' \<and> 0 \<le> get\<^bsub>z\<^esub> s' * get\<^bsub>y\<^esub> s)"
+  apply (intro iffI; clarsimp?)
+  by (rule_tac x="put\<^bsub>z\<^esub> s 1" in exI, clarsimp)
+    (simp add: zero_le_mult_iff)
+
+context four_vars
+begin
+
+(* 0.5<=x & x<=0.7 & 0<=y & y<=0.3
+  ->
+  [
+    {x'=-x+x*y , y'=-y}@invariant(y>=0)
+  ] !(-0.8>=x & x>=-1 & -0.7>=y & y>=-1) *)
+lemma "\<^bold>{0.5 \<le> $x & $x \<le> 0.7 & 0 \<le> $y & $y \<le> 0.3\<^bold>}
+    {x` = -$x + $x* $y , y` = - $y} INV (y \<ge> 0)
+  \<^bold>{ \<not> (-0.8 \<ge> $x \<and> $x \<ge> -1 & -0.7 \<ge> $y \<and> $y \<ge> -1)\<^bold>}"
+  unfolding invar_def
+  apply (rule_tac C="(y \<ge> 0)\<^sup>e" in diff_cut_on_rule)
+   apply (rule_tac I="(y \<ge> 0)\<^sup>e" in fbox_diff_invI)
+     apply (rule_tac J="(z > 0 \<and> z * y \<ge> 0)\<^sup>e" and y=z and k="1" in diff_ghost_rule_very_simple)
+          apply (rule hoare_invs)
+           prefer 2
+  subgoal (* \<^bold>{0 \<le> $z * $y\<^bold>} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} \<^bold>{0 \<le> $z * $y\<^bold>} *)
+    by (diff_inv_on_ineq "(0)\<^sub>e" "(z * y - z * y)\<^sup>e") vderiv
+(* alternative proof 
+           apply ((intro hoare_invs)?; subst fbox_diff_inv_on; 
+    intro lderiv_rules; 
+    (simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)?)
+  subgoal
+    apply (rule ldifferentiable; rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    using bounded_linear_fst bounded_linear_snd_comp by expr_auto
+  subgoal
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_snd_comp by expr_auto+
+  done *)
+  subgoal (*  \<^bold>{0 < $z\<^bold>} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} \<^bold>{0 < $z\<^bold>} *)
+    apply (dGhost "w" "(z*w\<^sup>2 = 1)\<^sub>e" "-1/2")
+    apply (diff_inv_on_eq)
+    using exp_ghost_arith by auto
+(*
+    apply (subst fbox_diff_inv_on;
+      intro lderiv_rules; 
+    (simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)?)
+    subgoal
+      apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+      using bounded_linear_fst bounded_linear_snd_comp by expr_auto
+    subgoal 
+      apply (subst framed_derivs)
+       apply expr_simp
+      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+      using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+    apply (subst framed_derivs)
+        apply expr_simp
+       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+  apply (subst framed_derivs)
+         apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+    apply (subst framed_derivs)
+       apply expr_simp
+      apply (simp add: lens_plus_sub_lens(1))
+    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+    by (expr_simp add: power2_eq_square) 
+  using exp_ghost_arith by expr_auto *)
+       apply expr_simp
+      apply expr_simp
+  subgoal by expr_auto (metis indeps(4) indeps(7) lens_indep_comm)
+      apply expr_simp
+  subgoal using exp_ghost_arith2'[of z y] by expr_auto
+  apply expr_auto
+  apply expr_auto
+  by (rule diff_weak_on_rule)
+    expr_auto
+
+end
+
+
+subsubsection \<open> Benchmarks/Nonlinear/Arrowsmith Place Fig_3_11 page 83 \<close>
+
+
+lemma lget_ge0_exI: "vwb_lens z \<Longrightarrow> \<exists>s'. 0 < get\<^bsub>z\<^esub> s'" for z :: "real \<Longrightarrow> 's"
+  by (metis class_dense_linordered_field.gt_ex vwb_lens.axioms(1) 
+      wb_lens.axioms(1) weak_lens.put_get)
+
+context four_vars
+begin
+
+(* x=1 & y=1/8
+  ->
+  [
+    {x'=x-y^2, y'=y*(x-y^2)}@invariant(y^2 < x)
+  ] !(x<0) *)
+lemma "(x=1 & y=1/8)\<^sub>e
+  \<le>
+  | {x` = $x - $y^2, y` = $y * ($x - $y^2)} INV (y^2 < x)
+  ] (\<not> (x<0))"
+  unfolding invar_def
+  apply (rule_tac C="(y^2 < x)\<^sup>e" in diff_cut_on_rule)
+   apply (rule_tac I="(0 < x - y^2)\<^sup>e" in fbox_diff_invI) 
+     apply (rule darboux_ge[of "x +\<^sub>L y" z w _ _ "($x - ($y)\<^sup>2)\<^sup>e"])
+                 apply simp+
+  subgoal by expr_auto (metis indeps(4) indeps(7) lens_indep_comm) 
+          apply expr_simp
+  using lget_ge0_exI[of z]  apply expr_auto
+  subgoal by expr_auto (smt (verit, best) indeps(11) indeps(6) indeps(9) lens_indep.lens_put_comm)
+       apply expr_simp
+      apply (subst framed_derivs)
+        apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+  using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
+       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+  using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+      apply (subst framed_derivs)
+        apply expr_simp
+       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+  using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
+      apply (subst framed_derivs; (simp add: lens_plus_sub_lens(1))?)
+  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
+      apply (subst framed_derivs; (simp add: lens_plus_sub_lens(1))?)
+  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
+      apply expr_simp
+  subgoal sorry
+  apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
+  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
+  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
+  using less_one_multI apply (expr_auto add: field_simps)
+   apply expr_simp
+  apply (rule diff_weak_on_rule)
+  subgoal by expr_auto (smt (verit) power2_less_0)
+  oops
+
+end
+
+
+
+
 (*
 
 % Report/summary of unsolved problems
@@ -3069,7 +3315,8 @@ end
       verified with the help of a CAS
 % 7. ETCS: Proposition 4 (Reactivity):
       not solved yet (not dedicated enough time)
-
+% 8. Benchmarks/Nonlinear/Arrowsmith Place Fig_3_11 page 83:
+      Requires darboux rule
 *)
 
 end
