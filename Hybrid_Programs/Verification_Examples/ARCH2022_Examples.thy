@@ -2479,17 +2479,32 @@ lemma "`\<epsilon> > 0 \<and> A > 0 \<and> b > 0
     )\<^sup>*\<rangle>
   (x \<ge> p)))`"
   apply (clarsimp simp: taut_def)
-  apply (rule_tac x=M in exI)
-  (* apply (rule fdia_kstar_variantI)
+  apply (rule_tac x="M" in exI)
+  apply (rule_tac P="\<lambda>r. ($x \<ge> p)\<^sup>e" in fdia_kstar_real_variantI)
     prefer 2
   apply (clarsimp simp: taut_def fdia_skip fdia_abort fdia_test fdia_assign 
-      fdia_nondet_assign fdia_choice fdia_kcomp fdia_g_ode_on
+      fdia_nondet_assign fdia_choice fdia_kcomp
       fdia_g_ode_frame_flow[OF local_flow_LICS2])
-  apply (hol_clarsimp) *)
+    apply (hol_clarsimp)
+  prefer 2 using indeps apply expr_simp
   thm taut_def fdia_skip fdia_abort fdia_test fdia_assign 
       fdia_nondet_assign fdia_choice fdia_kcomp
   thm fdia_g_ode_frame_flow[OF local_flow_LICS2]
-  oops (* do not understand the test yet *)
+  oops (* have not found the witness M *)
+
+(* 
+x’=v,v’=a,t’=1 
+\<Longrightarrow> v t = a * t + v\<^sub>0 and x t = a * t\<^sup>2 / 2 + v\<^sub>0 * t + x\<^sub>0 and t \<tau> = \<tau> + t\<^sub>0
+\<Longrightarrow> (x t - x\<^sub>0) = (v t - v\<^sub>0)\<^sup>2/(2 * a) + v\<^sub>0 * (v t - v\<^sub>0)/a
+\<Longrightarrow> 2 * a * (x t - x\<^sub>0) = (v t - v\<^sub>0)\<^sup>2 + 2 * v\<^sub>0 * (v t - v\<^sub>0)
+\<Longrightarrow> 2 * a * (x t - x\<^sub>0) = (v t)\<^sup>2 - 2 * v\<^sub>0 * (v t) + v\<^sub>0\<^sup>2 + 2 * v\<^sub>0 * (v t) - 2 * v\<^sub>0\<^sup>2
+\<Longrightarrow> 2 * a * (x t - x\<^sub>0) = (v t)\<^sup>2 - v\<^sub>0\<^sup>2
+
+a = - b \<Longrightarrow> p \<le> - b * \<epsilon>\<^sup>2 / 2 + v\<^sub>0 * \<epsilon> + x\<^sub>0 and 
+a = A \<Longrightarrow> v\<^sub>0' \<le> v\<^sub>0 \<le> A * \<epsilon> + v\<^sub>0' and  x\<^sub>0' \<le> x\<^sub>0 \<le> A * \<epsilon>\<^sup>2 / 2 + v\<^sub>0 * \<epsilon> + x0'
+  \<Longrightarrow> 0 \<le> v\<^sub>0 - v\<^sub>0' \<le> A * \<epsilon> and  0 \<le> x\<^sub>0 - x\<^sub>0' \<le> A * \<epsilon>\<^sup>2 / 2 + v\<^sub>0 * \<epsilon> 
+  \<Longrightarrow> 0 \<le> v\<^sub>0 - v\<^sub>0' \<le> A * \<epsilon> and  0 \<le> 2 * (x\<^sub>0 - x\<^sub>0') \<le> A * \<epsilon>\<^sup>2 + 2 * v\<^sub>0 * \<epsilon> 
+*)
 
 end
 
