@@ -125,7 +125,9 @@ context two_vars
 begin
 
 (* x>=0 & y>=1 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1) ++ y:=x+1;][{y'=2}][x:=y;]x>=1 *)
-lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1] |{y` = 2}] |x ::= y] (x \<ge> 1)"
+lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> 
+  |x ::= x + 1]|LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1] |{y` = 2}] |x ::= y] 
+  (x \<ge> 1)"
   apply (wlp_solve_one "\<lambda>t. [y \<leadsto> 2 * t + y]")
   apply (subst change_loopI[where I="(1 \<le> x \<and> 1 \<le> y)\<^sub>e"])
   apply (subst fbox_kcomp[symmetric], rule hoare_kcomp)
@@ -134,7 +136,9 @@ lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le> |x ::= x + 1]|LOOP x ::= x + 1 
   by (subst fbox_loopI, auto simp: wlp)
     expr_simp+
 
-lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} x ::= x + 1; ((LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y) \<^bold>{x \<ge> 1\<^bold>}"
+lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} 
+  x ::= x + 1; ((LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y) 
+  \<^bold>{x \<ge> 1\<^bold>}"
   apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
    apply (hoare_wp_auto)
   apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
@@ -565,9 +569,11 @@ proof -
     by simp
   have "w\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 + (get\<^bsub>x2\<^esub> s)\<^sup>2) = w\<^sup>2 * p\<^sup>2"
     using a1 by (simp add: distrib_left)
-  then have "w\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 * (cos (w * t))\<^sup>2 + ((get\<^bsub>x2\<^esub> s)\<^sup>2 * (cos (w * t))\<^sup>2 + (sin (w * t))\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 + (get\<^bsub>x2\<^esub> s)\<^sup>2))) = w\<^sup>2 * p\<^sup>2"
+  then have "w\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 * (cos (w * t))\<^sup>2 + ((get\<^bsub>x2\<^esub> s)\<^sup>2 * (cos (w * t))\<^sup>2 
+    + (sin (w * t))\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 + (get\<^bsub>x2\<^esub> s)\<^sup>2))) = w\<^sup>2 * p\<^sup>2"
     using f4 f3 by (metis (no_types) add.commute mult.right_neutral sin_cos_squared_add2)
-  then show "w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) + (w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) + (w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2) + w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2))) = p\<^sup>2 * w\<^sup>2"
+  then show "w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) + (w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) 
+    + (w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2) + w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2))) = p\<^sup>2 * w\<^sup>2"
     using f2 by (metis (no_types) add.left_commute distrib_left)
 qed
 
@@ -750,12 +756,14 @@ lemma "(x\<^sup>3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x\<^sup>3 + x\<^sup>4, 
    apply (expr_simp add: Collect_ge_ivl)
   subgoal for s X t
     apply(rule current_vderiv_ge_always_ge[of 5 "\<lambda>t. (fst (X t))\<^sup>3" 0 
-        "\<lambda>t. 3 * (fst (X t))\<^sup>2 * ((fst (X t))\<^sup>3 + (fst (X t))\<^sup>4)", where g="\<lambda>t. 3 * t\<^sup>2 + 3 * (root 3 t)\<^sup>5", rule_format])
+        "\<lambda>t. 3 * (fst (X t))\<^sup>2 * ((fst (X t))\<^sup>3 + (fst (X t))\<^sup>4)", 
+        where g="\<lambda>t. 3 * t\<^sup>2 + 3 * (root 3 t)\<^sup>5", rule_format])
     by (auto intro!: vderiv_intros simp: odd_real_root_power_cancel split: if_splits) 
       (clarsimp simp: fun_eq_iff, ferrack)
   apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
    apply (expr_simp add: Collect_ge_ivl)
-  by (rule current_vderiv_ge_always_ge[rule_format, of 2 "\<lambda>t. (snd (_ t))", where g="\<lambda>t. 5 * t + t\<^sup>2"])
+  by (rule current_vderiv_ge_always_ge[rule_format, of 2 "\<lambda>t. (snd (_ t))", 
+        where g="\<lambda>t. 5 * t + t\<^sup>2"])
     (auto intro!: vderiv_intros simp: odd_real_root_power_cancel split: if_splits)
 
 end
@@ -909,7 +917,8 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
   subgoal by expr_simp (metis indeps(15) indeps(6) lens_indep.lens_put_comm)
        apply expr_simp
   subgoal by expr_auto (metis vwb_lens.axioms(1) vwbs(4) wb_lens.axioms(1) weak_lens.put_get)
-  subgoal by expr_auto (smt (verit, ccfv_threshold) indeps(17) indeps(19) indeps(8) lens_indep.lens_put_comm)
+  subgoal by expr_auto 
+      (smt (verit, ccfv_threshold) indeps(17) indeps(19) indeps(8) lens_indep.lens_put_comm)
     apply expr_simp
   prefer 2 subgoal
       apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
@@ -959,7 +968,8 @@ begin
 
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
-  apply (rule diff_ghost_rule_very_simple[where y="w1" and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w1 + z*w1 = 0 \<and> w1 \<noteq> 0)\<^sup>e"])
+  apply (rule diff_ghost_rule_very_simple[where y="w1" 
+        and k="-(A*$x+B)/($z)\<^sup>2" and J="(x*w1 + z*w1 = 0 \<and> w1 \<noteq> 0)\<^sup>e"])
   defer
        apply expr_simp
   apply expr_simp
@@ -968,7 +978,8 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
    apply expr_auto
   apply(subst cross3_simps(23)[symmetric, of "get\<^bsub>x\<^esub> _" "get\<^bsub>w1\<^esub> _" "get\<^bsub>z\<^esub> _"])
     apply (auto simp: field_simps)[1]
-  apply (metis (full_types) bgauge_existence_lemma get_put_put_indep indeps(11) mem_Collect_eq verit_comp_simplify1(1) vwbs(4))
+    apply (metis (full_types) bgauge_existence_lemma get_put_put_indep indeps(11) 
+      mem_Collect_eq verit_comp_simplify1(1) vwbs(4))
    apply (clarsimp simp: field_simps, simp add: factorR(1))
   oops
 (* apply (dGhost "y" "(x*y\<^sup>2 = 1 \<or> x=0)\<^sub>e" "1/2") *)
@@ -1124,8 +1135,8 @@ end
 
 subsubsection \<open> Dynamics: Bifurcation \<close>
 
-lemma picard_lindeloef_dyn_bif: "continuous_on T (g::real \<Rightarrow> real) \<Longrightarrow> t\<^sub>0 \<in> T \<Longrightarrow> is_interval T \<Longrightarrow> 
-  open T \<Longrightarrow> picard_lindeloef (\<lambda>t \<tau>::real. r + \<tau>^2) T UNIV t\<^sub>0"
+lemma picard_lindeloef_dyn_bif: "continuous_on T (g::real \<Rightarrow> real) \<Longrightarrow> t\<^sub>0 \<in> T 
+  \<Longrightarrow> is_interval T \<Longrightarrow> open T \<Longrightarrow> picard_lindeloef (\<lambda>t \<tau>::real. r + \<tau>^2) T UNIV t\<^sub>0"
 proof(unfold_locales; clarsimp simp: dist_norm local_lipschitz_def lipschitz_on_def)
   fix x t::real
   {fix x1 and x2
@@ -1314,7 +1325,9 @@ context dyn_nonlinear
 begin
 
 (* x1^2/2-x2^2/2>=a -> [{x1'=x2+x1*x2^2, x2'=-x1+x1^2*x2 & x1>=0 & x2>=0}]x1^2/2-x2^2/2>=a *)
-lemma "(x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)\<^sub>e \<le> |{x1` = x2 + x1*x2\<^sup>2, x2` = -x1 + x1\<^sup>2 * x2| (x1 \<ge> 0 \<and> x2 \<ge> 0)}] (x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)"
+lemma "(x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)\<^sub>e \<le> 
+  |{x1` = x2 + x1*x2\<^sup>2, x2` = -x1 + x1\<^sup>2 * x2| (x1 \<ge> 0 \<and> x2 \<ge> 0)}] 
+  (x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)"
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(x1 * (x2 + x1*x2\<^sup>2) - x2 * (-x1 + x1\<^sup>2 * x2))\<^sup>e"; expr_simp)
   by (auto simp: field_simps fun_eq_iff intro!: vderiv_intros split: if_splits)
