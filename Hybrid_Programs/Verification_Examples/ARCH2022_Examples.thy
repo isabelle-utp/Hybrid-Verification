@@ -28,7 +28,7 @@ lit_vars \<comment> \<open> disable constants \<close>
 no_notation (ASCII) disj (infixr "|" 30)
 no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
 
-subsubsection \<open> Basic assignment \<close> 
+subsubsection \<open> 1. Basic assignment \<close> 
 
 dataspace two_vars =
   variables x :: real y :: real 
@@ -43,7 +43,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] (x \<ge> 1)"
 end
 
 
-subsubsection \<open> Overwrite assignment on some branches \<close>
+subsubsection \<open> 2. Overwrite assignment on some branches \<close>
 
 context two_vars
 begin
@@ -55,7 +55,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |x ::= x + 1 \<sqinter> y ::= x +
 end
 
 
-subsubsection \<open> Overwrite assignment in loop \<close>
+subsubsection \<open> 3. Overwrite assignment in loop \<close>
 
 context two_vars
 begin
@@ -68,7 +68,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |LOOP x ::= x + 1 INV (x \<ge> 1)
 end
 
 
-subsubsection \<open> Overwrite assignment in ODE \<close>
+subsubsection \<open> 4. Overwrite assignment in ODE \<close>
 
 
 context two_vars
@@ -95,7 +95,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
 end
 
 
-subsubsection \<open> Overwrite with nondeterministic assignment \<close>
+subsubsection \<open> 5. Overwrite with nondeterministic assignment \<close>
 
 context two_vars
 begin
@@ -107,7 +107,7 @@ lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; x ::= ? ; \<questiondown>x\<ge>
 end
 
 
-subsubsection \<open> Tests and universal quantification \<close>
+subsubsection \<open> 6. Tests and universal quantification \<close>
 
 context two_vars
 begin
@@ -119,7 +119,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<s
 end
 
 
-subsubsection \<open> Overwrite assignment several times \<close>
+subsubsection \<open> 7. Overwrite assignment several times \<close>
 
 context two_vars
 begin
@@ -159,7 +159,7 @@ lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>}
 
 end
 
-subsubsection \<open> Potentially overwrite dynamics \<close>
+subsubsection \<open> 8. Potentially overwrite dynamics \<close>
 
 context two_vars
 begin
@@ -202,7 +202,7 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = 5}]|LOOP x::=x+3 INV (x > 0) \<
 end
 
 
-subsubsection \<open> Potentially overwrite exponential decay \<close>
+subsubsection \<open> 9. Potentially overwrite exponential decay \<close>
 
 context two_vars
 begin
@@ -246,7 +246,7 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0)
 end
 
 
-subsubsection \<open> Dynamics: Cascaded \<close>
+subsubsection \<open> 10. Dynamics: Cascaded \<close>
 
 context three_vars
 begin
@@ -270,16 +270,14 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
   subgoal for s
     by expr_auto
       (rule_tac x="put\<^bsub>y\<^esub> s 1" in exI, simp)
-  subgoal
-    by (subst lens_indep_comm; expr_simp)
-  subgoal
-    by (simp add: frechet_derivative_fst)
+  subgoal by (subst lens_indep_comm; expr_simp)
+  subgoal by (simp add: frechet_derivative_fst)
   using bounded_linear_fst bounded_linear_imp_differentiable by blast
 
 end
 
 
-subsubsection \<open> Dynamics: Single integrator time \<close>
+subsubsection \<open> 11. Dynamics: Single integrator time \<close>
 
 context two_vars
 begin
@@ -297,7 +295,7 @@ lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
 end
 
 
-subsubsection \<open> Dynamics: Single integrator \<close>
+subsubsection \<open> 12. Dynamics: Single integrator \<close>
 
 context two_vars
 begin
@@ -318,7 +316,7 @@ qed
 end
 
 
-subsubsection \<open> Dynamics: Double integrator \<close>
+subsubsection \<open> 13. Dynamics: Double integrator \<close>
 
 context three_vars
 begin
@@ -330,7 +328,7 @@ lemma "(x \<ge> 0 \<and> y \<ge>0 \<and> z \<ge> 0)\<^sub>e \<le> |{x` = y, y` =
 end
 
 
-subsubsection \<open> Dynamics: Triple integrator \<close> (**)
+subsubsection \<open> 14. 4 \<close> (**)
 
 dataspace four_vars =
   variables 
@@ -352,7 +350,7 @@ lemma "(x \<ge> 0 \<and> y \<ge> 0 \<and> z \<ge> 0 \<and> w \<ge> 0)\<^sub>e \<
 end
 
 
-subsubsection \<open> Dynamics: Exponential decay (1) \<close>
+subsubsection \<open> 15. Dynamics: Exponential decay (1) \<close>
 
 context two_vars
 begin
@@ -372,7 +370,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
 end
 
 
-subsubsection \<open> Dynamics: Exponential decay (2) \<close>  (**)
+subsubsection \<open> 16. Dynamics: Exponential decay (2) \<close>  (**)
 
 context two_vars
 begin
@@ -385,18 +383,27 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
       exp_less_one_iff less_eq_real_def mult.commute mult_1 neg_equal_zero 
       real_0_less_add_iff right_minus_eq zero_le_mult_iff)
 
+end
+
+context three_vars
+begin
+
 (* proof with ghosts *)
 (* x>0 -> [{x'=-x+1}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x + 1}] (x > 0)"
-  apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2") (* find adequate ghost *)
-    apply (expr_auto add: exp_ghost_arith)
-  (* apply (diff_inv_on_eq) *)
-  oops
+  apply (rule_tac a=x and y=y and z=z and g="-1" in darboux_ge; simp?)
+  subgoal by expr_auto (meson indeps(1) lens_indep_comm)
+       prefer 6 apply (force simp: ldifferentiable)
+      prefer 5 apply (simp add: framed_derivs, expr_simp add: le_fun_def)
+     apply expr_auto
+  subgoal by expr_auto (metis get_put_put_indep indeps(1) vwbs(2))
+  subgoal by expr_auto (metis indeps(4) indeps(5) lens_indep_comm) 
+  by expr_auto
 
 end
 
 
-subsubsection \<open> Dynamics: Exponential decay (3) \<close> (**)
+subsubsection \<open> 17. Dynamics: Exponential decay (3) \<close> (**)
 
 context two_vars
 begin
@@ -408,7 +415,7 @@ lemma "`y > 0` \<Longrightarrow> (x > 0)\<^sub>e \<le> |{x` = - y * x}] (x > 0)"
 end
 
 
-subsubsection \<open> Dynamics: Exponential growth (1) \<close> (**)
+subsubsection \<open> 18. Dynamics: Exponential growth (1) \<close> (**)
 
 context two_vars
 begin
@@ -417,17 +424,29 @@ begin
 lemma "(x \<ge> 0)\<^sub>e \<le> |{x` = x}] (x \<ge> 0)"
   by (wlp_solve "\<lambda>t. [x \<leadsto> x * exp t]")
 
+end
+
+context three_vars
+begin
+
 (* proof with ghosts *)
 (* x>=0 -> [{x'=x}]x>=0 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |{x` = x}] (x \<ge> 0)"
-   apply (dGhost "y" "(x*y\<^sup>2 = 1 \<or> x=0)\<^sub>e" "1/2") (* find adequate ghost *)
-   apply (expr_auto add: exp_ghost_arith)
-  oops
+  apply (dGhost "y" "(y > 0 \<and> x * y \<ge> 0)\<^sub>e" "-1")
+   apply (dGhost "z" "(y * z\<^sup>2 = 1 \<and> x * y \<ge> 0)\<^sub>e" "1/2")
+    apply (rule fbox_invs)
+     apply (diff_inv_on_eq)
+    apply (diff_inv_on_ineq "(0)\<^sup>e" "(x * y - x * y)\<^sup>e")
+  apply (vderiv)
+  using exp_ghost_arith apply expr_auto
+  apply expr_auto
+  by (metis mult.right_neutral zero_less_one)
+    (simp add: zero_le_mult_iff)
 
 end
 
 
-subsubsection \<open> Dynamics: Exponential growth (2) \<close>
+subsubsection \<open> 19. Dynamics: Exponential growth (2) \<close>
 
 context two_vars
 begin
@@ -440,7 +459,7 @@ lemma "(x \<ge> 0 \<and> y \<ge> 0)\<^sub>e \<le> |{x` = y, y` = y\<^sup>2}] (x 
 end
 
 
-subsubsection \<open> Dynamics: Exponential growth (4) \<close> (* sic *)
+subsubsection \<open> 20. Dynamics: Exponential growth (4) \<close> (* sic *)
 
 context two_vars
 begin
@@ -452,7 +471,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = x powr x}] (x > 0)"
 end
 
 
-subsubsection \<open> Dynamics: Exponential growth (5) \<close>
+subsubsection \<open> 21. Dynamics: Exponential growth (5) \<close>
 
 context two_vars
 begin
@@ -478,7 +497,7 @@ lemma "(x \<ge> 1)\<^sub>e \<le> |{x` = x\<^sup>2 + 2 * x\<^sup>4}] (x^3 \<ge> x
 end
 
 
-subsubsection \<open> Dynamics: Rotational dynamics (1) \<close>
+subsubsection \<open> 22. Dynamics: Rotational dynamics (1) \<close>
 
 context two_vars
 begin
@@ -495,7 +514,7 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1)\<^sub>e \<le> |{x` = -y, y` = x}] (x\<^sup>2 
 end
 
 
-subsubsection \<open> Dynamics: Rotational dynamics (2) \<close> (* prove as a linear system *)
+subsubsection \<open> 23. Dynamics: Rotational dynamics (2) \<close> (* prove as a linear system *)
 
 context three_vars
 begin
@@ -530,7 +549,7 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z,
 
 end
 
-subsubsection \<open> Dynamics: Rotational dynamics (3) \<close>
+subsubsection \<open> 24. Dynamics: Rotational dynamics (3) \<close>
 
 dataspace rotational_dynamics3 =
   constants
@@ -595,7 +614,7 @@ lemma "w \<noteq> 0 \<Longrightarrow> (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<
 end
 
 
-subsubsection \<open> Dynamics: Spiral to equilibrium \<close>
+subsubsection \<open> 25. Dynamics: Spiral to equilibrium \<close>
 
 context four_vars
 begin
@@ -618,7 +637,7 @@ lemma "(w \<ge> 0 \<and> x = 0 \<and> y = 3)\<^sub>e \<le> |{x` = y, y` = - w\<^
 end
 
 
-subsubsection \<open> Dynamics: Open cases \<close>
+subsubsection \<open> 26. Dynamics: Open cases \<close>
 
 lemma has_vderiv_mono_test:
   assumes T_hyp: "is_interval T" 
@@ -750,7 +769,7 @@ begin
 
 (* x^3>5 & y>2 -> [{x'=x^3+x^4, y'=5*y+y^2}](x^3>5 & y>2) *)
 lemma "(x\<^sup>3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x\<^sup>3 + x\<^sup>4, y` = 5*y + y\<^sup>2}] (x\<^sup>3 > 5 \<and> y > 2)"
-  apply (rule fbox_invs; (rule fbox_invs)?)
+  apply (intro fbox_invs)
   apply (expr_simp)
   apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
    apply (expr_simp add: Collect_ge_ivl)
@@ -770,7 +789,7 @@ end
 
 
 
-subsubsection \<open> Dynamics: Closed cases \<close>
+subsubsection \<open> 27. Dynamics: Closed cases \<close>
 
 context three_vars
 begin
@@ -789,7 +808,7 @@ lemma "(x \<ge> 1 \<and> y = 10 \<and> z = - 2)\<^sub>e \<le> |{x` = y, y` =$z +
 end
 
 
-subsubsection \<open> Dynamics: Conserved quantity \<close>
+subsubsection \<open> 28. Dynamics: Conserved quantity \<close>
 
 lemma "(36::real) * (x1\<^sup>2 * (x1 * x2\<^sup>3)) - 
   (- (24 * (x1\<^sup>2 * x2) * x1 ^ 3 * (x2)\<^sup>2) - 12 * (x1\<^sup>2 * x2) * x1 * x2\<^sup>4) - 
@@ -817,7 +836,7 @@ lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 
 end
 
 
-subsubsection \<open> Dynamics: Darboux equality \<close>
+subsubsection \<open> 29. Dynamics: Darboux equality \<close>
 
 lemma mult_abs_right_mono: "a < b \<Longrightarrow> a * \<bar>c\<bar> \<le> b * \<bar>c\<bar>" for c::real
   by (simp add: mult_right_mono)
@@ -961,7 +980,7 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
 end
 
 
-subsubsection \<open> Dynamics: Fractional Darboux equality \<close> (*N 30 *)
+subsubsection \<open> 30. Dynamics: Fractional Darboux equality \<close> (*N 30 *)
 
 context darboux
 begin
@@ -1040,7 +1059,7 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
 end
 
 
-subsubsection \<open> Dynamics: Darboux inequality \<close> (*N 31 *)
+subsubsection \<open> 31. Dynamics: Darboux inequality \<close> (*N 31 *)
 
 lemma darboux_ineq_arith:
   assumes "0 \<le> s\<^sub>1 + s\<^sub>2" and "0 \<le> (t::real)" and "t * s\<^sub>1 < 1"
@@ -1133,7 +1152,7 @@ lemma "(x + z \<ge> 0)\<^sub>e \<le> |{x` = x\<^sup>2, z` = z*x + y | y = x\<^su
 end
 
 
-subsubsection \<open> Dynamics: Bifurcation \<close>
+subsubsection \<open> 32. Dynamics: Bifurcation \<close>
 
 lemma picard_lindeloef_dyn_bif: "continuous_on T (g::real \<Rightarrow> real) \<Longrightarrow> t\<^sub>0 \<in> T 
   \<Longrightarrow> is_interval T \<Longrightarrow> open T \<Longrightarrow> picard_lindeloef (\<lambda>t \<tau>::real. r + \<tau>^2) T UNIV t\<^sub>0"
@@ -1163,9 +1182,7 @@ context two_vars
 begin
 
 (* r <= 0 -> \exists f (x=f -> [{x'=r+x^2}]x=f) *)
-lemma 
-  fixes r::real
-  shows "`\<guillemotleft>r\<guillemotright> \<le> 0` \<longrightarrow> (\<exists>f. (x=f)\<^sub>e \<le> |{x` = \<guillemotleft>r\<guillemotright> + x^2| True on UNIV UNIV @ 0}] (x=f))"
+lemma "`\<guillemotleft>r\<guillemotright> \<le> 0` \<longrightarrow> (\<exists>f. (x=f)\<^sub>e \<le> |{x` = \<guillemotleft>r\<guillemotright> + x^2| True on UNIV UNIV @ 0}] (x=f))"
 proof(clarsimp, rule_tac x="sqrt \<bar>r\<bar>" in exI, 
     clarsimp simp: hoare_diff_inv_on diff_inv_on_eq ivp_sols_def tsubst2vecf_eq)
   fix X::"real\<Rightarrow>real" and t::real and s::'st
@@ -1194,7 +1211,7 @@ qed
 end
 
 
-subsubsection \<open> Dynamics: Parametric switching between two different damped oscillators \<close> (*N 33 *)
+subsubsection \<open> 33. Dynamics: Parametric switching between two different damped oscillators \<close> (*N 33 *)
 
 lemma dyn_param_switch_arith1:
   assumes hyp: "w\<^sup>2 * (y * a)\<^sup>2 + y\<^sup>2 \<le> c" 
@@ -1276,7 +1293,7 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
 end
 
 
-subsubsection \<open> Dynamics: Nonlinear 1 \<close>
+subsubsection \<open> 34. Dynamics: Nonlinear 1 \<close>
 
 dataspace dyn_nonlinear = 
   constants a :: real
@@ -1291,7 +1308,7 @@ lemma "(x1\<^sup>3 \<ge> -1)\<^sub>e \<le> |{x1` = (x1-3)\<^sup>4 + a | (a\<ge>0
 end
 
 
-subsubsection \<open> Dynamics: Nonlinear 2 \<close>
+subsubsection \<open> 35. Dynamics: Nonlinear 2 \<close>
 
 context dyn_nonlinear
 begin
@@ -1307,7 +1324,6 @@ lemma "(x1 + x2\<^sup>2/2 = a)\<^sub>e \<le> |{x1` = x1 * x2, x2` = -x1}] (x1 + 
     x2 \<leadsto> 2 powr (1 / 2) * ($x1 * (tanh (1 / 2 * (- 1 * 2 powr (1 / 2) * t * $x1 powr (1 / 2) + 
       - 1 * $x1 powr (1 / 2) * $x2)))\<^sup>2) powr (1 / 2)]"])
      apply (((clarsimp simp: local_flow_on_def)?, unfold_locales; clarsimp?); expr_auto)
-       apply expr_simp
   subgoal
     apply c1_lipschitz
     sorry
@@ -1319,7 +1335,7 @@ lemma "(x1 + x2\<^sup>2/2 = a)\<^sub>e \<le> |{x1` = x1 * x2, x2` = -x1}] (x1 + 
 end
 
 
-subsubsection \<open> Dynamics: Nonlinear 4 \<close>
+subsubsection \<open> 36. Dynamics: Nonlinear 4 \<close>
 
 context dyn_nonlinear
 begin
@@ -1335,7 +1351,7 @@ lemma "(x1\<^sup>2/2 - x2\<^sup>2/2 \<ge> a)\<^sub>e \<le>
 end
 
 
-subsubsection \<open> Dynamics: Nonlinear 5 \<close>
+subsubsection \<open> 37. Dynamics: Nonlinear 5 \<close>
 
 context dyn_nonlinear
 begin
@@ -1371,7 +1387,7 @@ lemma "(-x1*x2 \<ge> a)\<^sub>e \<le> |{x1` = x1 - x2 + x1*x2, x2` = -x2 - x2\<^
 end
 
 
-subsubsection \<open> Dynamics: Riccati \<close>
+subsubsection \<open> 38. Dynamics: Riccati \<close>
 
 context two_vars
 begin
@@ -1383,7 +1399,7 @@ lemma "(2*x\<^sup>3 \<ge> 1/4)\<^sub>e \<le> |{x` = x\<^sup>2 + x^4}] (2*x\<^sup
 end
 
 
-subsubsection \<open> Dynamics: Nonlinear differential cut \<close>
+subsubsection \<open> 39. Dynamics: Nonlinear differential cut \<close>
 
 context two_vars
 begin
@@ -1401,7 +1417,7 @@ lemma "(x\<^sup>3 \<ge> -1 \<and> y\<^sup>5 \<ge> 0)\<^sub>e \<le> |{x` = (x-3)\
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 1 \<close>
+subsubsection \<open> 40. STTT Tutorial: Example 1 \<close>
 
 dataspace STTT =
   constants A::real B::real S::real V::real \<epsilon>::real
@@ -1409,6 +1425,9 @@ dataspace STTT =
 
 context STTT
 begin
+
+lemma "(v \<ge> 0 \<and> A > 0)\<^sub>e \<le> |{x` = v, v` = A}] (v \<ge> 0)"
+  by (wlp_solve "\<lambda>t. [x \<leadsto> A * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> A * t + $v]")
 
 lemma "(v \<ge> 0 \<and> A > 0)\<^sub>e \<le> |{x` = v, v` = A}] (v \<ge> 0)"
   apply (rule diff_cut_on_rule[where C="(0 \<le> A)\<^sup>e"])
@@ -1422,7 +1441,7 @@ lemma "(v \<ge> 0 \<and> A > 0)\<^sub>e \<le> |{x` = v, v` = A}] (v \<ge> 0)"
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 2 \<close>
+subsubsection \<open> 41. STTT Tutorial: Example 2 \<close>
 
 context STTT
 begin
@@ -1448,7 +1467,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0)\<^sub>e \<le>
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 3a \<close> (* 37 *)
+subsubsection \<open> 42. STTT Tutorial: Example 3a \<close> (* 37 *)
 
 lemma STTexample3a_arith:
   assumes "0 < (B::real)" "0 \<le> t" "0 \<le> x2" and key: "x1 + x2\<^sup>2 / (2 * B) \<le> S"
@@ -1499,7 +1518,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) < S)\<^su
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 4a \<close>
+subsubsection \<open> 43. STTT Tutorial: Example 4a \<close>
 
 context STTT
 begin
@@ -1529,7 +1548,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
 end
 
 
-subsubsection \<open>STTT Tutorial: Example 4b\<close>
+subsubsection \<open> 44. STTT Tutorial: Example 4b \<close>
 
 context STTT
 begin
@@ -1551,7 +1570,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
 end
  
 
-subsubsection \<open>STTT Tutorial: Example 4c\<close>
+subsubsection \<open> 45. STTT Tutorial: Example 4c \<close>
 
 context STTT
 begin
@@ -1583,7 +1602,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 5 \<close>
+subsubsection \<open> 46. STTT Tutorial: Example 5 \<close>
 
 lemma STTexample5_arith:
   assumes "0 < A" "0 < B" "0 < \<epsilon>" "0 \<le> x2" "0 \<le> (t::real)" 
@@ -1643,7 +1662,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 6 \<close>
+subsubsection \<open> 47. STTT Tutorial: Example 6 \<close>
 
 lemma STTexample6_arith:
   assumes "0 < A" "0 < B" "0 < \<epsilon>" "0 \<le> x2" "0 \<le> (t::real)" "- B \<le> k" "k \<le> A"
@@ -1719,7 +1738,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
 
 end
 
-subsubsection \<open> STTT Tutorial: Example 7 \<close>
+subsubsection \<open> 48. STTT Tutorial: Example 7 \<close>
 
 lemma STTexample7_arith1:
   assumes "(0::real) < A" "0 < b" "0 < \<epsilon>" "0 \<le> v" "0 \<le> t" "k \<le> A"
@@ -1805,7 +1824,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> x + v\<^sup>
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 9a \<close>
+subsubsection \<open> 49. STTT Tutorial: Example 9a \<close>
 
 lemma STTexample9a_arith:
   "(10*x-10*r) * v/4 + v\<^sup>2/2 + (x-r)*(2*r-2*x-3 * v)/2 + v * (2*r-2*x-3 * v)/2 \<le> (0::real)" 
@@ -1856,7 +1875,7 @@ lemma "(v \<ge> 0 \<and> c > 0 \<and> Kp = 2 \<and> Kd = 3 \<and> (5/4)*(x-xr)\<
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 9b \<close> (*N 50 *)
+subsubsection \<open> 50. STTT Tutorial: Example 9b \<close> (*N 50 *)
 
 lemma STTT_9b_arith1:
   assumes "0 \<le> (v::real)" and "xm \<le> x" and "xr * 2 = xm + S" 
@@ -1901,8 +1920,7 @@ lemma local_flow_STTT_9b: "local_flow_on [v \<leadsto> 2 * xr - 2 * x - 3 * v, x
   v \<leadsto> exp (-2*t) * (-2 * xr + 2 * xr * exp t + 2 * v - v * exp t + 2 * x - 2 * x * exp t)])"
   apply (clarsimp simp add: local_flow_on_def)
   apply (unfold_locales; expr_simp)
-  apply (rule c1_implies_local_lipschitz[of UNIV UNIV _ 
-        "(\<lambda>(t::real,c). Blinfun (\<lambda>c. (snd c, - 2 * fst c - 3 * snd c)))"]; expr_simp)
+  apply c1_lipschitz
   by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros split: if_splits)
     (auto simp: fun_eq_iff field_simps exp_minus_inverse)
 
@@ -1982,7 +2000,7 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
 end
 
 
-subsubsection \<open> STTT Tutorial: Example 10 \<close> (*N 51 *)
+subsubsection \<open> 51. STTT Tutorial: Example 10 \<close> (*N 51 *)
 
 dataspace STTT_10 =
   constants A::real B::real \<epsilon>::real
@@ -2333,7 +2351,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
 end 
 
 
-subsubsection \<open> LICS: Example 1 Continuous car accelertes forward \<close>
+subsubsection \<open> 52. LICS: Example 1 Continuous car accelertes forward \<close>
 
 dataspace LICS =
   constants A::real B::real b::real m::real \<epsilon>::real
@@ -2353,7 +2371,7 @@ lemma "(v \<ge> 0 \<and> a \<ge> 0)\<^sub>e \<le> |{x` = v, v` = a | (v \<ge> 0)
 end
  
 
-subsubsection \<open> LICS: Example 2 Single car drives forward \<close>
+subsubsection \<open> 53. LICS: Example 2 Single car drives forward \<close>
 
 context LICS
 begin
@@ -2378,7 +2396,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> b > 0)\<^sub>e \<le>
 end
 
 
-subsubsection \<open> LICS: Example 3a event-triggered car drives forward \<close>
+subsubsection \<open> 54. LICS: Example 3a event-triggered car drives forward \<close>
 
 context LICS
 begin
@@ -2410,7 +2428,7 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> b > 0)\<^sub>e \<le>
 end
 
 
-subsubsection \<open> LICS: Example 4a safe stopping of time-triggered car \<close>
+subsubsection \<open> 55. LICS: Example 4a safe stopping of time-triggered car \<close>
 
 lemma LICSexample4a_arith:
   assumes "(0::real) \<le> A" "0 < b" "v\<^sup>2 \<le> 2 * b * (m - x)" "0 \<le> t"
@@ -2469,7 +2487,7 @@ lemma "(v\<^sup>2 \<le> 2*b*(m-x) \<and> v\<ge>0 \<and> A \<ge> 0 \<and> b>0)\<^
 end
 
 
-subsubsection \<open> LICS: Example 4b progress of time-triggered car \<close>  (*N 56 *)
+subsubsection \<open> 56. LICS: Example 4b progress of time-triggered car \<close>  (*N 56 *)
 
 context LICS
 begin
@@ -2522,7 +2540,7 @@ a = A \<Longrightarrow> v\<^sub>0' \<le> v\<^sub>0 \<le> A * \<epsilon> + v\<^su
 end
 
 
-subsubsection \<open> LICS: Example 4c relative safety of time-triggered car \<close>
+subsubsection \<open> 57. LICS: Example 4c relative safety of time-triggered car \<close>
 
 lemma LICSexample4c_arith1:
   assumes "v\<^sup>2 \<le> 2 * b * (m - x)" "0 \<le> t" "A \<ge> 0" "b > 0"
@@ -2583,7 +2601,7 @@ lemma "`|{x` = v, v` = -b}](x\<le>m \<and> v \<ge> 0 \<and> A \<ge> 0 \<and> b >
 end
 
 
-subsubsection \<open> LICS: Example 5 Controllability Equivalence \<close>
+subsubsection \<open> 58. LICS: Example 5 Controllability Equivalence \<close>
 
 lemma LICSexample5_arith1:
   assumes "(0::real) < b" "0 \<le> t"
@@ -2652,7 +2670,7 @@ lemma "`v \<ge> 0 \<and> b > 0 \<longrightarrow> (v\<^sup>2 \<le> 2*b*(m-x) \<lo
 end
 
 
-subsubsection \<open> LICS: Example 6 MPC Acceleration Equivalence \<close>  (*N 59 *)
+subsubsection \<open> 59. LICS: Example 6 MPC Acceleration Equivalence \<close>  (*N 59 *)
 
 lemma LICSexample6_arith1:
   assumes "0 \<le> v" "0 < b" "0 \<le> A" "0 \<le> \<epsilon>" 
@@ -2718,7 +2736,7 @@ end
 
 
 
-subsubsection \<open> LICS: Example 7 Model-Predictive Control Design Car \<close>  (*N 60 *)
+subsubsection \<open> 60. LICS: Example 7 Model-Predictive Control Design Car \<close>  (*N 60 *)
 
 lemma LICSexample7_arith: "\<forall>t\<ge>0. v * t - b * t\<^sup>2 / 2 + x \<le> m \<Longrightarrow>
        0 \<le> A \<Longrightarrow>
@@ -3155,10 +3173,9 @@ lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
   apply (rule hoare_loopI)
     prefer 3 apply expr_simp
    prefer 2 apply expr_simp
-  apply (clarsimp simp add: wlp fbox_g_dL_easiest[OF local_flow_hosc])
-  apply expr_simp
-  apply (clarsimp simp: iota1_def iota2_def discr_def)
-  using hosc_arith[of b a] by force
+  using hosc_arith[of b a]
+  by (wlp_full local_flow: local_flow_hosc)
+    (clarsimp simp: iota1_def iota2_def discr_def)
 
 
 end
