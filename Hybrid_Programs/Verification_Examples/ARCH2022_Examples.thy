@@ -535,10 +535,9 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z,
 
 lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z, z` = -y}] (x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)"
   (* find_local_flow *)
-  apply (subst fbox_solve[where \<phi>="\<lambda>t. [x \<leadsto> $x + $z * (- 1 + cos t) + - 1 * $y * sin t, 
+  apply (wlp_solve "\<lambda>t. [x \<leadsto> $x + $z * (- 1 + cos t) + - 1 * $y * sin t, 
   y \<leadsto> $y * cos t + $z * sin t, 
-  z \<leadsto> $z * cos t + - 1 * $y * sin t]"]; expr_simp?)
-   apply local_flow_on_auto
+  z \<leadsto> $z * cos t + - 1 * $y * sin t]")
   apply (expr_auto add: le_fun_def field_simps)
   apply (clarsimp simp: power2_eq_square[symmetric])
   subgoal for s t
@@ -3300,8 +3299,7 @@ begin
     {x'=x-y^2, y'=y*(x-y^2)}@invariant(y^2 < x)
   ] !(x<0) *)
 lemma "(x=1 & y=1/8)\<^sub>e
-  \<le>
-  | {x` = $x - $y^2, y` = $y * ($x - $y^2)} INV (y^2 < x)
+  \<le> |{x` = $x - $y^2, y` = $y * ($x - $y^2)} INV (y^2 < x)
   ] (\<not> (x<0))"
   unfolding invar_def
   apply (rule_tac C="(y^2 < x)\<^sup>e" in diff_cut_on_rule)

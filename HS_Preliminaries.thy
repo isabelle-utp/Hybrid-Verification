@@ -223,6 +223,24 @@ lemma vderiv_sinI[vderiv_intros]:
   by (rule vderiv_composeI[OF _ assms(1), of "\<lambda>t. sin t"])
     (auto intro!: derivative_eq_intros simp: assms has_vderiv_on_iff)
 
+lemma vderiv_tanI[vderiv_intros]:
+  assumes "D (f::real \<Rightarrow> real) = f' on T" and "\<forall>t\<in>T. cos (f t) \<noteq> 0"
+    and "g = (\<lambda>t. f' t * inverse (cos (f t) *  cos (f t)))"
+  shows "D (\<lambda>t. tan (f t)) = g on T"
+  by (rule vderiv_composeI[OF _ assms(1), of "\<lambda>t. tan t"])
+    (auto intro!: derivative_eq_intros simp: power2_eq_square assms has_vderiv_on_iff)
+
+lemma vderiv_cotI[vderiv_intros]:
+  assumes "D (f::real \<Rightarrow> real) = f' on T" and "\<forall>t\<in>T. sin (f t) \<noteq> 0"
+    and "g = (\<lambda>t. - f' t * inverse (sin (f t) *  sin (f t)))"
+  shows "D (\<lambda>t. cot (f t)) = g on T"
+  using assms
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  apply clarsimp
+  apply (subst has_derivative_eq_rhs)
+  by (rule DERIV_cot[THEN DERIV_compose_FDERIV]; force)
+    (auto simp add: field_simps)
+
 lemma vderiv_expI[vderiv_intros]:
   assumes "D (f::real \<Rightarrow> real) = f' on T" and "g = (\<lambda>t. (f' t) * exp (f t))"
   shows "D (\<lambda>t. exp (f t)) = g on T"
@@ -244,28 +262,28 @@ lemma vderiv_pairI[vderiv_intros]:
     (rule has_derivative_Pair, auto)
 
 lemma has_vderiv_on_proj:
-  assumes "D X = X' on T " and "X' = (\<lambda>t. (X1' t, X2' t))"
-  shows has_vderiv_on_fst: "D (\<lambda>t. fst (X t)) = (\<lambda>t. X1' t) on T"
-    and has_vderiv_on_snd: "D (\<lambda>t. snd (X t)) = (\<lambda>t. X2' t) on T"
+  assumes "D f = f' on T " and "f' = (\<lambda>t. (f1' t, f2' t))"
+  shows has_vderiv_on_fst: "D (\<lambda>t. fst (f t)) = (\<lambda>t. f1' t) on T"
+    and has_vderiv_on_snd: "D (\<lambda>t. snd (f t)) = (\<lambda>t. f2' t) on T"
   using assms 
   unfolding has_vderiv_on_def comp_def[symmetric] 
   by (auto intro!: has_vector_derivative_fst' 
       has_vector_derivative_snd'')
 
 lemma vderiv_fstI [vderiv_intros]:
-  assumes "D X = X' on T " and "g = (\<lambda>t. fst (X' t))"
-  shows "D (\<lambda>t. fst (X t)) = g on T"
+  assumes "D f = f' on T " and "g = (\<lambda>t. fst (f' t))"
+  shows "D (\<lambda>t. fst (f t)) = g on T"
   using assms 
   apply (unfold has_vderiv_on_def comp_def[symmetric], safe)
-  subgoal for x by (rule_tac has_vector_derivative_fst'[of _ _ "(snd \<circ> X') x"], force)
+  subgoal for x by (rule_tac has_vector_derivative_fst'[of _ _ "(snd \<circ> f') x"], force)
   done
 
 lemma vderiv_sndI [vderiv_intros]:
-  assumes "D X = X' on T " and "g = (\<lambda>t. snd (X' t))"
-  shows "D (\<lambda>t. snd (X t)) = g on T"
+  assumes "D f = f' on T " and "g = (\<lambda>t. snd (f' t))"
+  shows "D (\<lambda>t. snd (f t)) = g on T"
   using assms 
   apply (unfold has_vderiv_on_def comp_def[symmetric], safe)
-  subgoal for x by (rule_tac has_vector_derivative_snd''[of _ "(fst \<circ> X') x"], force)
+  subgoal for x by (rule_tac has_vector_derivative_snd''[of _ "(fst \<circ> f') x"], force)
   done
 
 lemma has_vderiv_on_inverse: "D f = f' on T \<Longrightarrow> \<forall>t\<in>T. f t \<noteq> 0 
@@ -284,8 +302,55 @@ lemma has_vderiv_on_divideR: "\<forall>t\<in>T. g t \<noteq> (0::real) \<Longrig
   by (auto intro!: vderiv_intros)
     (clarsimp simp: field_simps)
 
-(* should we add this one?*)
-lemmas vderiv_divideRI[vderiv_intros] = has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs] 
+lemmas vderiv_divideRI = has_vderiv_on_divideR[THEN has_vderiv_on_eq_rhs] 
+
+lemma vderiv_sqrtI [vderiv_intros]:
+  assumes "D f = f' on T" and "f \<in> T \<rightarrow> {t. t > 0}"
+    and "g = (\<lambda>t. f' t * (inverse (sqrt (f t)) / 2))"
+  shows "D (\<lambda>t. sqrt (f t)) = g on T"
+  using assms
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  apply clarsimp
+  apply (subst has_derivative_eq_rhs)
+  by (rule has_derivative_real_sqrt; force)
+    (auto simp add: field_simps)
+
+lemma vderiv_powrI [vderiv_intros]:
+  fixes f :: "real \<Rightarrow> real"
+  assumes "D f = f' on T"
+    and "D g = g' on T" and "f \<in> T \<rightarrow> {t. t > 0}"
+    and "h = (\<lambda>t. f t powr g t * (g' t * ln (f t) + f' t * g t / f t))"
+  shows "D (\<lambda>t. f t powr g t) = h on T"
+  using assms
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  apply clarsimp
+  apply (subst has_derivative_eq_rhs)
+  by (rule has_derivative_powr; force)
+    (auto simp add: field_simps)
+
+lemma vderiv_innerI [vderiv_intros]:
+  assumes "D f = f' on T"
+    and "D g = g' on T"
+    and "h = (\<lambda>t. f t \<bullet> g' t + f' t \<bullet> g t)"
+  shows "D (\<lambda>t. f t \<bullet> g t) = h on T"
+  using assms
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  apply clarsimp
+  apply (subst has_derivative_eq_rhs)
+  by (rule has_derivative_inner; force)
+    (auto simp add: field_simps)
+
+lemma vderiv_normI [vderiv_intros]:
+  assumes "D f = f' on T" and "f \<in> T \<rightarrow> {t. t \<noteq> 0}"
+    and "g = (\<lambda>t. f' t \<bullet> sgn (f t))"
+  shows "D (\<lambda>t. \<parallel>f t\<parallel>) = g on T"
+  using assms
+  unfolding has_vderiv_on_def has_vector_derivative_def
+  apply clarsimp
+  apply (subst has_derivative_eq_rhs)
+  apply (rule_tac g=norm in has_derivative_compose, force)
+  by (rule has_derivative_norm, force)
+    (auto simp add: field_simps)
 
 lemmas vderiv_ivl_integralI[vderiv_intros] = ivl_integral_has_vderiv_on[OF vderiv_on_continuous_on]
 
