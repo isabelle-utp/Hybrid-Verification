@@ -218,10 +218,11 @@ text \<open> Heavily simplified for the purpose of example \<close>
 
 abbreviation "Autopilot \<equiv> rs ::= 1; rs ::= 0"
 
-lemma "ODE nmods {rs, rh, wps, org}" by (simp add: closure)
+lemma "ODE nmods (rs, rh, wps, org)" 
+  by (auto intro!: closure; subst_eval)
 
-lemma "Autopilot nmods {p, a, v, s}"
-  by (simp add: closure)
+lemma "Autopilot nmods (p, a, v, s)"
+  by (auto intro!: closure; subst_eval)
 
 lemma "\<^bold>{s\<^sup>2 = v \<bullet> v\<^bold>} ODE \<^bold>{s\<^sup>2 = v \<bullet> v\<^bold>}"
   by (dWeaken, metis orient_vec_mag_n self_dot)

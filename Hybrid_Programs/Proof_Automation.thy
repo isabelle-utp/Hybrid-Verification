@@ -238,7 +238,7 @@ method diff_cut_ineq for I::"'a \<Rightarrow> bool" (* create tactic move to gua
 text \<open> A first attempt at a high-level automated proof strategy using differential induction.
   A sequence of commands is tried as alternatives, one by one, and the method then iterates. \<close>
 
-method dDiscr = (rule_tac nmods_invariant[OF nmods_g_orbital_on_discrete']; unrest)
+method dDiscr = (rule_tac nmods_invariant; auto intro!: closure)
 
 method dInduct = (subst hoare_diff_inv_on' fbox_diff_inv_on; 
     rule_tac lderiv_rules; 

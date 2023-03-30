@@ -774,101 +774,101 @@ lemma frame_assign_in:
   using assms
   by (auto simp add: prog_defs expr_defs fun_eq_iff put_scene_override_le)
   
-definition not_modifies :: "'s prog \<Rightarrow> 's scene \<Rightarrow> bool" where
-  "not_modifies P a = (\<forall> s s'. s' \<in> P s \<longrightarrow> s' \<approx>\<^sub>S s on a)" 
+definition not_modifies :: "'s prog \<Rightarrow> ('a, 's) expr \<Rightarrow> bool" where
+  "not_modifies P e = (\<forall> s s'. s' \<in> P s \<longrightarrow> e s' = e s)" 
 
-syntax "_not_modifies" :: "logic \<Rightarrow> salpha \<Rightarrow> logic" (infix "nmods" 30)
-translations "_not_modifies P a" == "CONST not_modifies P a"
+syntax "_not_modifies" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix "nmods" 30)
+translations "_not_modifies P e" == "CONST not_modifies P (e)\<^sub>e"
 
 (* FIXME: The following rule is an inefficient way to calculate modification; 
   replace with scene membership laws. *)
 
 lemma nmods_union [closure]:
-  assumes "P nmods A" "P nmods B"
-  shows "P nmods (A \<union> B)"
+  assumes "P nmods e" "P nmods f"
+  shows "P nmods (e, f)"
   using assms
   by (auto simp add: not_modifies_def prog_defs)
-     (metis scene_equiv_def scene_override_union scene_union_incompat scene_union_unit(1))
 
-lemma nmods_skip [closure]: "idem_scene a \<Longrightarrow> skip nmods a"
+lemma nmods_skip [closure]: "skip nmods e"
   by (simp add: not_modifies_def prog_defs scene_equiv_def)
 
 lemma nmods_seq [closure]:
-  assumes "P nmods a" "Q nmods a"
-  shows "(P ; Q) nmods a"
+  assumes "P nmods e" "Q nmods e"
+  shows "(P ; Q) nmods e"
   using assms 
   by (auto simp add: not_modifies_def prog_defs scene_equiv_def)
-    (metis scene_override_overshadow_right)
 
 lemma nmods_if [closure]:
-  assumes "P nmods a" "Q nmods a"
-  shows "IF b THEN P ELSE Q nmods a"
+  assumes "P nmods e" "Q nmods e"
+  shows "IF b THEN P ELSE Q nmods e"
   using assms by (auto simp add: not_modifies_def prog_defs)
 
 lemma nmods_choice [closure]:
-  assumes "P nmods a" "Q nmods a"
-  shows "P \<sqinter> Q nmods a"  
+  assumes "P nmods e" "Q nmods e"
+  shows "P \<sqinter> Q nmods e"  
   using assms by (auto simp add: not_modifies_def prog_defs)
 
 lemma nmods_Choice [closure]:
-  assumes "\<And> i. i \<in> I \<Longrightarrow> P(i) nmods a"
-  shows "(\<Sqinter> i\<in>I. P(i)) nmods a"
+  assumes "\<And> i. i \<in> I \<Longrightarrow> P(i) nmods e"
+  shows "(\<Sqinter> i\<in>I. P(i)) nmods e"
   using assms
   by (auto simp add: Nondet_choice_def not_modifies_def)
 
 lemma nmods_kpower [closure]:
-  assumes "idem_scene a" "P nmods a"
-  shows "(kpower P n) nmods a"
+  assumes "P nmods e"
+  shows "(kpower P n) nmods e"
 proof (induct n)
   case 0
-  then show ?case 
-    by (simp add: kpower_def assms(1) nmods_skip)
+  then show ?case
+    by (metis kpower_0' nmods_skip) 
 next
   case (Suc n)
   then show ?case
-    by (simp add: kpower_Suc nmods_seq assms)
+    by (metis assms kpower_Suc' nmods_seq)
 qed
 
 lemma nmods_star [closure]:
-  assumes "idem_scene a" "P nmods a"
-  shows "P\<^sup>* nmods a"
+  assumes "P nmods e"
+  shows "P\<^sup>* nmods e"
   by (simp add: assms kstar_alt nmods_Choice nmods_kpower)
 
 lemma nmods_loop [closure]:
-  assumes "idem_scene a" "P nmods a"
-  shows "LOOP P INV B nmods a"
+  assumes "P nmods e"
+  shows "LOOP P INV B nmods e"
   by (simp add: assms loopi_def nmods_star)
 
 lemma nmods_test [closure]:
-  "idem_scene a \<Longrightarrow> \<questiondown>b? nmods a"
+  "\<questiondown>b? nmods e"
   by (auto simp add: not_modifies_def prog_defs scene_equiv_def)
 
-lemma nmods_assign [closure]:
-  assumes "vwb_lens x" "idem_scene a" "var_alpha x \<bowtie>\<^sub>S a"
-  shows "x ::= e nmods a"
+lemma nmods_assigns [closure]:
+  assumes "\<sigma> \<dagger> (e)\<^sub>e = (e)\<^sub>e" 
+  shows "\<langle>\<sigma>\<rangle> nmods e"
   using assms
   by (expr_simp add: not_modifies_def assigns_def put_scene_override_indep)
 
+lemma nmods_assign:
+  assumes "a\<lbrakk>e/x\<rbrakk> = (a)\<^sub>e"
+  shows "x ::= e nmods a"
+  by (metis SEXP_def assms nmods_assigns)
+
 lemma nmods_via_fbox:
-  "\<lbrakk> vwb_lens x; \<And> v. |P] ($x = \<guillemotleft>v\<guillemotright>) = ($x = \<guillemotleft>v\<guillemotright>)\<^sub>e \<rbrakk> \<Longrightarrow> P nmods $x"
-  by (expr_simp add: fbox_def not_modifies_def, auto)
-     (metis UNIV_I lens_override_def mwb_lens.weak_get_put vwb_lens_iff_mwb_UNIV_src)
+  "\<lbrakk> vwb_lens x; \<And> v. |P] (e = \<guillemotleft>v\<guillemotright>) = (e = \<guillemotleft>v\<guillemotright>)\<^sub>e \<rbrakk> \<Longrightarrow> P nmods e"
+  by (expr_simp add: fbox_def not_modifies_def)
 
 text \<open> Important principle: If @{term P} does not modify @{term a}, and predicate @{term b} does
   not refers only variables outside of @{term a} then @{term b} is an invariant of @{term P}. \<close>
 
 lemma nmods_frame_law:
-  assumes "S nmods a" "(-a) \<sharp> (I)\<^sub>e" "\<^bold>{P\<^bold>}S\<^bold>{Q\<^bold>}"
+  assumes "S nmods I" "\<^bold>{P\<^bold>}S\<^bold>{Q\<^bold>}"
   shows "\<^bold>{P \<and> I\<^bold>}S\<^bold>{Q \<and> I\<^bold>}"
   using assms
-  by (auto simp add: prog_defs fbox_def expr_defs 
-      scene_override_commute not_modifies_def scene_equiv_def, metis)
+  by (auto simp add: prog_defs fbox_def expr_defs not_modifies_def)
 
 lemma nmods_invariant:
-  assumes "P nmods a" "(-a) \<sharp> (b)\<^sub>e"
+  assumes "P nmods b"
   shows "\<^bold>{b\<^bold>}P\<^bold>{b\<^bold>}"
   using assms
-  by (auto simp add: prog_defs fbox_def expr_defs 
-      scene_override_commute not_modifies_def scene_equiv_def, metis)
+  by (auto simp add: prog_defs fbox_def expr_defs not_modifies_def)
 
 end

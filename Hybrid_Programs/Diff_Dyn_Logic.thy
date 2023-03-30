@@ -15,12 +15,12 @@ begin
 subsection \<open> Derivation of the rules of dL \<close>
 
 lemma nmods_g_orbital_on_discrete [closure]:
-  assumes "vwb_lens x" "idem_scene a" "var_alpha x \<bowtie>\<^sub>S a"
+  assumes "\<And> v. (a)\<^sub>e\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk> = (a)\<^sub>e"
   shows "(g_orbital_on x f G U S t\<^sub>0) nmods a"
   using assms
-  by (auto simp add: not_modifies_def g_orbital_on_eq
-      scene_equiv_def put_scene_override_indep var_alpha_def)
+  by (auto simp add: not_modifies_def g_orbital_on_eq expr_defs fun_eq_iff)
 
+(*
 lemma nmods_g_orbital_on_discrete' [closure]:
   assumes "vwb_lens x" 
   shows "(g_orbital_on x f G U S t\<^sub>0) nmods (- $x)"
@@ -32,7 +32,7 @@ lemma nmods_g_orbital_on_discrete_lens [closure]:
   shows "(g_orbital_on A f G U S t\<^sub>0) nmods $x"
   by (rule nmods_g_orbital_on_discrete) 
     (simp_all add: assms lens_indep_sym scene_indep_sym var_alpha_def) 
-
+*)
 
 subsection \<open> Derivation of the rules of dL \<close>
 
