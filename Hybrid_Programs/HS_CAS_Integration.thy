@@ -3,12 +3,9 @@ theory HS_CAS_Integration
   keywords "find_local_flow" :: diag
 begin
 
-method fbox_solve for \<phi> :: "real \<Rightarrow> 's \<Rightarrow> 's" =
-  ((subst fbox_solve[where \<phi>="\<phi>"]; simp?), (local_flow_Lconst)[1])
-
 ML \<open>
 fun match_term (top, _) = case top of
-     Const ("HS_Lens_ODEs.g_orbital_on", _) => true
+     Const ("Framed_Dyn_Sys.g_orbital_on", _) => true
    | _ => false
 
 fun find_ode term =
@@ -40,9 +37,9 @@ fun find_local_flow_cmd state =
       val term = Thm.concl_of g
       val sode = find_ode term
       val tm = Solve_Subst_ODE.solve_subst_ode ctx sode
-    in
+    in 
     "try this: " ^ Active.sendback_markup_command
-     ("apply (fbox_solve \"" ^ Syntax.string_of_term ctx tm ^ "\")") |> writeln
+     ("apply (wlp_solve \"" ^ Syntax.string_of_term ctx tm ^ "\")") |> writeln
    end
 ;
 
@@ -54,7 +51,5 @@ val _ =
       (fn (_) =>
         Toplevel.keep_proof
           (find_local_flow_cmd o Toplevel.proof_of)))
-
 \<close>
-
 end
