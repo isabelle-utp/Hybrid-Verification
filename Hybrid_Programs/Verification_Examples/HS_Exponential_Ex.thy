@@ -46,7 +46,7 @@ lemma "\<^bold>{x > 0\<^bold>}(x\<acute>= exp_f & G)\<^bold>{x > 0\<^bold>}"
 end
 
 dataspace exponential =
-  variables x::real y::real
+  variables x::real y::real z::real
 context exponential
 begin
 
@@ -92,6 +92,20 @@ lemma local_flow_exp_flow: "local_flow_on exp_f x UNIV UNIV exp_flow"
 
 lemma flow_example: "\<^bold>{x > 0\<^bold>}dyn\<^bold>{x > 0\<^bold>}"
   by (hoare_wp_auto local_flow: local_flow_exp_flow)
+
+lemma "\<^bold>{x \<ge> 0\<^bold>}dyn\<^bold>{x \<ge> 0\<^bold>}"
+  apply (rule darboux_geq[of x y z, where g="-1"]; expr_simp add: framed_derivs 
+      ldifferentiable closure usubst unrest_ssubst unrest usubst_eval; clarsimp?)
+  subgoal
+    by (subst lens_indep_comm; expr_simp)
+  subgoal for s
+    by expr_auto
+      (rule_tac x="put\<^bsub>y\<^esub> s 1" in exI, simp)
+  apply (metis indeps(3) indeps(6) lens_indep_comm)
+  apply (simp add: frechet_derivative_fst)
+  using bounded_linear_fst 
+    bounded_linear_imp_differentiable 
+  by blast
 
 end
 

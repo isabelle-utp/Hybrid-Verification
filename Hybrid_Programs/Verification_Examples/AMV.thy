@@ -545,7 +545,7 @@ lemma "0 \<le> arccos x \<longleftrightarrow> (-1 \<le> x \<and> x \<le> 1)"
   oops
 
 lemma "\<^bold>{True\<^bold>} AP \<^bold>{ft \<le> f\<^sub>m\<^sub>a\<^sub>x\<^bold>}"
-  apply (simp add: wp usubst_eval)
+  apply (simp add: wlp usubst_eval)
   oops
 
 (*

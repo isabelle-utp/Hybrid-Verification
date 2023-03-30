@@ -31,7 +31,7 @@ subsection \<open> Forward box operator \<close>
 
 named_theorems prog_defs
 
-named_theorems wp "simplification rules for equational reasoning with weakest liberal preconditions"
+named_theorems wlp "simplification rules for equational reasoning with weakest liberal preconditions"
 
 definition fbox :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred"
   where "fbox F P = (\<lambda>s. (\<forall>s'. s' \<in> F s \<longrightarrow> P s'))"
@@ -56,19 +56,6 @@ lemma fbox_mono:
 lemma fbox_anti: "\<forall>s. F\<^sub>1 s \<subseteq> F\<^sub>2 s \<Longrightarrow> |F\<^sub>2] P \<le> |F\<^sub>1] P"
   unfolding fbox_def by auto
 
-lemma fbox_inv:
-  assumes "P \<le> I" and "I \<le> |F] I" and "I \<le> Q"
-  shows "P \<le> |F] Q"
-  by (rule order.trans[OF assms(1) order.trans[OF assms(2)]])
-    (rule fbox_iso[OF assms(3)])
-
-lemma fbox_invs: 
-  assumes "(I)\<^sub>e \<le> |F] I" and "(J)\<^sub>e \<le> |F] J"
-  shows "(I \<and> J)\<^sub>e \<le> |F] (I \<and> J)"
-    and "(I \<or> J)\<^sub>e \<le> |F] (I \<or> J)"
-  using assms unfolding fbox_def SEXP_def by auto
-
-lemmas fbox_invs_raw = fbox_invs[unfolded expr_defs]
 
 subsection \<open> Forward diamond operator \<close>
 
@@ -109,12 +96,6 @@ translations
 lemma fbox_to_hoare: "P \<le> |F] Q \<longleftrightarrow> \<^bold>{P\<^bold>}F\<^bold>{Q\<^bold>}"
   by auto
 
-lemma hoare_invs:
-  assumes "\<^bold>{I\<^sub>1\<^bold>}F\<^bold>{I\<^sub>1\<^bold>}" and "\<^bold>{I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>2\<^bold>}"
-  shows hoare_conj_inv: "\<^bold>{I\<^sub>1 \<and> I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>1 \<and> I\<^sub>2\<^bold>}"
-    and hoare_disj_inv: "\<^bold>{I\<^sub>1 \<or> I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>1 \<or> I\<^sub>2\<^bold>}"
-  using fbox_invs[OF assms] by auto
-
 text \<open> Need to generalise these laws \<close>
 
 lemma hoare_conj_preI: 
@@ -137,6 +118,12 @@ lemma hoare_disj_posI:
   "\<^bold>{@P\<^bold>}X\<^bold>{@a\<^bold>} \<Longrightarrow> Q = (@a \<or> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
   by (auto simp: le_fun_def fbox_def)
 
+lemma fbox_conseq:
+  assumes "P\<^sub>2 \<le> |X] Q\<^sub>2" "`P\<^sub>1 \<longrightarrow> P\<^sub>2`" "`Q\<^sub>2 \<longrightarrow> Q\<^sub>1`"
+  shows "P\<^sub>1 \<le> |X] Q\<^sub>1"
+  using assms 
+  by (auto simp add: fbox_def expr_defs)
+
 lemma hoare_conseq: 
   assumes "\<^bold>{p\<^sub>2\<^bold>}S\<^bold>{q\<^sub>2\<^bold>}" "`p\<^sub>1 \<longrightarrow> p\<^sub>2`" "`q\<^sub>2 \<longrightarrow> q\<^sub>1`"
   shows "\<^bold>{p\<^sub>1\<^bold>}S\<^bold>{q\<^sub>1\<^bold>}"
@@ -147,7 +134,66 @@ lemma fdia_conseq:
   assumes "P\<^sub>2 \<le> |X\<rangle> Q\<^sub>2" "`P\<^sub>1 \<longrightarrow> P\<^sub>2`" "`Q\<^sub>2 \<longrightarrow> Q\<^sub>1`"
   shows "P\<^sub>1 \<le> |X\<rangle> Q\<^sub>1"
   using assms 
-  by (auto simp add: fdia_def expr_defs le_fun_def)
+  by (auto simp add: fdia_def expr_defs)
     blast
+
+
+subsection \<open> Program invariants \<close>
+
+lemma fbox_inv:
+  assumes "P \<le> I" and "I \<le> |F] I" and "I \<le> Q"
+  shows "P \<le> |F] Q"
+  by (rule order.trans[OF assms(1) order.trans[OF assms(2)]])
+    (rule fbox_iso[OF assms(3)])
+
+lemma fdia_inv:
+  assumes "P \<le> I" and "I \<le> |F\<rangle> I" and "I \<le> Q"
+  shows "P \<le> |F\<rangle> Q"
+  apply (rule fdia_conseq[OF assms(2)])
+  using assms by expr_auto+
+
+lemma fbox_invs: 
+  assumes "(I)\<^sub>e \<le> |F] I" and "(J)\<^sub>e \<le> |F] J"
+  shows "(I \<and> J)\<^sub>e \<le> |F] (I \<and> J)"
+    and "(I \<or> J)\<^sub>e \<le> |F] (I \<or> J)"
+  using assms unfolding fbox_def SEXP_def by auto
+
+lemmas fbox_invs_raw = fbox_invs[unfolded expr_defs]
+
+lemma hoare_invs:
+  assumes "\<^bold>{I\<^sub>1\<^bold>}F\<^bold>{I\<^sub>1\<^bold>}" and "\<^bold>{I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>2\<^bold>}"
+  shows hoare_conj_inv: "\<^bold>{I\<^sub>1 \<and> I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>1 \<and> I\<^sub>2\<^bold>}"
+    and hoare_disj_inv: "\<^bold>{I\<^sub>1 \<or> I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>1 \<or> I\<^sub>2\<^bold>}"
+  using fbox_invs[OF assms] by auto
+
+definition invar :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a set)"
+  where "invar F I \<equiv> F"
+
+expr_ctr fdia
+
+syntax "_invar" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix "INV" 63)
+translations "_invar F I" == "CONST invar F (I)\<^sub>e"
+
+lemma insert_invar: "F = (F INV I)"
+  by (simp add: invar_def)
+
+lemma change_invar: "(F INV I) = (F INV J)"
+  by (simp add: invar_def)
+
+lemma conj_invar: "(F INV I) = (F INV (I \<and> J))"
+  by (simp add: invar_def)
+
+lemma fbox_invI:
+  assumes "P \<le> I" and "I \<le> |F] I" and "I \<le> Q"
+  shows "P \<le> |F INV I] Q"
+  using fbox_inv[OF assms]
+  by (auto simp: invar_def)
+
+lemma fdia_invI:
+  assumes "P \<le> I" and "I \<le> |F\<rangle> I" and "I \<le> Q"
+  shows "P \<le> |F INV I\<rangle> Q"
+  unfolding invar_def
+  by (rule fdia_inv[OF assms])
+
 
 end

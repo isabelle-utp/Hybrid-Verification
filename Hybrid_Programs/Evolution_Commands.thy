@@ -68,7 +68,7 @@ term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x | $x \<ge> 0 \<
 term "{EVOL x = 5 * \<guillemotleft>\<tau>\<guillemotright> + $x | $x \<ge> 0 \<and> \<guillemotleft>\<tau>\<guillemotright> \<le> \<guillemotleft>max\<guillemotright> on {0--\<guillemotleft>t\<guillemotright>}}"
 term "{EVOL (x, y) = ($x * cos \<guillemotleft>\<tau>\<guillemotright> + $y * sin \<guillemotleft>\<tau>\<guillemotright>, - $x * sin \<guillemotleft>\<tau>\<guillemotright> + $y * cos \<guillemotleft>\<tau>\<guillemotright>) | true on UNIV}"
 
-lemma fbox_g_evol_on [wp]:
+lemma fbox_g_evol_on [wlp]:
   assumes "vwb_lens a"
   shows "|g_evol_on a \<phi> G U] Q 
   = (\<forall>t\<in>\<guillemotleft>U\<guillemotright> ($a). (\<forall> \<tau>\<in>down (\<guillemotleft>U\<guillemotright> ($a)) \<guillemotleft>t\<guillemotright> . G\<lbrakk>\<langle>\<phi> \<tau>\<rangle>\<^sub>s a/a\<rbrakk>) \<longrightarrow> Q\<lbrakk>\<langle>\<phi> t\<rangle>\<^sub>s a/a\<rbrakk>)\<^sub>e"

@@ -28,8 +28,7 @@ declare [[coercion real_of_bool]]
 
 lemma differentiable_of_bool [closure]:
   "\<lbrakk> vwb_lens a; $a \<sharp> (e)\<^sub>e \<rbrakk> \<Longrightarrow> differentiable\<^sub>e (of_bool e) on a"
-  apply (rule differentiable_discr_expr, simp, unrest)
-  by (metis SEXP_def)
+  by (rule differentiable_discr_expr, simp, unrest)
 
 definition vec_lens :: "'i \<Rightarrow> ('a \<Longrightarrow> 'a^'i)" where
 [lens_defs]: "vec_lens k = \<lparr> lens_get = (\<lambda> s. vec_nth s k)
@@ -79,7 +78,7 @@ lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^s
 \<comment> \<open>Verified with differential invariants as cartesian product \<close>
 
 lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
-  apply(simp add: dInduct_hoare_diff_inv_on)
+  apply(simp add: hoare_diff_inv_on')
   apply(rule diff_inv_on_eqI)
   by clarsimp+ (expr_auto, auto intro!: vderiv_intros simp: case_prod_beta)
 
@@ -175,7 +174,7 @@ lemma ball_diff_inv: "\<^bold>{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotr
   by expr_auto (auto intro!: vderiv_intros)
 
 lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall_dinv \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
-  apply(rule hoare_loopI, simp only: wp fbox_if_then_else)
+  apply(rule hoare_loopI, simp only: wlp fbox_if_then_else)
     apply(rule hoare_g_odei)
   using ball_diff_inv apply simp
      apply force
@@ -210,7 +209,7 @@ proof-
 qed
 
 lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall_dyn \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
-  apply(rule hoare_loopI, simp only: wp fbox_if_then_else fbox_g_evol)
+  apply(rule hoare_loopI, simp only: wlp fbox_if_then_else fbox_g_evol)
     apply(expr_auto, auto simp: field_simps)
   using c_pos c_le_one H_pos apply expr_auto
     using BBall_dyn_arith by expr_auto
@@ -241,7 +240,7 @@ lemma "local_flow f UNIV UNIV \<phi>"
   using exhaust_2 by (auto simp: vec_eq_iff)
 
 lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
-  apply(rule hoare_loopI, simp only: wp fbox_if_then_else)
+  apply(rule hoare_loopI, simp only: wlp fbox_if_then_else)
     apply(subst local_flow.fbox_g_ode_subset[OF local_flow_ball], simp)
   using g_pos apply(expr_simp, clarsimp simp: field_simps)
   using c_pos c_le_one H_pos apply expr_auto
@@ -397,7 +396,7 @@ lemma
   "\<^bold>{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M \<and> \<theta> = 0\<^bold>} 
     (LOOP (therm_ctrl; therm_dyn) INV (T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M \<and> (\<theta> = 0 \<or> \<theta> = 1)))
    \<^bold>{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M\<^bold>}"
-  apply(rule hoare_loopI, simp only: wp fbox_if_then_else)
+  apply(rule hoare_loopI, simp only: wlp fbox_if_then_else)
     apply(subst fbox_therm_dyn, expr_simp)+
   using temp_dyn_up_real_arith[OF a_ge0 _ _ TM_less_L, of "T\<^sub>m"]
     and temp_dyn_down_real_arith[OF a_ge0 Tm_nonneg, of _ "T\<^sub>M"]

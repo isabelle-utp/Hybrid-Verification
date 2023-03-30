@@ -45,12 +45,6 @@ lemma has_derivative_discr_expr: "\<lbrakk>vwb_lens x; $x \<sharp> (expr)\<^sub>
   \<Longrightarrow> ((\<lambda>c. expr (put\<^bsub>x\<^esub> s c)) has_derivative (\<lambda>c. 0)) (at (get\<^bsub>x\<^esub> s) within S)"
   by expr_auto
 
-lemma differentiable_discr_expr [ldifferentiable]:
-  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> differentiable\<^bsub>x\<^esub> expr within S when G"
-  using differentiable_def has_derivative_discr_expr
-  unfolding ldifferentiable_expr_def lframe_fun_def
-  by fastforce
-
 lemma differentiable_plus [ldifferentiable]:
   assumes "differentiable\<^bsub>x\<^esub> expr1 within S when G" 
     and "differentiable\<^bsub>x\<^esub> expr2 within S when G"
@@ -64,7 +58,7 @@ lemma differentiable_minus [ldifferentiable]:
   using assms by (simp add: expr_defs)
 
 lemma differentiable_times [ldifferentiable]:
-  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_field"
+  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_algebra"
   assumes "differentiable\<^bsub>x\<^esub> expr1 within S when G"  
     and "differentiable\<^bsub>x\<^esub> expr2 within S when G"
   shows "differentiable\<^bsub>x\<^esub> (expr1 * expr2) within S when G"
@@ -118,6 +112,12 @@ lemma differentiable_dvar [ldifferentiable]:
   shows "differentiable\<^bsub>y\<^esub> $x within S when G"
   using assms by (auto simp add: expr_defs)
 
+lemma differentiable_discr_expr [ldifferentiable]:
+  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> differentiable\<^bsub>x\<^esub> expr within S when G"
+  using differentiable_def has_derivative_discr_expr
+  unfolding ldifferentiable_expr_def lframe_fun_def
+  by fastforce
+
 declare lens_plus_right_sublens [simp] 
 
 (* should we generalise and make it "at (get\<^bsub>x\<^esub> s) within S"? It does not seem 
@@ -154,10 +154,6 @@ lemma lframeD_numeral [framed_derivs]: "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<
 lemma lframeD_const [framed_derivs]: "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> \<guillemotleft>k\<guillemotright> = (0)\<^sub>e"
   by (simp add: expr_defs)
 
-lemma lframeD_discr_expr [framed_derivs]:
-  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr = (0)\<^sub>e"
-  by expr_simp
-
 lemma lframeD_plus [framed_derivs]:
   "\<lbrakk>differentiable\<^bsub>x\<^esub> expr1 ; differentiable\<^bsub>x\<^esub> expr2\<rbrakk> 
   \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1 + expr2) = (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 + \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2)\<^sub>e"
@@ -169,7 +165,7 @@ lemma lframeD_minus [framed_derivs]:
   by (simp add: expr_defs fun_eq_iff frechet_derivative_minus)
 
 lemma lframeD_times [framed_derivs]:
-  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_field"
+  fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_algebra"
   assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2"
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1 * expr2) = (expr1 * \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2 + \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 * expr2)\<^sub>e"
   using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_mult assms)
@@ -226,6 +222,34 @@ lemma lframeD_cos [framed_derivs]:
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (cos expr) = (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr * - sin expr)\<^sub>e"
   using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_cos)
 
+lemma lframeD_pair [framed_derivs]:
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 
+    and expr1 :: "'s \<Rightarrow> 'v::real_normed_field"
+    and expr2 :: "'s \<Rightarrow> 'v::real_normed_field"
+  assumes  "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1, expr2) = ((\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 , \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2))\<^sub>e"
+  using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_Pair)
+
+lemma lframeD_fst [framed_derivs]:
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 
+    and expr :: "'s \<Rightarrow> ('v1::real_normed_field) \<times> ('v2::real_normed_field)"
+  assumes  "vwb_lens x" "vwb_lens y" "differentiable\<^bsub>x +\<^sub>L y\<^esub> expr"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (fst expr) = (fst (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr))\<^sub>e"
+  using assms 
+  using frechet_derivative_fst
+  (* by (simp add: expr_defs fun_eq_iff frechet_derivative_fst) *)
+  oops
+
+lemma lframeD_snd [framed_derivs]:
+  fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 
+    and expr :: "'s \<Rightarrow> ('v1::real_normed_field) \<times> ('v2::real_normed_field)"
+  assumes  "vwb_lens x" "vwb_lens y" "differentiable\<^bsub>x +\<^sub>L y\<^esub> expr"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (snd expr) = (snd (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr))\<^sub>e"
+  using assms 
+  using frechet_derivative_snd
+  (* by (simp add: expr_defs fun_eq_iff frechet_derivative_snd) *)
+  oops
+
 declare lens_quotient_plus_den1 [simp]
 declare lens_quotient_plus_den2 [simp]
 
@@ -246,6 +270,10 @@ lemma lframeD_disc_var [framed_derivs]:
   shows "\<D>\<^bsub>y\<^esub>\<langle>\<sigma>\<rangle> $x = (0)\<^sub>e"
   using assms
   by (auto simp add: expr_defs lens_quotient_def fun_eq_iff)
+
+lemma lframeD_discr_expr [framed_derivs]:
+  "\<lbrakk> vwb_lens x; $x \<sharp> (expr)\<^sub>e \<rbrakk> \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr = (0)\<^sub>e"
+  by expr_simp
 
 
 subsection \<open> framed differential invariants revisited \<close>
@@ -383,7 +411,7 @@ lemma ldiff_inv_on_eq_rule:
   fixes e :: "'s \<Rightarrow> 'a::real_inner" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_eq: "`G \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e = \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f` 
-  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (G)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e = f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis1")
+  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (G)\<^sub>e (Collect ((\<le>) 0))\<^sub>e UNIV 0 (e = f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis1")
 proof -
   have "`G \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e = \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f` \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (G)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e - f = 0)\<^sub>e"
     by (rule ldiff_inv_on_eq, simp_all add: framed_derivs ldifferentiable assms)
@@ -397,7 +425,7 @@ lemma ldiff_inv_on_le_rule:
   fixes e :: "'s \<Rightarrow> real" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_le: "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` 
-  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e \<ge> f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
+  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e (Collect ((\<le>) 0))\<^sub>e UNIV 0 (e \<ge> f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
 proof -
   have "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e  ({t. t \<ge> 0})\<^sub>e UNIV 0 (e - f \<ge> 0)\<^sub>e"
     by (rule ldiff_inv_on_leq, simp_all add: framed_derivs ldifferentiable assms)
@@ -411,7 +439,7 @@ lemma ldiff_inv_on_less_rule:
   fixes e :: "'s \<Rightarrow> real" and x :: "'c::real_normed_vector \<Longrightarrow> 's"
   assumes "vwb_lens x" "differentiable\<^sub>e e on x" "differentiable\<^sub>e f on x"
   shows lderiv_less: "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` 
-  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e > f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
+  \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e (Collect ((\<le>) 0))\<^sub>e UNIV 0 (e > f)\<^sub>e " (is "_ \<Longrightarrow> ?thesis2")
 proof -
   have "`B \<longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> f \<le> \<D>\<^bsub>x\<^esub>\<langle>F\<rangle> e` \<Longrightarrow> diff_inv_on x (\<lambda> _. F) (B)\<^sub>e ({t. t \<ge> 0})\<^sub>e UNIV 0 (e - f > 0)\<^sub>e "
     by (rule ldiff_inv_on_less, simp_all add: framed_derivs ldifferentiable assms)
