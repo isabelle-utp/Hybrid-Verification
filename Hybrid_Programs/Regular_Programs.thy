@@ -848,7 +848,7 @@ lemma nmods_assigns [closure]:
   by (expr_simp add: not_modifies_def assigns_def put_scene_override_indep)
 
 lemma nmods_assign:
-  assumes "a\<lbrakk>e/x\<rbrakk> = (a)\<^sub>e"
+  assumes "(a)\<^sub>e\<lbrakk>e/x\<rbrakk> = (a)\<^sub>e"
   shows "x ::= e nmods a"
   by (metis SEXP_def assms nmods_assigns)
 
