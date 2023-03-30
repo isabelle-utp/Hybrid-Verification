@@ -2277,7 +2277,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
               apply (simp only: fbox_diff_inv_on)
               apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(1)\<^sup>e"; (force | vderiv))
              apply (rule diff_weak_on_rule, expr_simp)
-    by (diff_inv_on_eq | (rule nmods_invariant; (auto intro!: closure simp add: subst_eval)))+
+    by (diff_inv_on_eq | (rule nmods_invariant; ((auto intro!: closure simp add: ), expr_simp)))+
       (clarsimp simp: le_fun_def)+
   apply (rule_tac C="(-c * v + a*c\<^sup>2/2 \<le> y - y0 \<and> y - y0 \<le> c * v - a*c\<^sup>2/2)\<^sup>e" in diff_cut_on_rule)
   subgoal for v0 y0
