@@ -39,7 +39,7 @@ definition fbox :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow
 syntax "_fbox" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("|_] _" [0,81] 82)
 translations "_fbox F P" == "CONST fbox F (P)\<^sub>e"
 
-expr_ctr fbox
+expr_constructor fbox
 
 lemma clarify_fbox: "|F] P = fbox F P"
   by (clarsimp simp: fbox_def)
@@ -62,7 +62,7 @@ subsection \<open> Forward diamond operator \<close>
 definition fdia :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'b pred \<Rightarrow> 'a pred"
   where "fdia F P = (\<lambda>s. (\<exists>s'. s' \<in> F s \<and> P s'))"
 
-expr_ctr fdia
+expr_constructor fdia
 
 syntax "_fdia" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("|_\<rangle> _" [0,81] 82)
 translations "_fdia F P" == "CONST fdia F (P)\<^sub>e"
@@ -169,7 +169,7 @@ lemma hoare_invs:
 definition invar :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a set)"
   where "invar F I \<equiv> F"
 
-expr_ctr fdia
+expr_constructor fdia
 
 syntax "_invar" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix "INV" 63)
 translations "_invar F I" == "CONST invar F (I)\<^sub>e"

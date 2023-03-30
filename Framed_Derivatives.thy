@@ -132,7 +132,7 @@ lemma lframe_frechetD_alt [expr_defs]: "lframe_frechetD x \<sigma> expr
   = (\<lambda>s. frechet_derivative (\<lambda>c. expr (put\<^bsub>x\<^esub> s c)) (at (get\<^bsub>x\<^esub> s)) (get\<^bsub>x\<^esub> (\<sigma> s)))"
   by (simp add: expr_defs lframe_frechetD_def fun_eq_iff)
 
-expr_ctr lframe_frechetD
+expr_constructor lframe_frechetD
 
 syntax
   "_lframeD"  :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic"  ("\<D>\<index>\<langle>_\<rangle> _" [0, 100] 100)
@@ -489,7 +489,7 @@ lemma c1_local_lipschitz_on:
 proof (unfold local_lipschitz_on_def, clarify)
   fix s
   from assms(1,2)
-  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
+  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c')) (at c')"
     by (simp add: differentiable_subst_def frechet_derivative_works)
 
   have obs: "\<forall>t. \<exists>f'. (D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> f' (at t))"
@@ -521,7 +521,7 @@ lemma c1_local_lipschitz_on':
 proof (unfold local_lipschitz_on_def, clarify)
   fix s
   from assms 
-  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c') at c'"
+  have 1:"\<forall>c'. D (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) \<mapsto> (\<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at c')) (at c')"
     by (simp add: differentiable_subst_def frechet_derivative_works)
 
   obtain f where f: "\<And> x s. \<partial> (\<lambda>c. get\<^bsub>a\<^esub> (\<sigma> (put\<^bsub>a\<^esub> s c))) (at x) = f" "bounded_linear f"
