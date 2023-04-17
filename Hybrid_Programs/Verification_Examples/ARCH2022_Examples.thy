@@ -3284,7 +3284,7 @@ lemma "\<^bold>{0.5 \<le> $x & $x \<le> 0.7 & 0 \<le> $y & $y \<le> 0.3\<^bold>}
 end
 
 
-subsubsection \<open> Benchmarks/Nonlinear/Arrowsmith Place Fig_3_11 page 83 \<close>
+subsubsection \<open> Benchmarks/Nonlinear/Arrowsmith Place Fig\_3\_11 page 83 \<close>
 
 
 lemma lget_ge0_exI: "vwb_lens z \<Longrightarrow> \<exists>s'. 0 < get\<^bsub>z\<^esub> s'" for z :: "real \<Longrightarrow> 's"
