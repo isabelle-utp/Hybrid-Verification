@@ -428,7 +428,7 @@ text \<open> A simple tactic for Hoare logic that uses weakest liberal precondit
 method hoare_wp_simp uses local_flow 
   = (((rule_tac hoare_loopI) | (rule hoare_loopI_break))?; 
     simp add: unrest_ssubst var_alpha_combine wlp usubst usubst_eval 
-    refine_iff_implies fbox_solve[OF local_flow])
+    refine_iff_implies fbox_solve[OF local_flow[simplified]])
 
 method hoare_wp_auto uses local_flow = (hoare_wp_simp local_flow: local_flow; expr_auto)
 
