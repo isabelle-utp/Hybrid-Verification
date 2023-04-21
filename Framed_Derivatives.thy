@@ -97,6 +97,18 @@ lemma differentiable_power [ldifferentiable]:
   shows "differentiable\<^bsub>x\<^esub> (expr^\<guillemotleft>n\<guillemotright>) within S when G"
   using assms by (simp add: expr_defs)
 
+lemma differentiable_sin [ldifferentiable]:
+  fixes expr :: "'s \<Rightarrow> real"
+  assumes "differentiable\<^bsub>x\<^esub> expr within S when G"
+  shows "differentiable\<^bsub>x\<^esub> (sin expr) within S when G"
+  using assms has_derivative_sin by (simp add: expr_defs differentiable_def, blast)
+
+lemma differentiable_cos [ldifferentiable]:
+  fixes expr :: "'s \<Rightarrow> real"
+  assumes "differentiable\<^bsub>x\<^esub> expr within S when G"
+  shows "differentiable\<^bsub>x\<^esub> (cos expr) within S when G"
+  using assms has_derivative_cos by (simp add: expr_defs differentiable_def, blast)
+
 lemma sublens_obs_create: "\<lbrakk> mwb_lens X; Y \<subseteq>\<^sub>L X \<rbrakk> 
   \<Longrightarrow> get\<^bsub>Y\<^esub> (put\<^bsub>X\<^esub> v s) = get\<^bsub>Y\<^esub> (create\<^bsub>X\<^esub> s)"
   by (simp add: lens_create_def sublens_obs_get)
