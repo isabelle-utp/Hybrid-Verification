@@ -1,31 +1,72 @@
 theory Pendulum_with_force
-  imports "Hybrid-Verification.Proof_Automation"
+  imports "Hybrid-Verification.Proof_Automation" "HOL-Decision_Procs.Approximation"
 begin
+
+
+lemma
+  fixes g L k :: real
+  assumes "L > 0" "k > 0" "g > 0" "g * (1 - cos \<theta>) / L + w\<^sup>2 / 2 < g / L"
+  shows "(w - k)\<^sup>2 < g * cos \<theta> * 2 / L \<Longrightarrow> g * (1 - cos \<theta>) / L + (w - k)\<^sup>2 / 2 < g / L"
+  using assms
+  by (simp add: field_simps, metis distrib_left mult_less_cancel_left_pos)
+
+lemma 
+  fixes g L k :: real
+  assumes "L > 0" "k > 0" "g > 0" "g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L"
+  shows "pi / 2 < \<theta>"
+proof -
+  have ge_0: "L * w\<^sup>2 / (2*g) \<ge> 0"
+    using assms(1) assms(3) by auto
+  from assms have less_cos: "L * w\<^sup>2 / (2*g) < cos \<theta>"
+    by (simp add: field_simps)
+  hence less_1: "L * w\<^sup>2 / (2*g) < 1"
+    by (metis add.commute add_le_cancel_left add_mono_thms_linordered_field(3) cos_le_one not_less)
+  hence "arccos(L * w\<^sup>2 / (2*g)) > arccos(cos(\<theta>))"
+    using arccos_less_arccos ge_0 less_cos by auto
+  oops
+
+
+
+lemma 
+  fixes g L k :: real
+  assumes "L > 0" "k > 0" "g > 0" "g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L"
+  shows "pi / 2 < \<theta>"
+  using assms
+  oops
+
 
 dataspace sys = 
   constants g :: real L :: real k :: real
-  assumes L_gr_0: "L \<noteq> 0" and K_gr_0: "k > 0" and g_gr_0: "g > 0"
+  assumes L_gr_0: "L > 0" and K_gr_0: "k > 0" and g_gr_0: "g > 0"
   variables w :: real \<theta> :: real push :: real
 context sys
 begin
 
-declare L_gr_0 [simp]
+lemma L_neq_0 [simp]: "L \<noteq> 0"
+  using L_gr_0 by blast
+  
 
 abbreviation "program \<equiv> LOOP ((push ::= ? ; IF (1/2 * (w - push)\<^sup>2 < g / L * cos(\<theta>)) THEN w ::= w - push ELSE skip);
                               {\<theta>` = w, w` = -g/L * sin(\<theta>) - k * w}) INV (g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L)"
 
 lemma "\<^bold>{(g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L)\<^bold>} {\<theta>` = w, w` = -g/L * sin(\<theta>) - k * w} \<^bold>{(g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L)\<^bold>}"
   apply dInduct_auto
-  using K_gr_0 by auto
+  by (meson K_gr_0 dual_order.order_iff_strict mult_nonneg_nonneg zero_le_square)
+
+lemma "\<^bold>{0 \<le> w\<^bold>} {\<theta>` = w, w` = -g/L * sin(\<theta>) - k * w} \<^bold>{0 \<le> w\<^bold>}"
+  apply dInduct
+  oops
 
 lemma "\<^bold>{(g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L)\<^bold>} (push ::= ? ; IF (1/2 * (w - push)\<^sup>2 < g / L * cos(\<theta>)) THEN w ::= w - push ELSE skip) \<^bold>{(g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L)\<^bold>}"
   apply wlp_simp
   apply (simp_all add: usubst_eval)
   apply (expr_auto)
-  sorry
+  using L_gr_0 apply (simp add: field_simps)
+  by (metis (no_types, opaque_lifting) distrib_left mult.left_commute mult_less_cancel_left_pos)
 
 lemma "`g / L * (1 - cos(\<theta>)) + (1/2 * w\<^sup>2) < g / L \<longrightarrow> pi / 2 < \<theta> \<and> \<theta> < pi / 2`"
-  apply (expr_auto)
+  using L_gr_0 K_gr_0 apply (expr_auto)
+  apply (simp add: field_simps)
   sorry
 
 
