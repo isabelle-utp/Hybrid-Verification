@@ -479,9 +479,8 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
       (c ::= 0); 
       {x` = v, v` = a, c` = 1 | (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)}
     )
-   INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
+   INV (v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)
   ] (x \<le> S)"
-  apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
   apply (wlp_expr_solve "(\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])")
   by (smt (verit) divide_nonneg_nonneg zero_le_power)
 
@@ -498,9 +497,8 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
       (c ::= 0); 
       {x` = v, v` = a, c` = 1 | (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)}
     )
-   INV (v \<ge> 0 \<and> x + v\<^sup>2/(2 * B) \<le> S)
+   INV (v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)
   ] (x \<le> S)"
-  apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)\<^sup>e"])
   by (wlp_full local_flow: local_flow_test)
     (smt (verit) divide_nonneg_nonneg zero_le_power)
 
