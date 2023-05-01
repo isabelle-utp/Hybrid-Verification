@@ -100,14 +100,14 @@ subsection \<open> Nondeterministic assignments \<close>
 definition nondet_assign :: "('a \<Longrightarrow> 's) \<Rightarrow> 's prog" ("(2_ ::= ?)" [64] 65)
   where [prog_defs]: "(x ::= ?) = (\<lambda>s. {(put\<^bsub>x\<^esub> s k)|k. True})"
 
-lemma fbox_nondet_assign [wlp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>k/x\<rbrakk>)\<^sub>e"
+lemma fbox_nondet_assign [wlp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>)\<^sub>e"
   unfolding fbox_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)
 
-lemma hoare_nondet_assign: "\<^bold>{\<forall>k. Q\<lbrakk>k/x\<rbrakk>\<^bold>} (x ::= ?) \<^bold>{Q\<^bold>}"
+lemma hoare_nondet_assign: "\<^bold>{\<forall>k. Q\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>\<^bold>} (x ::= ?) \<^bold>{Q\<^bold>}"
   by (simp add: fbox_nondet_assign)
 
-lemma fdia_nondet_assign: "|x ::= ?\<rangle> P = (\<exists>k. P\<lbrakk>k/x\<rbrakk>)\<^sub>e"
+lemma fdia_nondet_assign: "|x ::= ?\<rangle> P = (\<exists>k. P\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>)\<^sub>e"
   unfolding fdia_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)
 
