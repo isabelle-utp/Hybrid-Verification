@@ -828,6 +828,14 @@ begin
 lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)\<^sub>e \<le>
   |{x1` = 2*x1\<^sup>4*x2 + 4*x1\<^sup>2*x2\<^sup>3 - 6*x1\<^sup>2*x2, x2` = -4*x1\<^sup>3*x2\<^sup>2 - 2*x1*x2\<^sup>4 + 6*x1*x2\<^sup>2}]
   (x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)"
+  by dInduct_mega
+
+(* x1^4*x2^2+x1^2*x2^4-3*x1^2*x2^2+1 <= c ->
+    [{x1'=2*x1^4*x2+4*x1^2*x2^3-6*x1^2*x2, x2'=-4*x1^3*x2^2-2*x1*x2^4+6*x1*x2^2}] 
+   x1^4*x2^2+x1^2*x2^4-3*x1^2*x2^2+1 <= c *)
+lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)\<^sub>e \<le>
+  |{x1` = 2*x1\<^sup>4*x2 + 4*x1\<^sup>2*x2\<^sup>3 - 6*x1\<^sup>2*x2, x2` = -4*x1\<^sup>3*x2\<^sup>2 - 2*x1*x2\<^sup>4 + 6*x1*x2\<^sup>2}]
+  (x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)"
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(0)\<^sup>e"; expr_simp)
   apply (intro vderiv_intros; (assumption)?, (rule vderiv_intros)?)

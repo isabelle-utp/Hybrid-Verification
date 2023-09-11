@@ -84,6 +84,31 @@ lemma determ_fdia_fboxI: "\<forall>s. \<exists>s'. F s \<subseteq> {s'} \<Longri
   by (auto simp: fdia_def fbox_def taut_def)
     fastforce
 
+subsection \<open> Backward diamond operator \<close>
+
+definition bdia :: "('a \<Rightarrow> 'b set) \<Rightarrow> 'a pred \<Rightarrow> 'b pred"
+  where "bdia F P = (\<lambda>s'. (\<exists>s. s' \<in> F s \<and> P s))"
+
+expr_constructor bdia
+
+syntax "_bdia" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("\<langle>_| _" [0,81] 82)
+translations "_bdia F P" == "CONST bdia F (P)\<^sub>e"
+
+lemma clarify_bdia: "\<langle>F| P = bdia F P"
+  by (clarsimp simp: bdia_def)
+
+lemma bdia_iso: "P \<le> Q \<Longrightarrow> \<langle>F| P \<le> \<langle>F| Q"
+  unfolding bdia_def by auto
+
+lemma bdia_mono: 
+  "( \<langle>F| P) s \<Longrightarrow> `P \<longrightarrow> Q` \<Longrightarrow> ( \<langle>F| Q) s"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `\<langle>F| P \<longrightarrow> \<langle>F| Q`"
+  "`P \<longrightarrow> Q` \<Longrightarrow> `\<langle>F| P` \<Longrightarrow> `\<langle>F| Q`"
+  by (auto simp: taut_def bdia_def) blast
+
+lemma bdia_dual_fbox: "( \<langle>F| P \<le> Q) \<longleftrightarrow> P \<le> |F] Q"
+  by (auto simp: bdia_def fbox_def)
+
 
 subsection \<open> Hoare triple \<close>
 
