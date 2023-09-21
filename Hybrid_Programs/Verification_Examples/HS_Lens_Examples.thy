@@ -459,9 +459,16 @@ abbreviation "dyn \<equiv> IF flw THEN {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \
 
 abbreviation "dyn' \<equiv> {h` = (flw*c\<^sub>i) - c\<^sub>o, t` = 1 | t \<le> ((flw*H\<^sub>u + (\<not>flw)*H\<^sub>l) - h\<^sub>m)/((flw*c\<^sub>i) - c\<^sub>o)}"
 
-lemma nm: "dyn nmods {flw, h\<^sub>m}" by (simp add: closure)
 
-lemma "\<^bold>{flw = F\<^bold>}dyn\<^bold>{flw = F\<^bold>}" by (rule nmods_invariant[OF nm], unrest)
+(* why doesn't this work anymore: by (simp add: closure) *)
+lemma "dyn nmods {flw, h\<^sub>m}"
+  by (subst closure(4); (subst closure(12))?; expr_auto)
+
+lemma nm: "dyn nmods $flw = F"
+  by (subst closure(4); (subst closure(12))?; expr_auto)
+
+lemma "\<^bold>{flw = F\<^bold>}dyn\<^bold>{flw = F\<^bold>}"
+  by (rule nmods_invariant[OF nm])
 
 lemma 
   "\<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 

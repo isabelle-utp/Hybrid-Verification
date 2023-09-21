@@ -639,45 +639,12 @@ end
 
 subsubsection \<open> 26. Dynamics: Open cases \<close>
 
-lemma has_vderiv_mono_test:
-  assumes T_hyp: "is_interval T" 
-    and d_hyp: "D f = f' on T"
-    and xy_hyp: "x\<in>T" "y\<in>T" "x \<le> y" 
-  shows "\<forall>x\<in>T. (0::real) \<le> f' x \<Longrightarrow> f x \<le> f y"
-    and "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> f x \<ge> f y"
-proof-
-  have "{x..y} \<subseteq> T"
-    using T_hyp xy_hyp by (meson atLeastAtMost_iff mem_is_interval_1_I subsetI) 
-  hence "D f = f' on {x..y}"
-    using has_vderiv_on_subset[OF d_hyp(1)] by blast
-  hence "(\<And>t. x \<le> t \<Longrightarrow> t \<le> y \<Longrightarrow> D f \<mapsto> (\<lambda>\<tau>. \<tau> *\<^sub>R f' t) at t within {x..y})"
-    unfolding has_vderiv_on_def has_vector_derivative_def by auto
-  then obtain c where c_hyp: "c \<in> {x..y} \<and> f y - f x = (y - x) *\<^sub>R f' c"
-    using mvt_very_simple[OF xy_hyp(3), of f "(\<lambda>t \<tau>. \<tau> *\<^sub>R f' t)"] by blast
-  hence mvt_hyp: "f x = f y - f' c * (y - x)"
-    by (simp add: mult.commute)
-  also have "\<forall>x\<in>T. 0 \<le> f' x \<Longrightarrow> ... \<le> f y"
-    using xy_hyp d_hyp c_hyp \<open>{x..y} \<subseteq> T\<close> by auto
-  finally show "\<forall>x\<in>T. 0 \<le> f' x \<Longrightarrow> f x \<le> f y" .
-  have "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> f y - f' c * (y - x) \<ge> f y"
-    using xy_hyp d_hyp c_hyp \<open>{x..y} \<subseteq> T\<close> by (auto simp: mult_le_0_iff)
-  thus "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> f x \<ge> f y"
-    using mvt_hyp by auto
-qed
-
-lemma continuous_on_ge_ball_ge: 
-  "continuous_on T f \<Longrightarrow> x \<in> T \<Longrightarrow> f x > (k::real) \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>y\<in>ball x \<epsilon> \<inter> T. f y > k"
-  unfolding continuous_on_iff apply(erule_tac x=x in ballE; clarsimp?)
-  apply(erule_tac x="f x - k" in allE, clarsimp simp: dist_norm)
-  apply(rename_tac \<delta>, rule_tac x=\<delta> in exI, clarsimp)
-  apply(erule_tac x=y in ballE; clarsimp?)
-  by (subst (asm) abs_le_eq, simp_all add: dist_commute)
-
 lemma current_vderiv_ge_always_ge:
   fixes c::real
   assumes init: "c < x t\<^sub>0" and ode: "D x = x' on {t\<^sub>0..}" 
     and dhyp: "x' = (\<lambda>t. g (x t))" "\<forall>x\<ge>c. g x \<ge> 0"
   shows "\<forall>t\<ge>t\<^sub>0. x t > c"
+  using first_derivative_test(1)[OF _ ode, unfolded dhyp, simplified]
 proof-
   have cont: "continuous_on {t\<^sub>0..} x"
     using vderiv_on_continuous_on[OF ode] .
@@ -729,7 +696,7 @@ proof-
     hence "c < x t\<^sub>1"
       using \<open>x t\<^sub>1 \<ge> c\<close> init by auto
     then obtain \<epsilon> where eps_hyp: "\<epsilon> > 0 \<and> (\<forall>t\<in>ball t\<^sub>1 \<epsilon> \<inter> {t\<^sub>0..}. c < x t)"
-      using continuous_on_ge_ball_ge[of _ "\<lambda>t. x t", OF cont _ \<open>c < x t\<^sub>1\<close>] \<open>t\<^sub>0  \<le> t\<^sub>1\<close> by auto
+      using continuous_on_Ex_ball_less'[of _ "\<lambda>t. x t", OF cont _ \<open>c < x t\<^sub>1\<close>] \<open>t\<^sub>0  \<le> t\<^sub>1\<close> by auto
     hence "\<forall>t\<in>{t\<^sub>0..<t\<^sub>1+\<epsilon>}. c < x t"
       using obs \<open>t\<^sub>0 \<le> t\<^sub>1\<close> ball_eq_greaterThanLessThan by auto
     hence "\<forall>t\<in>{t. t > t\<^sub>0 \<and> x t \<le> c}. t\<^sub>1+\<epsilon> \<le> t"

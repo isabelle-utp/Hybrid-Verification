@@ -759,6 +759,14 @@ next
     by blast
 qed
 
+lemma continuous_on_Ex_ball_less': 
+  "continuous_on T f \<Longrightarrow> x \<in> T \<Longrightarrow> f x > (k::real) \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>y\<in>ball x \<epsilon> \<inter> T. f y > k"
+  unfolding continuous_on_iff apply(erule_tac x=x in ballE; clarsimp?)
+  apply(erule_tac x="f x - k" in allE, clarsimp simp: dist_norm)
+  apply(rename_tac \<delta>, rule_tac x=\<delta> in exI, clarsimp)
+  apply(erule_tac x=y in ballE; clarsimp?)
+  by (subst (asm) abs_le_eq, simp_all add: dist_commute)
+
 lemma continuous_on_Ex_ball_less:
   fixes f :: "'a :: metric_space \<Rightarrow> real"
   assumes "continuous_on T f" and "t \<in> T"
