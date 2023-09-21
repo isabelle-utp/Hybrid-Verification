@@ -590,6 +590,370 @@ next
 qed
 
 
+subsection \<open> Derivative tests \<close>
+
+definition "increasing_on T f \<longleftrightarrow> (\<forall>x\<in>T. \<forall>y\<in>T. x \<le> y \<longrightarrow> f x \<le> f y)"
+
+lemma increasing_on_trans:
+  fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> increasing_on {a..b} f 
+  \<Longrightarrow> increasing_on {b..c} f \<Longrightarrow> increasing_on {a..c} f"
+  unfolding increasing_on_def  
+  by auto (smt (verit, best) intervalE nle_le order_trans)
+
+definition "decreasing_on T f \<longleftrightarrow> (\<forall>x\<in>T. \<forall>y\<in>T. x \<le> y \<longrightarrow> f y \<le> f x)"
+
+lemma decreasing_on_trans:
+  fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> decreasing_on {a..b} f 
+  \<Longrightarrow> decreasing_on {b..c} f \<Longrightarrow> decreasing_on {a..c} f"
+  unfolding decreasing_on_def  
+  by auto (smt (verit, best) intervalE nle_le order_trans)
+
+definition "strict_increasing_on T f \<longleftrightarrow> (\<forall>x\<in>T. \<forall>y\<in>T. x < y \<longrightarrow> f x < f y)"
+
+lemma strict_increasing_on_trans:
+  fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> strict_increasing_on {a..b} f 
+  \<Longrightarrow> strict_increasing_on {b..c} f \<Longrightarrow> strict_increasing_on {a..c} f"
+  unfolding strict_increasing_on_def  
+  by auto (smt (verit, best) intervalE linorder_le_cases 
+      order_less_trans verit_comp_simplify1(3))
+
+definition "strict_decreasing_on T f \<longleftrightarrow> (\<forall>x\<in>T. \<forall>y\<in>T. x < y \<longrightarrow> f y < f x)"
+
+lemma strict_decreasing_on_trans:
+  fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> strict_decreasing_on {a..b} f 
+  \<Longrightarrow> strict_decreasing_on {b..c} f \<Longrightarrow> strict_decreasing_on {a..c} f"
+  unfolding strict_decreasing_on_def  
+  by auto (smt (verit, best) intervalE linorder_le_cases 
+      order_less_trans verit_comp_simplify1(3))
+
+definition "local_maximum_at T f x \<longleftrightarrow> (\<forall>y\<in>T. f y \<le> f x)"
+
+lemma increasing_on_local_maximum:
+  fixes f :: "'a::preorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> increasing_on {a..b} f \<Longrightarrow> local_maximum_at {a..b} f b" 
+  by (auto simp: increasing_on_def local_maximum_at_def)
+
+lemma decreasing_on_local_maximum:
+  fixes f :: "'a::preorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> decreasing_on {a..b} f \<Longrightarrow> local_maximum_at {a..b} f a" 
+  by (auto simp: decreasing_on_def local_maximum_at_def)
+
+lemma incr_decr_local_maximum:
+  fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> increasing_on {a..b} f 
+  \<Longrightarrow> decreasing_on {b..c} f \<Longrightarrow> local_maximum_at {a..c} f b"
+  unfolding increasing_on_def decreasing_on_def local_maximum_at_def
+  by auto (metis intervalE linorder_le_cases)
+
+definition "local_minimum_at T f x \<longleftrightarrow> (\<forall>y\<in>T. f y \<ge> f x)"
+
+lemma increasing_on_local_minimum:
+  fixes f :: "'a::preorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> increasing_on {a..b} f \<Longrightarrow> local_minimum_at {a..b} f a" 
+  by (auto simp: increasing_on_def local_minimum_at_def)
+
+lemma decreasing_on_local_minimum:
+  fixes f :: "'a::preorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> decreasing_on {a..b} f \<Longrightarrow> local_minimum_at {a..b} f b" 
+  by (auto simp: decreasing_on_def local_minimum_at_def)
+
+lemma incr_decr_local_minimum:
+  fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
+  shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> decreasing_on {a..b} f 
+  \<Longrightarrow> increasing_on {b..c} f \<Longrightarrow> local_minimum_at {a..c} f b"
+  unfolding increasing_on_def decreasing_on_def local_minimum_at_def
+  by auto (metis intervalE linorder_le_cases)
+
+lemma has_vderiv_mono_test:
+  assumes T_hyp: "is_interval T" 
+    and d_hyp: "D f = f' on T"
+    and xy_hyp: "x\<in>T" "y\<in>T" "x \<le> y" 
+  shows "\<forall>x\<in>T. (0::real) \<le> f' x \<Longrightarrow> f x \<le> f y"
+    and "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> f x \<ge> f y"
+proof-
+  have "{x..y} \<subseteq> T"
+    using T_hyp xy_hyp by (meson atLeastAtMost_iff mem_is_interval_1_I subsetI) 
+  hence "D f = f' on {x..y}"
+    using has_vderiv_on_subset[OF d_hyp(1)] by blast
+  hence "(\<And>t. x \<le> t \<Longrightarrow> t \<le> y \<Longrightarrow> D f \<mapsto> (\<lambda>\<tau>. \<tau> *\<^sub>R f' t) at t within {x..y})"
+    unfolding has_vderiv_on_def has_vector_derivative_def by auto
+  then obtain c where c_hyp: "c \<in> {x..y} \<and> f y - f x = (y - x) *\<^sub>R f' c"
+    using mvt_very_simple[OF xy_hyp(3), of f "(\<lambda>t \<tau>. \<tau> *\<^sub>R f' t)"] by blast
+  hence mvt_hyp: "f x = f y - f' c * (y - x)"
+    by (simp add: mult.commute)
+  also have "\<forall>x\<in>T. 0 \<le> f' x \<Longrightarrow> ... \<le> f y"
+    using xy_hyp d_hyp c_hyp \<open>{x..y} \<subseteq> T\<close> by auto
+  finally show "\<forall>x\<in>T. 0 \<le> f' x \<Longrightarrow> f x \<le> f y" .
+  have "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> f y - f' c * (y - x) \<ge> f y"
+    using xy_hyp d_hyp c_hyp \<open>{x..y} \<subseteq> T\<close> by (auto simp: mult_le_0_iff)
+  thus "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> f x \<ge> f y"
+    using mvt_hyp by auto
+qed
+
+lemma first_derivative_test:
+  assumes T_hyp: "is_interval T" 
+    and d_hyp: "D f = f' on T"
+  shows "\<forall>x\<in>T. (0::real) \<le> f' x \<Longrightarrow> increasing_on T f"
+    and "\<forall>x\<in>T. f' x \<le> 0 \<Longrightarrow> decreasing_on T f"
+  unfolding increasing_on_def decreasing_on_def
+  using has_vderiv_mono_test[OF assms] by blast+
+
+definition "neighbourhood N x \<longleftrightarrow> (\<exists>X. open X \<and> x \<in> X \<and> X \<subseteq> N)"
+
+lemma neighbourhood_iff: "neighbourhood N x \<longleftrightarrow> (\<exists>\<epsilon>>0. ball x \<epsilon> \<subseteq> N)"
+  using neighbourhood_def[of N x, unfolded open_contains_ball]
+  by (metis Elementary_Metric_Spaces.open_ball centre_in_ball 
+      open_contains_ball_eq order_trans)
+
+lemma tendsto_at_within_topological: 
+  "((f::'a::topological_space \<Rightarrow> 'b::topological_space) \<longlongrightarrow> l) (at x within X) 
+  \<longleftrightarrow> (\<forall>B. open B \<longrightarrow> l \<in> B \<longrightarrow> (\<exists>A. open A \<and> x \<in> A \<and> (\<forall>y\<in>A. y \<noteq> x \<longrightarrow> y \<in> X \<longrightarrow> f y \<in> B)))"
+  using tendsto_def[where F="at _ within _", unfolded eventually_at_topological, of f l x X]
+  by blast
+
+lemma continuous_on_Ex_open_less:
+  fixes f :: "'a :: topological_space \<Rightarrow> real"
+  assumes "continuous_on T f" and "t \<in> T"
+    and "neighbourhood T t"
+  shows "f t > c \<Longrightarrow> \<exists>X. open X \<and> t \<in> X \<and> X \<subseteq> T \<and> (\<forall>\<tau>\<in>X. f \<tau> > c)"
+    and "f t < c \<Longrightarrow> \<exists>X. open X \<and> t \<in> X \<and> X \<subseteq> T \<and> (\<forall>\<tau>\<in>X. f \<tau> < c)"
+proof-
+  assume "c < f t"
+  then obtain X\<^sub>1 where "open X\<^sub>1" and "t \<in> X\<^sub>1" 
+    and ge_dist: "\<forall>y\<in>T. y \<in> X\<^sub>1 \<longrightarrow> dist (f t) (f y) < f t - c"
+    using continuous_on_topological[THEN iffD1, rule_format, 
+        OF assms(1,2) open_ball[of "f t" "f t - c"] 
+          centre_in_ball[THEN iffD2, of "f t - c" "f t"], 
+        unfolded ball_def, simplified]
+    by blast
+  moreover obtain X\<^sub>2 where "open X\<^sub>2" and "t \<in> X\<^sub>2" and "X\<^sub>2 \<subseteq> T"
+    using \<open>neighbourhood T t\<close> neighbourhood_def
+    by metis
+  moreover define X where X_def: "X = X\<^sub>1 \<inter> X\<^sub>2"
+  ultimately have "open X" and "X \<subseteq> T" and "t \<in> X" and "\<forall>\<tau>\<in>X. f \<tau> > c"
+    using \<open>open X\<^sub>1\<close> \<open>open X\<^sub>2\<close> \<open>X\<^sub>2 \<subseteq> T\<close> dist_real_def
+    by (auto simp: X_def open_Int)
+  thus "\<exists>X. open X \<and> t \<in> X \<and> X \<subseteq> T \<and> (\<forall>\<tau>\<in>X. f \<tau> > c)"
+    by blast
+next
+  assume "f t < c"
+  then obtain X\<^sub>1 where "open X\<^sub>1" and "t \<in> X\<^sub>1" 
+    and ge_dist: "\<forall>y\<in>T. y \<in> X\<^sub>1 \<longrightarrow> dist (f t) (f y) < c - f t"
+    using continuous_on_topological[THEN iffD1, rule_format, 
+        OF assms(1,2) open_ball[of "f t" "c - f t"] 
+          centre_in_ball[THEN iffD2, of "c - f t" "f t"], 
+        unfolded ball_def, simplified]
+    by blast
+  moreover obtain X\<^sub>2 where "open X\<^sub>2" and "t \<in> X\<^sub>2" and "X\<^sub>2 \<subseteq> T"
+    using \<open>neighbourhood T t\<close> neighbourhood_def
+    by metis
+  moreover define X where X_def: "X = X\<^sub>1 \<inter> X\<^sub>2"
+  ultimately have "open X" and "X \<subseteq> T" and "t \<in> X" and "\<forall>\<tau>\<in>X. f \<tau> < c"
+    using \<open>open X\<^sub>1\<close> \<open>open X\<^sub>2\<close> \<open>X\<^sub>2 \<subseteq> T\<close> dist_real_def
+    by (auto simp: X_def open_Int)
+  thus "\<exists>X. open X \<and> t \<in> X \<and> X \<subseteq> T \<and> (\<forall>\<tau>\<in>X. f \<tau> < c)"
+    by blast
+qed
+
+lemma continuous_on_Ex_ball_less:
+  fixes f :: "'a :: metric_space \<Rightarrow> real"
+  assumes "continuous_on T f" and "t \<in> T"
+    and "neighbourhood T t"
+  shows "f t > c \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> > c \<and> \<tau> \<in> T"
+    and "f t < c \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> < c \<and> \<tau> \<in> T" 
+proof-
+  obtain X where Ex_ball: "\<forall>x\<in>X. \<exists>e>0. ball x e \<subseteq> X" 
+    and "X \<subseteq> T"
+    and conseq1: "c < f t \<longrightarrow> t \<in> X \<and> (\<forall>\<tau>\<in>X. c < f \<tau>)"
+    and conseq2: "c > f t \<longrightarrow> t \<in> X \<and> (\<forall>\<tau>\<in>X. c > f \<tau>)"
+    using continuous_on_Ex_open_less[OF assms, unfolded open_contains_ball, of c]
+    by (cases "c < f t") (atomize_elim, clarsimp, blast)+
+  {assume "c < f t"
+    then obtain \<epsilon> where "\<epsilon> > 0" and "ball t \<epsilon> \<subseteq> X" and "\<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> > c"
+      using Ex_ball conseq1
+      by (meson subsetD)
+    hence "\<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> > c \<and> \<tau> \<in> T"
+      using \<open>X \<subseteq> T\<close> 
+      by auto}
+  thus "f t > c \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> > c \<and> \<tau> \<in> T" .
+  {assume "c > f t"
+    then obtain \<epsilon> where "\<epsilon> > 0" and "ball t \<epsilon> \<subseteq> X" and "\<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> < c"
+      using Ex_ball conseq2
+      by (meson subsetD)
+    hence "\<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> < c \<and> \<tau> \<in> T"
+      using \<open>X \<subseteq> T\<close> 
+      by auto}
+  thus "f t < c \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> < c \<and> \<tau> \<in> T" .
+qed
+
+lemma has_vderiv_max_test: 
+  assumes "continuous_on T f''" and "t \<in> T"
+    and "neighbourhood T t"
+    and f': "D f = f' on T"
+    and f'': "D f' = f'' on T"
+    and "f' t = (0 :: real)"
+  shows "f'' t < 0 \<Longrightarrow> \<exists>a b. a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> (\<forall>\<tau>\<in>{a--b}. f \<tau> \<le> f t)"
+proof-
+  assume "f'' t < 0"
+  then obtain a b where Ex_ivl: "a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> (\<forall>\<tau>\<in>{a--b}. f'' \<tau> < 0)"
+    using continuous_on_Ex_open_less(2)[OF assms(1-3)] open_contains_cball real_ivl_eqs(7)
+    by (smt (verit) centre_in_cball dual_order.trans subsetD)
+  hence "{a--t} \<subseteq> T" and "{t--b} \<subseteq> T" 
+    and "a < t" and "t < b"
+    by (auto simp: closed_segment_eq_real_ivl)
+  {fix \<tau>
+    assume "a \<le> \<tau>" and "\<tau> \<le> t"
+    hence "{\<tau>--t} \<subseteq> T"
+      using \<open>{a--t} \<subseteq> T\<close> closed_segment_eq_real_ivl1 
+      by force
+    then obtain r where "r \<in> {\<tau>--t}" and r_obs: "f' t - f' \<tau> = (t - \<tau>) * f'' r"
+      using \<open>\<tau> \<le> t\<close> mvt_very_simple_closed_segmentE[OF has_vderiv_on_subset[OF f'' \<open>{\<tau>--t} \<subseteq> T\<close>]]
+      by blast
+    hence "r \<in> {a--b}"
+      by (metis Ex_ivl \<open>\<tau> <= t\<close> \<open>a \<le> \<tau>\<close> atLeastAtMost_iff closed_segment_eq_real_ivl1
+          order.order_iff_strict order_le_less_trans)
+    hence "f'' r < 0"
+      using Ex_ivl 
+      by blast
+    hence "0 \<le> f' \<tau>"
+      using r_obs \<open>f' t = 0\<close> \<open>\<tau> \<le> t\<close>
+      by (metis diff_gt_0_iff_gt linorder_not_less order.order_iff_strict zero_le_mult_iff)
+  }
+  hence "\<forall>x\<in>{a..t}. 0 \<le> f' x"
+    by (simp add: order.order_iff_strict)
+  hence "\<And>x y. a \<le> x \<and> x \<le> t \<Longrightarrow> a \<le> y \<and> y \<le> t \<Longrightarrow> x \<le> y \<Longrightarrow> f x \<le> f y"
+    using has_vderiv_mono_test(1)[OF _ has_vderiv_on_subset[OF f' \<open>{a--t} \<subseteq> T\<close>]]
+    by (auto simp: closed_segment_eq_real_ivl)
+  hence max_left: "\<forall>\<tau>\<in>{a--t}. f \<tau> \<le> f t"
+    using \<open>a < t\<close> \<open>t < b\<close>
+    by (auto simp: closed_segment_eq_real_ivl)
+  {fix \<tau>
+    assume "t \<le> \<tau>" and "\<tau> \<le> b"
+    hence "{t--\<tau>} \<subseteq> T"
+      using \<open>{t--b} \<subseteq> T\<close> closed_segment_eq_real_ivl1 
+      by force
+    then obtain r where "r \<in> {t--\<tau>}" and r_obs: "f' \<tau> - f' t = (\<tau> - t) * f'' r"
+      using \<open>t \<le> \<tau>\<close> mvt_very_simple_closed_segmentE[OF has_vderiv_on_subset[OF f'' \<open>{t--\<tau>} \<subseteq> T\<close>]]
+      by blast
+    hence "r \<in> {a--b}"
+      by (metis Ex_ivl \<open>t \<le> \<tau>\<close> \<open>\<tau> \<le> b\<close> atLeastAtMost_iff closed_segment_eq_real_ivl1
+          order.order_iff_strict order_le_less_trans)
+    hence "f'' r < 0"
+      using Ex_ivl 
+      by blast
+    hence "0 \<ge> f' \<tau>"
+      using r_obs \<open>f' t = 0\<close> \<open>\<tau> \<ge> t\<close>
+      by (metis diff_gt_0_iff_gt linorder_not_less order.order_iff_strict zero_le_mult_iff)
+  }
+  hence "\<forall>x\<in>{t..b}. f' x \<le> 0"
+    by (simp add: order.order_iff_strict)
+  hence "\<And>x y. t \<le> x \<and> x \<le> b \<Longrightarrow> t \<le> y \<and> y \<le> b \<Longrightarrow> x \<le> y \<Longrightarrow> f y \<le> f x"
+    using has_vderiv_mono_test(2)[OF _ has_vderiv_on_subset[OF f' \<open>{t--b} \<subseteq> T\<close>]]
+    by (auto simp: closed_segment_eq_real_ivl)
+  hence max_right: "\<forall>\<tau>\<in>{t--b}. f \<tau> \<le> f t" 
+    using \<open>a < t\<close> \<open>t < b\<close>
+    by (auto simp: closed_segment_eq_real_ivl)
+  hence "\<forall>\<tau>\<in>{a--b}. f \<tau> \<le> f t"
+    using \<open>a < t\<close> \<open>t < b\<close> max_left
+    by (metis atLeastAtMost_iff closed_segment_eq_real_ivl1 inf.order_iff 
+        le_inf_iff linorder_le_cases order.order_iff_strict)
+  thus ?thesis
+    using Ex_ivl by blast
+qed
+
+lemma has_vderiv_min_test: 
+  assumes "continuous_on T f''" and "t \<in> T"
+    and "neighbourhood T t"
+    and f': "D f = f' on T"
+    and f'': "D f' = f'' on T"
+    and "f' t = (0 :: real)"
+  shows "f'' t > 0 \<Longrightarrow> \<exists>a b. a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> (\<forall>\<tau>\<in>{a--b}. f t \<le> f \<tau>)"
+proof-
+  assume "f'' t > 0"
+  then obtain a b where Ex_ivl: "a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> (\<forall>\<tau>\<in>{a--b}. f'' \<tau> > 0)"
+    using continuous_on_Ex_open_less(1)[OF assms(1-3)] open_contains_cball real_ivl_eqs(7)
+    by (smt (verit) centre_in_cball dual_order.trans subsetD)
+  hence "{a--t} \<subseteq> T" and "{t--b} \<subseteq> T" 
+    and "a < t" and "t < b"
+    by (auto simp: closed_segment_eq_real_ivl)
+  {fix \<tau>
+    assume "a \<le> \<tau>" and "\<tau> \<le> t"
+    hence "{\<tau>--t} \<subseteq> T"
+      using \<open>{a--t} \<subseteq> T\<close> closed_segment_eq_real_ivl1 
+      by force
+    then obtain r where "r \<in> {\<tau>--t}" and r_obs: "f' t - f' \<tau> = (t - \<tau>) * f'' r"
+      using \<open>\<tau> \<le> t\<close> mvt_very_simple_closed_segmentE[OF has_vderiv_on_subset[OF f'' \<open>{\<tau>--t} \<subseteq> T\<close>]]
+      by blast
+    hence "r \<in> {a--b}"
+      by (metis Ex_ivl \<open>\<tau> <= t\<close> \<open>a \<le> \<tau>\<close> atLeastAtMost_iff closed_segment_eq_real_ivl1
+          order.order_iff_strict order_le_less_trans)
+    hence "f'' r > 0"
+      using Ex_ivl 
+      by blast
+    hence "0 \<ge> f' \<tau>"
+      using r_obs \<open>f' t = 0\<close> \<open>\<tau> \<le> t\<close>
+      by (metis diff_gt_0_iff_gt less_iff_diff_less_0 linorder_not_le 
+          not_less_iff_gr_or_eq pos_prod_lt)
+  }
+  hence "\<forall>x\<in>{a..t}. f' x \<le> 0"
+    by (simp add: order.order_iff_strict)
+  hence "\<And>x y. a \<le> x \<and> x \<le> t \<Longrightarrow> a \<le> y \<and> y \<le> t \<Longrightarrow> x \<le> y \<Longrightarrow> f y \<le> f x"
+    using has_vderiv_mono_test(2)[OF _ has_vderiv_on_subset[OF f' \<open>{a--t} \<subseteq> T\<close>]]
+    by (auto simp: closed_segment_eq_real_ivl)
+  hence min_left: "\<forall>\<tau>\<in>{a--t}. f t \<le> f \<tau>"
+    using \<open>a < t\<close> \<open>t < b\<close>
+    by (auto simp: closed_segment_eq_real_ivl)
+  {fix \<tau>
+    assume "t \<le> \<tau>" and "\<tau> \<le> b"
+    hence "{t--\<tau>} \<subseteq> T"
+      using \<open>{t--b} \<subseteq> T\<close> closed_segment_eq_real_ivl1 
+      by force
+    then obtain r where "r \<in> {t--\<tau>}" and r_obs: "f' \<tau> - f' t = (\<tau> - t) * f'' r"
+      using \<open>t \<le> \<tau>\<close> mvt_very_simple_closed_segmentE[OF has_vderiv_on_subset[OF f'' \<open>{t--\<tau>} \<subseteq> T\<close>]]
+      by blast
+    hence "r \<in> {a--b}"
+      by (metis Ex_ivl \<open>t \<le> \<tau>\<close> \<open>\<tau> \<le> b\<close> atLeastAtMost_iff closed_segment_eq_real_ivl1
+          order.order_iff_strict order_le_less_trans)
+    hence "f'' r > 0"
+      using Ex_ivl 
+      by blast
+    hence "0 \<le> f' \<tau>"
+      using r_obs \<open>f' t = 0\<close> \<open>\<tau> \<ge> t\<close>
+      by fastforce
+  }
+  hence "\<forall>x\<in>{t..b}. f' x \<ge> 0"
+    by (simp add: order.order_iff_strict)
+  hence "\<And>x y. t \<le> x \<and> x \<le> b \<Longrightarrow> t \<le> y \<and> y \<le> b \<Longrightarrow> x \<le> y \<Longrightarrow> f x \<le> f y"
+    using has_vderiv_mono_test(1)[OF _ has_vderiv_on_subset[OF f' \<open>{t--b} \<subseteq> T\<close>]]
+    by (auto simp: closed_segment_eq_real_ivl)
+  hence max_right: "\<forall>\<tau>\<in>{t--b}. f t \<le> f \<tau>" 
+    using \<open>a < t\<close> \<open>t < b\<close>
+    by (auto simp: closed_segment_eq_real_ivl)
+  hence "\<forall>\<tau>\<in>{a--b}. f t \<le> f \<tau>"
+    using \<open>a < t\<close> \<open>t < b\<close> min_left
+    by (metis atLeastAtMost_iff closed_segment_eq_real_ivl1 inf.order_iff 
+        le_inf_iff linorder_le_cases order.order_iff_strict)
+  thus ?thesis
+    using Ex_ivl by blast
+qed
+
+lemma second_derivative_test:
+  assumes "continuous_on T f''" and "t \<in> T"
+    and "neighbourhood T t"
+    and f': "D f = f' on T"
+    and f'': "D f' = f'' on T"
+    and "f' t = (0 :: real)"
+  shows "f'' t < 0 \<Longrightarrow> \<exists>a b. a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> local_maximum_at {a--b} f t" 
+    and "f'' t > 0 \<Longrightarrow> \<exists>a b. a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> local_minimum_at {a--b} f t"
+  unfolding local_maximum_at_def local_minimum_at_def
+  using has_vderiv_max_test[OF assms] has_vderiv_min_test[OF assms] 
+  by blast+
+
+
 subsection \<open> Filters \<close>
 
 lemma eventually_at_within_mono:

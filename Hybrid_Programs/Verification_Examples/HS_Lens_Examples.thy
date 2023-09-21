@@ -594,6 +594,113 @@ lemma tank_inv:
 
 end
 
+
+subsubsection \<open> Rocket \<close>
+
+lemma rocket_arith1: 
+  "m * (2 * m / k)\<^sup>2 / 2 - k * (2 * m / k)\<^sup>3 / 6 = 2 * m\<^sup>3 / (3 * k\<^sup>2)" (is "?lhs = ?rhs") for m::real 
+proof -
+  have "m * (2 * m / k)\<^sup>2 / 2 = 6 * m\<^sup>3 / (3 * k\<^sup>2)"
+    by (auto simp: field_simps)
+      (simp add: power3_eq_cube)
+  moreover have "k * (2 * m / k)\<^sup>3 / 6 = 4 * m\<^sup>3 / (3 * k\<^sup>2)"
+    by (auto simp: field_simps)
+      (simp add: power3_eq_cube)
+  ultimately show "?lhs = ?rhs"
+    by simp
+qed
+
+lemma rocket_arith2:
+  assumes "(k::real) > 1" and "m\<^sub>0 > k" and "x \<in> {0..}"
+  shows "- k*x\<^sup>3/6 + m\<^sub>0*x\<^sup>2/2 \<le> 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2)" (is "?lhs \<le> _")
+proof-
+  let ?f = "\<lambda>t. -k*t\<^sup>3/6 + m\<^sub>0*t\<^sup>2/2" 
+    and ?f' = "\<lambda>t. -k*t\<^sup>2/2 + m\<^sub>0*t"
+    and ?f'' = "\<lambda>t. -k*t + m\<^sub>0"
+  have "2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) = -k*(2*m\<^sub>0/k)\<^sup>3/6 + m\<^sub>0*(2*m\<^sub>0/k)\<^sup>2/2" (is "_ = ?rhs")
+    using rocket_arith1 by simp
+  moreover have "?lhs \<le> ?rhs"
+  proof(cases "x \<le> 2 * m\<^sub>0 / k")
+    case True
+    have ge_0_left: "0 \<le> y \<Longrightarrow> y \<le> m\<^sub>0/k \<Longrightarrow> ?f' 0 \<le> ?f' y" for y
+      apply (rule has_vderiv_mono_test(1)[of "{0..m\<^sub>0/k}" ?f' ?f'' 0])
+      using \<open>k > 1\<close> \<open>m\<^sub>0 > k\<close>
+      by (auto intro!: vderiv_intros simp: field_simps)
+    moreover have ge_0_right: "m\<^sub>0/k \<le> y \<Longrightarrow> y \<le> 2*m\<^sub>0/k \<Longrightarrow> ?f' (2*m\<^sub>0/k) \<le> ?f' y" for y
+      apply(rule has_vderiv_mono_test(2)[of "{m\<^sub>0/k..2*m\<^sub>0/k}" ?f' ?f'' _ "2*m\<^sub>0/k"])
+      using \<open>k > 1\<close> \<open>m\<^sub>0 > k\<close>
+      by (auto intro!: vderiv_intros simp: field_simps)
+    ultimately have ge_0: "\<forall>y\<in>{0..2*m\<^sub>0/k}. 0 \<le> ?f' y"
+      using \<open>k > 1\<close> \<open>m\<^sub>0 > k\<close>
+      by (fastforce simp: field_simps)
+    show ?thesis
+      apply (rule has_vderiv_mono_test(1)[of "{0..2*m\<^sub>0/k}" ?f ?f' _ "2*m\<^sub>0/k"])
+      using ge_0 True \<open>x \<in> {0..}\<close> \<open>k > 1\<close> \<open>m\<^sub>0 > k\<close>
+      by (auto intro!: vderiv_intros simp: field_simps)
+  next
+    case False
+    have "2*m\<^sub>0/k \<le> y \<Longrightarrow> ?f' y \<le> ?f' (2*m\<^sub>0/k)" for y
+      apply (rule has_vderiv_mono_test(2)[of "{m\<^sub>0/k..}" ?f' ?f''])
+      using \<open>k > 1\<close> \<open>m\<^sub>0 > k\<close> by (auto intro!: vderiv_intros simp: field_simps)
+    hence obs: "\<forall>y\<in>{2*m\<^sub>0/k..}. ?f' y \<le> 0"
+      using \<open>k > 1\<close> \<open>m\<^sub>0 > k\<close>
+      by (clarsimp simp: field_simps)
+    show ?thesis
+      apply (rule has_vderiv_mono_test(2)[of "{2*m\<^sub>0/k..}" ?f ?f'])
+      using False \<open>k > 1\<close> obs
+      by (auto intro!: vderiv_intros simp: field_simps)
+  qed
+  ultimately show ?thesis
+    by simp
+qed
+
+dataspace rocket = 
+  constants g :: real c :: real k :: real
+  assumes c_less_0: "c < 0" 
+    and k_ge_1: "k > 1" 
+    and g_ge_0: "g > 0"
+  variables v :: real y :: real m :: real t :: real
+
+context rocket
+begin
+
+lemma neqs_0 [simp]: "c \<noteq> 0" "k \<noteq> 0" "g \<noteq> 0"
+  using c_less_0 k_ge_1 g_ge_0 by auto
+
+abbreviation "ode \<equiv> {y` = v, v` = m, t` = 1, m` = - k | (t \<ge> 0)}"
+
+abbreviation "flow \<tau> \<equiv> 
+  [y \<leadsto> -k*\<tau>\<^sup>3/6 + m*\<tau>\<^sup>2/2 + v *\<tau> + y, 
+  v \<leadsto> -k*\<tau>\<^sup>2/2 + m*\<tau> + v, 
+  t \<leadsto> \<tau> + t, 
+  m \<leadsto> -k*\<tau> + m]"
+
+(* m = - k * t + m\<^sub>0 
+v = - k * t\<^sup>2/2 + m\<^sub>0 * t = t * (- k * t/2 + m\<^sub>0)
+y = - k * t\<^sup>3/6 + m\<^sub>0 * t\<^sup>2/2 = (t\<^sup>2 / 2) * (-k*t/3 + m\<^sub>0)
+\<Longrightarrow> (v' = 0 \<Longrightarrow> t = m\<^sub>0/k \<Longrightarrow> v = m\<^sub>0\<^sup>2/k - m\<^sub>0\<^sup>2/(2*k) = m\<^sub>0\<^sup>2/(2*k))
+\<Longrightarrow> (y' = 0 \<Longrightarrow> t = 0 \<or> t = 2*m\<^sub>0/k \<Longrightarrow> y = (2*m\<^sub>0\<^sup>2/k\<^sup>2) * (m\<^sub>0/3) = 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2)
+*)
+
+lemma local_flow_on_rocket:
+  "local_flow_on [y \<leadsto> $v, v \<leadsto> $m, t \<leadsto> 1, m \<leadsto> - k] (y +\<^sub>L v +\<^sub>L t +\<^sub>L m) UNIV UNIV flow"
+  by local_flow_on_auto
+
+lemma "(m = m\<^sub>0 \<and> m\<^sub>0 > k \<and> t = 0 \<and> v = 0 \<and> y = 0)\<^sub>e \<le> |ode] (y \<le> 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2))"
+  apply (wlp_solve "flow")
+  using c_less_0 k_ge_1 rocket_arith2
+  by (expr_simp add: le_fun_def)
+
+lemma "(0 \<le> h \<and> h < 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) \<and> m = m\<^sub>0 \<and> m\<^sub>0 > k \<and> t = 0 \<and> v = 0 \<and> y = 0)\<^sub>e \<le> |ode\<rangle> (y \<ge> h)"
+  using k_ge_1
+  by (subst fdia_g_ode_frame_flow[OF local_flow_on_rocket]; expr_simp)
+    (auto simp: rocket_arith1 intro!: exI[of _ "2*m\<^sub>0/k"])
+
+end
+
+
+subsubsection \<open>???\<close>
+
 locale example_9b = 
   fixes Kp::real 
     and Kd::real

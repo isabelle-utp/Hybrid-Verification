@@ -238,6 +238,9 @@ lemma fdia_if_then_else:
   "|IF T THEN X ELSE Y\<rangle> Q = ((T \<and> |X\<rangle> Q) \<or> (\<not> T \<and> |Y\<rangle> Q))\<^sub>e"
   unfolding fdia_def ifthenelse_def by expr_auto
 
+lemma "IF T THEN skip ELSE abort = \<questiondown>T?"
+  by (auto simp: fun_eq_iff skip_def abort_def test_def ifthenelse_def)
+
 
 subsection \<open> N iterations \<close>
 
