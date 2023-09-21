@@ -459,6 +459,35 @@ abbreviation "dyn \<equiv> IF flw THEN {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \
 
 abbreviation "dyn' \<equiv> {h` = (flw*c\<^sub>i) - c\<^sub>o, t` = 1 | t \<le> ((flw*H\<^sub>u + (\<not>flw)*H\<^sub>l) - h\<^sub>m)/((flw*c\<^sub>i) - c\<^sub>o)}"
 
+thm hoare_diff_inv_on' fbox_diff_inv_on
+(*
+method dInduct = (subst dInduct_hoare_diff_inv_on fbox_diff_inv_on; 
+    rule_tac lie_deriv_rules; simp add: lie_deriv closure usubst unrest_ssubst unrest usubst_eval)
+method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
+method dWeaken = (rule_tac diff_weak_on_rule; expr_simp; auto simp add: field_simps)
+
+text \<open> A first attempt at a high-level automated proof strategy using differential induction.
+  A sequence of commands is tried as alternatives, one by one, and the method then iterates. \<close>
+
+method dInduct_mega uses facts = 
+  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
+  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
+  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
+  | rule_tac hoare_if_then_else_inv
+  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
+  )+
+
+
+method dInduct_mega' uses facts = 
+  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
+  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
+  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
+  | rule_tac hoare_if_then_else_inv
+  | (dDiscr ; force) \<comment> \<open> (3) Try proving as a discrete invariant \<close>
+  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
+  )+
+*)
+
 
 (* why doesn't this work anymore: by (simp add: closure) *)
 lemma "dyn nmods {flw, h\<^sub>m}"
@@ -477,10 +506,13 @@ lemma
   using tank_arith[OF _ co ci]
   by (hoare_wp_auto local_flow: lflow_tank)
 
-lemma "\<^bold>{flw \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+lemma "\<^bold>{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
          dyn'
-       \<^bold>{flw \<and> 0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
-  using ci by dInduct_mega'
+       \<^bold>{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+  using ci
+  apply dInduct_mega'
+  by (rule nmods_invariant, subst closure; expr_simp)
+    dInduct_mega
 
 lemma "\<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
          {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/(c\<^sub>i - c\<^sub>o)}
@@ -491,7 +523,10 @@ lemma tank_correct:
   "\<^bold>{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
       LOOP ctrl ; dyn INV (0 \<le> t \<and> h = ((flw * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
    \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
-  using ci co by dProve
+  using ci co
+  apply (rule_tac hoare_loop_seqI)
+  by hoare_wp_auto
+    ((dInduct_mega', (rule nmods_invariant, subst closure; expr_simp)) | (dInduct_mega', auto))+
 
 
 (* TODO: Tactic for automated Hoare-style verification. *)

@@ -242,7 +242,7 @@ method dDiscr = (rule_tac nmods_invariant; auto intro!: closure)
 
 (* hoare_diff_inv_on' *)
 method dInduct = ((intro hoare_invs)?; subst fbox_diff_inv_on; 
-    intro lderiv_rules; 
+    rule_tac lderiv_rules; 
     simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
 
 method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
