@@ -459,36 +459,6 @@ abbreviation "dyn \<equiv> IF flw THEN {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \
 
 abbreviation "dyn' \<equiv> {h` = (flw*c\<^sub>i) - c\<^sub>o, t` = 1 | t \<le> ((flw*H\<^sub>u + (\<not>flw)*H\<^sub>l) - h\<^sub>m)/((flw*c\<^sub>i) - c\<^sub>o)}"
 
-thm hoare_diff_inv_on' fbox_diff_inv_on
-(*
-method dInduct = (subst dInduct_hoare_diff_inv_on fbox_diff_inv_on; 
-    rule_tac lie_deriv_rules; simp add: lie_deriv closure usubst unrest_ssubst unrest usubst_eval)
-method dInduct_auto = (dInduct; expr_simp; auto simp add: field_simps)
-method dWeaken = (rule_tac diff_weak_on_rule; expr_simp; auto simp add: field_simps)
-
-text \<open> A first attempt at a high-level automated proof strategy using differential induction.
-  A sequence of commands is tried as alternatives, one by one, and the method then iterates. \<close>
-
-method dInduct_mega uses facts = 
-  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
-  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
-  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
-  | rule_tac hoare_if_then_else_inv
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
-  )+
-
-
-method dInduct_mega' uses facts = 
-  ( fact facts \<comment> \<open> (1) Try any facts we have provided \<close>
-  | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
-  | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
-  | rule_tac hoare_if_then_else_inv
-  | (dDiscr ; force) \<comment> \<open> (3) Try proving as a discrete invariant \<close>
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
-  )+
-*)
-
-
 (* why doesn't this work anymore: by (simp add: closure) *)
 lemma "dyn nmods {flw, h\<^sub>m}"
   by (subst closure(4); (subst closure(12))?; expr_auto)

@@ -709,6 +709,9 @@ lemma neighbourhood_iff: "neighbourhood N x \<longleftrightarrow> (\<exists>\<ep
   by (metis Elementary_Metric_Spaces.open_ball centre_in_ball 
       open_contains_ball_eq order_trans)
 
+lemma in_neighbourhood: "neighbourhood N x \<Longrightarrow> x \<in> N"
+  by (auto simp: neighbourhood_def)
+
 lemma tendsto_at_within_topological: 
   "((f::'a::topological_space \<Rightarrow> 'b::topological_space) \<longlongrightarrow> l) (at x within X) 
   \<longleftrightarrow> (\<forall>B. open B \<longrightarrow> l \<in> B \<longrightarrow> (\<exists>A. open A \<and> x \<in> A \<and> (\<forall>y\<in>A. y \<noteq> x \<longrightarrow> y \<in> X \<longrightarrow> f y \<in> B)))"
@@ -717,7 +720,7 @@ lemma tendsto_at_within_topological:
 
 lemma continuous_on_Ex_open_less:
   fixes f :: "'a :: topological_space \<Rightarrow> real"
-  assumes "continuous_on T f" and "t \<in> T"
+  assumes "continuous_on T f"
     and "neighbourhood T t"
   shows "f t > c \<Longrightarrow> \<exists>X. open X \<and> t \<in> X \<and> X \<subseteq> T \<and> (\<forall>\<tau>\<in>X. f \<tau> > c)"
     and "f t < c \<Longrightarrow> \<exists>X. open X \<and> t \<in> X \<and> X \<subseteq> T \<and> (\<forall>\<tau>\<in>X. f \<tau> < c)"
@@ -726,7 +729,9 @@ proof-
   then obtain X\<^sub>1 where "open X\<^sub>1" and "t \<in> X\<^sub>1" 
     and ge_dist: "\<forall>y\<in>T. y \<in> X\<^sub>1 \<longrightarrow> dist (f t) (f y) < f t - c"
     using continuous_on_topological[THEN iffD1, rule_format, 
-        OF assms(1,2) open_ball[of "f t" "f t - c"] 
+        OF assms(1) 
+          in_neighbourhood[OF assms(2)] 
+          open_ball[of "f t" "f t - c"] 
           centre_in_ball[THEN iffD2, of "f t - c" "f t"], 
         unfolded ball_def, simplified]
     by blast
@@ -744,7 +749,9 @@ next
   then obtain X\<^sub>1 where "open X\<^sub>1" and "t \<in> X\<^sub>1" 
     and ge_dist: "\<forall>y\<in>T. y \<in> X\<^sub>1 \<longrightarrow> dist (f t) (f y) < c - f t"
     using continuous_on_topological[THEN iffD1, rule_format, 
-        OF assms(1,2) open_ball[of "f t" "c - f t"] 
+        OF assms(1) 
+          in_neighbourhood[OF assms(2)] 
+          open_ball[of "f t" "c - f t"] 
           centre_in_ball[THEN iffD2, of "c - f t" "f t"], 
         unfolded ball_def, simplified]
     by blast
@@ -769,7 +776,7 @@ lemma continuous_on_Ex_ball_less':
 
 lemma continuous_on_Ex_ball_less:
   fixes f :: "'a :: metric_space \<Rightarrow> real"
-  assumes "continuous_on T f" and "t \<in> T"
+  assumes "continuous_on T f"
     and "neighbourhood T t"
   shows "f t > c \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> > c \<and> \<tau> \<in> T"
     and "f t < c \<Longrightarrow> \<exists>\<epsilon>>0. \<forall>\<tau>\<in>ball t \<epsilon>. f \<tau> < c \<and> \<tau> \<in> T" 
@@ -799,7 +806,7 @@ proof-
 qed
 
 lemma has_vderiv_max_test: 
-  assumes "continuous_on T f''" and "t \<in> T"
+  assumes "continuous_on T f''"
     and "neighbourhood T t"
     and f': "D f = f' on T"
     and f'': "D f' = f'' on T"
@@ -808,7 +815,7 @@ lemma has_vderiv_max_test:
 proof-
   assume "f'' t < 0"
   then obtain a b where Ex_ivl: "a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> (\<forall>\<tau>\<in>{a--b}. f'' \<tau> < 0)"
-    using continuous_on_Ex_open_less(2)[OF assms(1-3)] open_contains_cball real_ivl_eqs(7)
+    using continuous_on_Ex_open_less(2)[OF assms(1,2)] open_contains_cball real_ivl_eqs(7)
     by (smt (verit) centre_in_cball dual_order.trans subsetD)
   hence "{a--t} \<subseteq> T" and "{t--b} \<subseteq> T" 
     and "a < t" and "t < b"
@@ -874,7 +881,7 @@ proof-
 qed
 
 lemma has_vderiv_min_test: 
-  assumes "continuous_on T f''" and "t \<in> T"
+  assumes "continuous_on T f''"
     and "neighbourhood T t"
     and f': "D f = f' on T"
     and f'': "D f' = f'' on T"
@@ -883,7 +890,7 @@ lemma has_vderiv_min_test:
 proof-
   assume "f'' t > 0"
   then obtain a b where Ex_ivl: "a < t \<and> t < b \<and> {a--b} \<subseteq> T \<and> (\<forall>\<tau>\<in>{a--b}. f'' \<tau> > 0)"
-    using continuous_on_Ex_open_less(1)[OF assms(1-3)] open_contains_cball real_ivl_eqs(7)
+    using continuous_on_Ex_open_less(1)[OF assms(1,2)] open_contains_cball real_ivl_eqs(7)
     by (smt (verit) centre_in_cball dual_order.trans subsetD)
   hence "{a--t} \<subseteq> T" and "{t--b} \<subseteq> T" 
     and "a < t" and "t < b"
@@ -950,7 +957,7 @@ proof-
 qed
 
 lemma second_derivative_test:
-  assumes "continuous_on T f''" and "t \<in> T"
+  assumes "continuous_on T f''"
     and "neighbourhood T t"
     and f': "D f = f' on T"
     and f'': "D f' = f'' on T"
