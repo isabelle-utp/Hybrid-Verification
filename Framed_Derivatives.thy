@@ -248,9 +248,14 @@ lemma lframeD_fst [framed_derivs]:
   assumes  "vwb_lens x" "vwb_lens y" "differentiable\<^bsub>x +\<^sub>L y\<^esub> expr"
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (fst expr) = (fst (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr))\<^sub>e"
   using assms 
-  using frechet_derivative_fst
-  (* by (simp add: expr_defs fun_eq_iff frechet_derivative_fst) *)
+  apply (simp add: lframe_frechetD_alt)
+  apply expr_simp
+  apply clarsimp
+  apply (subst frechet_derivative_compose[unfolded comp_def, of _ _ fst])
   oops
+  (* subgoal sorry
+  using bounded_linear_fst bounded_linear_imp_differentiable
+  by (auto simp: frechet_derivative_fst) *)
 
 lemma lframeD_snd [framed_derivs]:
   fixes x :: "'c::real_normed_vector \<Longrightarrow> 's" 

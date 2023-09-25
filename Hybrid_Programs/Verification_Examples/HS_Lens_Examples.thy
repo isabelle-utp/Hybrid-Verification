@@ -46,7 +46,7 @@ lemma vec_lens_indep [simp]: "(i \<noteq> j) \<Longrightarrow> (vec_lens i \<bow
 
 subsubsection \<open>Pendulum\<close>
 
-text \<open> The ODEs @{text "x' t = y t"} and {text "y' t = - x t"} describe the circular motion of
+text \<open> The ODEs @{text "x' t = y t"} and @{text "y' t = - x t"} describe the circular motion of
 a mass attached to a string looked from above. We use @{text "s$1"} to represent the x-coordinate
 and @{text "s$2"} for the y-coordinate. We prove that this motion remains circular. \<close>
 
@@ -70,7 +70,7 @@ lemma pendulum_dyn:
   "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2\<^bold>} (EVOL pend_flow G U) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2\<^bold>}"
   by (simp add: fbox_g_evol) expr_auto
 
-\<comment> \<open>Verified with lie_derivative \<close>
+\<comment> \<open>Verified with Framed derivatives \<close>
 
 lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
   by dInduct
@@ -667,17 +667,15 @@ proof-
 qed
 
 dataspace rocket = 
-  constants g :: real c :: real k :: real
-  assumes c_less_0: "c < 0" 
-    and k_ge_1: "k > 1" 
-    and g_ge_0: "g > 0"
+  constants k :: real
+  assumes k_ge_1: "k > 1" 
   variables v :: real y :: real m :: real t :: real
 
 context rocket
 begin
 
-lemma neqs_0 [simp]: "c \<noteq> 0" "k \<noteq> 0" "g \<noteq> 0"
-  using c_less_0 k_ge_1 g_ge_0 by auto
+lemma neqs_0 [simp]: "k \<noteq> 0"
+  using k_ge_1 by auto
 
 abbreviation "ode \<equiv> {y` = v, v` = m, t` = 1, m` = - k | (t \<ge> 0)}"
 
@@ -700,7 +698,7 @@ lemma local_flow_on_rocket:
 
 lemma "(m = m\<^sub>0 \<and> m\<^sub>0 > k \<and> t = 0 \<and> v = 0 \<and> y = 0)\<^sub>e \<le> |ode] (y \<le> 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2))"
   apply (wlp_solve "flow")
-  using c_less_0 k_ge_1 rocket_arith2
+  using k_ge_1 rocket_arith2
   by (expr_simp add: le_fun_def)
 
 lemma "(0 \<le> h \<and> h < 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) \<and> m = m\<^sub>0 \<and> m\<^sub>0 > k \<and> t = 0 \<and> v = 0 \<and> y = 0)\<^sub>e \<le> |ode\<rangle> (y \<ge> h)"
