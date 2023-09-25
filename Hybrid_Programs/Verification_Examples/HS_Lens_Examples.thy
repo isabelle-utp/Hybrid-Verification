@@ -685,12 +685,17 @@ abbreviation "flow \<tau> \<equiv>
   t \<leadsto> \<tau> + t, 
   m \<leadsto> -k*\<tau> + m]"
 
-(* m = - k * t + m\<^sub>0 
-v = - k * t\<^sup>2/2 + m\<^sub>0 * t = t * (- k * t/2 + m\<^sub>0)
-y = - k * t\<^sup>3/6 + m\<^sub>0 * t\<^sup>2/2 = (t\<^sup>2 / 2) * (-k*t/3 + m\<^sub>0)
-\<Longrightarrow> (v' = 0 \<Longrightarrow> t = m\<^sub>0/k \<Longrightarrow> v = m\<^sub>0\<^sup>2/k - m\<^sub>0\<^sup>2/(2*k) = m\<^sub>0\<^sup>2/(2*k))
-\<Longrightarrow> (y' = 0 \<Longrightarrow> t = 0 \<or> t = 2*m\<^sub>0/k \<Longrightarrow> y = (2*m\<^sub>0\<^sup>2/k\<^sup>2) * (m\<^sub>0/3) = 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2)
-*)
+(* m' = - k
+\<Longrightarrow> m = - k * t + m\<^sub>0 is a line s.t. m = 0 \<longleftrightarrow> t = m\<^sub>0/k
+\<Longrightarrow> v = - k * t\<^sup>2/2 + m\<^sub>0 * t = t * (- k * t/2 + m\<^sub>0)
+  s.t. v = 0 \<longleftrightarrow> t = 0 \<or> t = 2*m\<^sub>0/k
+\<Longrightarrow> y = - k * t\<^sup>3/6 + m\<^sub>0 * t\<^sup>2/2 = (t\<^sup>2 / 2) * (-k*t/3 + m\<^sub>0)
+  s.t. y = 0 \<longleftrightarrow> t = 0 \<or> t = 3*m\<^sub>0/k
+\<Longrightarrow> (v' = m = 0 \<Longrightarrow> t = m\<^sub>0/k \<Longrightarrow> v = m\<^sub>0\<^sup>2/k - m\<^sub>0\<^sup>2/(2*k) = m\<^sub>0\<^sup>2/(2*k))
+  \<and> (y' = v = 0 \<Longrightarrow> t = 0 \<or> t = 2*m\<^sub>0/k \<Longrightarrow> y = (2*m\<^sub>0\<^sup>2/k\<^sup>2) * (m\<^sub>0/3) = 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2)
+\<Longrightarrow> v is a concave down parabola with maximum at t=m\<^sub>0/k and v=m\<^sub>0\<^sup>2/(2*k)
+  and y is a mostly decreasing cubic line with critical points 
+  at t=0 with y=0 and t=2*m\<^sub>0/k with max at t=2*m\<^sub>0/k and y=2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) *)
 
 lemma local_flow_on_rocket:
   "local_flow_on [y \<leadsto> $v, v \<leadsto> $m, t \<leadsto> 1, m \<leadsto> - k] (y +\<^sub>L v +\<^sub>L t +\<^sub>L m) UNIV UNIV flow"
