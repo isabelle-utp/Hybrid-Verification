@@ -609,20 +609,7 @@ end
 
 subsubsection \<open> Rocket \<close>
 
-lemma rocket_arith1: 
-  "m * (2 * m / k)\<^sup>2 / 2 - k * (2 * m / k)\<^sup>3 / 6 = 2 * m\<^sup>3 / (3 * k\<^sup>2)" (is "?lhs = ?rhs") for m::real 
-proof -
-  have "m * (2 * m / k)\<^sup>2 / 2 = 6 * m\<^sup>3 / (3 * k\<^sup>2)"
-    by (auto simp: field_simps)
-      (simp add: power3_eq_cube)
-  moreover have "k * (2 * m / k)\<^sup>3 / 6 = 4 * m\<^sup>3 / (3 * k\<^sup>2)"
-    by (auto simp: field_simps)
-      (simp add: power3_eq_cube)
-  ultimately show "?lhs = ?rhs"
-    by simp
-qed
-
-lemma rocket_arith2:
+lemma rocket_arith:
   assumes "(k::real) > 1" and "m\<^sub>0 > k" and "x \<in> {0..}"
   shows "- k*x\<^sup>3/6 + m\<^sub>0*x\<^sup>2/2 \<le> 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2)" (is "?lhs \<le> _")
 proof-
@@ -630,7 +617,7 @@ proof-
     and ?f' = "\<lambda>t. -k*t\<^sup>2/2 + m\<^sub>0*t"
     and ?f'' = "\<lambda>t. -k*t + m\<^sub>0"
   have "2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) = -k*(2*m\<^sub>0/k)\<^sup>3/6 + m\<^sub>0*(2*m\<^sub>0/k)\<^sup>2/2" (is "_ = ?rhs")
-    using rocket_arith1 by simp
+    by (auto simp: field_simps power3_eq_cube)
   moreover have "?lhs \<le> ?rhs"
   proof(cases "x \<le> 2 * m\<^sub>0 / k")
     case True
@@ -674,9 +661,6 @@ dataspace rocket =
 context rocket
 begin
 
-lemma neqs_0 [simp]: "k \<noteq> 0"
-  using k_ge_1 by auto
-
 abbreviation "ode \<equiv> {y` = v, v` = m, t` = 1, m` = - k | (t \<ge> 0)}"
 
 abbreviation "flow \<tau> \<equiv> 
@@ -703,13 +687,13 @@ lemma local_flow_on_rocket:
 
 lemma "(m = m\<^sub>0 \<and> m\<^sub>0 > k \<and> t = 0 \<and> v = 0 \<and> y = 0)\<^sub>e \<le> |ode] (y \<le> 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2))"
   apply (wlp_solve "flow")
-  using k_ge_1 rocket_arith2
+  using k_ge_1 rocket_arith
   by (expr_simp add: le_fun_def)
 
 lemma "(0 \<le> h \<and> h < 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) \<and> m = m\<^sub>0 \<and> m\<^sub>0 > k \<and> t = 0 \<and> v = 0 \<and> y = 0)\<^sub>e \<le> |ode\<rangle> (y \<ge> h)"
   using k_ge_1
   by (subst fdia_g_ode_frame_flow[OF local_flow_on_rocket]; expr_simp)
-    (auto simp: rocket_arith1 intro!: exI[of _ "2*m\<^sub>0/k"])
+    (auto simp: field_simps power3_eq_cube intro!: exI[of _ "2*m\<^sub>0/k"])
 
 end
 
