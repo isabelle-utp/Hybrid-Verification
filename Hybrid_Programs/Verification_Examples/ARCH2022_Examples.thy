@@ -3182,9 +3182,9 @@ begin
   [
     {x'=-x+x*y , y'=-y}@invariant(y>=0)
   ] !(-0.8>=x & x>=-1 & -0.7>=y & y>=-1) *)
-lemma "\<^bold>{0.5 \<le> $x & $x \<le> 0.7 & 0 \<le> $y & $y \<le> 0.3\<^bold>}
-    {x` = -$x + $x* $y , y` = - $y} INV (y \<ge> 0)
-  \<^bold>{ \<not> (-0.8 \<ge> $x \<and> $x \<ge> -1 & -0.7 \<ge> $y \<and> $y \<ge> -1)\<^bold>}"
+lemma "\<^bold>{0.5 \<le> x & x \<le> 0.7 & 0 \<le> y & y \<le> 0.3\<^bold>}
+    {x` = -x + x* y , y` = - y} INV (y \<ge> 0)
+  \<^bold>{ \<not> (-0.8 \<ge> x \<and> x \<ge> -1 & -0.7 \<ge> y \<and> y \<ge> -1)\<^bold>}"
   unfolding invar_def
   apply (rule_tac C="(y \<ge> 0)\<^sup>e" in diff_cut_on_rule)
    apply (rule_tac I="(y \<ge> 0)\<^sup>e" in fbox_diff_invI)
