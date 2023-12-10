@@ -341,6 +341,11 @@ lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::re
   \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> - $y, y \<leadsto> $x] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x +\<^sub>L y\<^esub> s)"
   by c1_lipschitz
 
+lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (y::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens (z::real \<Longrightarrow> 's) 
+  \<Longrightarrow> x \<bowtie> y \<Longrightarrow> y \<bowtie> x \<Longrightarrow> x \<bowtie> z \<Longrightarrow> z \<bowtie> x \<Longrightarrow> y \<bowtie> z \<Longrightarrow> z \<bowtie> y
+  \<Longrightarrow> local_lipschitz UNIV UNIV (\<lambda>t::real. [x \<leadsto> - $y, y \<leadsto> $x, z \<leadsto> $z] \<down>\<^sub>S\<^sub>u\<^sub>b\<^sub>s\<^sub>t\<^bsub>x +\<^sub>L y +\<^sub>L z\<^esub> s)"
+  by c1_lipschitz
+
 lemma trivial_prod_subst: "(\<lambda>x. case x of (t, a) \<Rightarrow> f t a) = (\<lambda>(t,a). f t a)"
   by simp
 
