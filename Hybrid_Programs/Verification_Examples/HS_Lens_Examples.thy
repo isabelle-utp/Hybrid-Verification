@@ -698,6 +698,38 @@ lemma "(0 \<le> h \<and> h < 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) \<and> m = m\<^su
 end
 
 
+subsubsection \<open> Blood glucose \<close>
+
+dataspace glucose = 
+  constants g\<^sub>m :: real g\<^sub>M :: real
+  assumes ge_0: "g\<^sub>m > 0" and ge_gm: "g\<^sub>M > g\<^sub>m"
+  variables g :: real
+
+context glucose
+begin
+
+abbreviation "ctrl \<equiv> IF g \<le> g\<^sub>m THEN g ::= g\<^sub>M ELSE skip"
+
+abbreviation "dyn \<equiv> {g` = -g}"
+
+abbreviation "flow \<tau> \<equiv> [g \<leadsto> g * exp (- \<tau>)]"
+
+abbreviation "blood_sugar \<equiv> LOOP (ctrl; dyn) INV (g \<ge> 0)"
+
+lemma "\<^bold>{g \<ge> 0\<^bold>} blood_sugar \<^bold>{g \<ge> 0\<^bold>}"
+  apply (wlp_simp) \<comment> \<open> @{term "( |dyn] (0 \<le> $g))"} appears\<close>
+  apply (subst fbox_solve[where \<phi>=flow])
+     apply ((clarsimp simp: local_flow_on_def)?, unfold_locales; clarsimp?)
+       apply (rule c1_local_lipschitz)
+  oops
+
+lemma "\<^bold>{g \<ge> 0\<^bold>} blood_sugar \<^bold>{g \<ge> 0\<^bold>}"
+  apply (wlp_expr_solve "flow")
+  using ge_gm by force
+
+end
+
+
 subsubsection \<open>???\<close>
 
 locale example_9b = 
