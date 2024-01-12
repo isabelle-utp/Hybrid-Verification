@@ -730,6 +730,81 @@ lemma "\<^bold>{g \<ge> 0\<^bold>} blood_sugar \<^bold>{g \<ge> 0\<^bold>}"
 end
 
 
+expr_vars
+
+lemma diffInvariant:
+  assumes "\<^bold>{I\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{I\<^bold>}" "`P \<longrightarrow> I`"
+          "\<^bold>{P\<^bold>} g_orbital_on a f (G \<and> I)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
+  shows "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
+  apply (rule diff_cut_on_rule[where C=I])
+  using assms weaken apply fastforce
+  using assms by simp
+
+method dInv for I :: "'s \<Rightarrow> bool" uses facts =
+  (rule diffInvariant[where I="I"],
+   (dInduct_mega facts: facts)[1],
+   (expr_auto)[1])
+
+lemma hoare_disj_split:
+  "\<^bold>{P\<^bold>} F \<^bold>{R\<^bold>} \<Longrightarrow> \<^bold>{Q\<^bold>} F \<^bold>{R\<^bold>} \<Longrightarrow> \<^bold>{P \<or> Q\<^bold>} F \<^bold>{R\<^bold>}"
+  unfolding fbox_def by (simp add: le_fun_def)
+
+lit_vars
+
+dataspace planar_flight =
+  constants
+    v\<^sub>o :: real (* own_velocity *)
+    v\<^sub>i :: real (* intruder velocity *)
+  assumes
+    v\<^sub>o_pos: "v\<^sub>o > 0" and
+    v\<^sub>i_pos: "v\<^sub>i > 0"
+  variables (* Coordinates in reference frame of own ship *)
+    x :: real (* Intruder x *)
+    y :: real (* Intruder y *)
+    \<theta> :: real (* Intruder angle *)
+    \<omega> :: real (* Angular velocity *)
+
+context planar_flight
+begin
+
+abbreviation "I \<equiv> (v\<^sub>i * sin \<theta> * x - (v\<^sub>i * cos \<theta> - v\<^sub>o) * y
+                   > v\<^sub>o + v\<^sub>i)\<^sup>e"
+
+abbreviation "J \<equiv> (v\<^sub>i * \<omega> * sin \<theta> * x - v\<^sub>i * \<omega> * cos \<theta> * y 
+                  + v\<^sub>o * v\<^sub>i * cos \<theta> 
+                  > v\<^sub>o * v\<^sub>i + v\<^sub>i * \<omega>)\<^sup>e"
+
+definition "ctrl \<equiv> (\<omega> ::= 0; \<questiondown>@I?) \<sqinter> (\<omega> ::= 1; \<questiondown>@J?)"
+
+definition "plant \<equiv> {x` = v\<^sub>i * cos \<theta> - v\<^sub>o + \<omega> * y,
+                     y` = v\<^sub>i * sin \<theta> - \<omega> * x,
+                     \<theta>` = -\<omega>}"
+
+
+definition "flight \<equiv> (ctrl; plant)\<^sup>*"
+
+lemma flight_safe: "\<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>} flight \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
+proof -
+  have ctrl_post: "\<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>} ctrl \<^bold>{(\<omega> = 0 \<and> @I) \<or> (\<omega> = 1 \<and> @J)\<^bold>}"
+    unfolding ctrl_def by wlp_full
+
+  have plant_safe_I: "\<^bold>{\<omega> = 0 \<and> @I\<^bold>} plant \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
+    unfolding plant_def apply (dInv "($\<omega> = 0 \<and> @I)\<^sup>e", dWeaken)
+    using v\<^sub>o_pos v\<^sub>i_pos sum_squares_gt_zero_iff by fastforce
+
+  have plant_safe_J: "\<^bold>{\<omega> = 1 \<and> @J\<^bold>} plant \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
+    unfolding plant_def apply (dInv "(\<omega>=1 \<and> @J)\<^sup>e", dWeaken)
+    by (smt (z3) cos_le_one mult_if_delta mult_le_cancel_iff2 
+          mult_left_le sum_squares_gt_zero_iff v\<^sub>i_pos v\<^sub>o_pos)
+
+    show ?thesis
+    unfolding flight_def apply (intro hoare_kstar_inv hoare_kcomp[OF ctrl_post])
+    by (rule hoare_disj_split[OF plant_safe_I plant_safe_J])
+qed
+
+end
+
+
 subsubsection \<open>???\<close>
 
 locale example_9b = 
