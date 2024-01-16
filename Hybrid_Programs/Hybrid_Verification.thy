@@ -5,6 +5,29 @@ theory Hybrid_Verification
     HS_CAS_Integration
 begin
 
+(* Turn off notation from HOL that clashes with ours *)
+
+bundle Hybrid_Program_Syntax
+begin
+
+no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
+no_notation (ASCII) disj (infixr "|" 30)
+no_notation (ASCII)
+  Set.member  ("'(:')") and
+  Set.member  ("(_/ : _)" [51, 51] 50)
+
+end
+
+syntax
+  "_preserves"       :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix "preserves" 40)
+  "_preserves_under" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("_ preserves _ under _" [40, 0, 40] 40)
+
+translations
+  "_preserves S P" => "\<^bold>{P\<^bold>} S \<^bold>{P\<^bold>}"
+  "_preserves_under S P Q" => "\<^bold>{P \<and> Q\<^bold>} S \<^bold>{P\<^bold>}"
+
+unbundle Hybrid_Program_Syntax
+
 (* People will mainly be using this theory for doing verification, so we turn on literal variables *)
 
 lit_vars
