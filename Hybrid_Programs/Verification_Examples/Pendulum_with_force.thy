@@ -6,7 +6,7 @@ begin
 
 lemma trig_prop:
   fixes g L k :: real
-  assumes "L > 0" "k > 0" "g > 0" "g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L" "-pi < \<theta>" "\<theta> < pi"
+  assumes "L > 0" "k > 0" "g > 0" "g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L" "-pi \<le> \<theta>" "\<theta> \<le> pi"
   shows "- pi / 2 < \<theta>" "\<theta> < pi / 2"
 proof -
   have ge_0: "L * \<omega>\<^sup>2 / (2*g) \<ge> 0"
@@ -34,23 +34,24 @@ begin
 lemma L_neq_0 [simp]: "L \<noteq> 0"
   using L_gr_0 by blast
 
-abbreviation "ctrl \<equiv> IF (1/2 * (\<omega> - push)\<^sup>2 < g / L * cos(\<theta>)) THEN \<omega> ::= \<omega> - push ELSE skip"
+abbreviation "ctrl \<equiv> push ::= ?; IF (1/2 * (\<omega> - push)\<^sup>2 < g / L * cos(\<theta>)) THEN \<omega> ::= \<omega> - push ELSE skip"
 
-abbreviation "ode \<equiv> {\<theta>` = \<omega>, \<omega>` = -g/L * sin(\<theta>) - k * \<omega> | -pi < \<theta> \<and> \<theta> < pi}"
+abbreviation "ode \<equiv> {\<theta>` = \<omega>, \<omega>` = -g/L * sin(\<theta>) - k * \<omega> | -pi \<le> \<theta> \<and> \<theta> \<le> pi}"
 
-abbreviation "program \<equiv> LOOP (ctrl ; ode) INV (-pi < \<theta> \<and> \<theta> < pi \<and> g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L)"
+abbreviation "program \<equiv> LOOP (ctrl ; ode) INV (-pi \<le> \<theta> \<and> \<theta> \<le> pi \<and> g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L)"
 
-abbreviation "invariant \<equiv> (-pi < \<theta> \<and> \<theta> < pi \<and> (g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L))\<^sup>e"
+abbreviation "invariant \<equiv> (-pi \<le> \<theta> \<and> \<theta> \<le> pi \<and> (g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L))\<^sup>e"
 
 lemma ode_correct: "\<^bold>{@(invariant)\<^bold>} ode \<^bold>{@(invariant)\<^bold>}"
-  by (dInduct_mega, meson K_gr_0 dual_order.order_iff_strict mult_nonneg_nonneg zero_le_square)
+  apply dInduct_mega
+  using K_gr_0 by force
 
 lemma ctrl_correct: "\<^bold>{@(invariant)\<^bold>} ctrl \<^bold>{@(invariant)\<^bold>}"
   apply wlp_simp
   apply (simp_all add: usubst_eval)
   apply (expr_auto)
   using L_gr_0 apply (simp add: field_simps)
-  by (metis (no_types, opaque_lifting) distrib_left mult_less_cancel_left_pos)
+  by (smt (verit, del_insts) factorR(1) mult.commute mult.left_commute mult_less_cancel_left_pos)
 
 lemma inv_impl_postcondition: "`@(invariant) \<longrightarrow> - pi / 2 < \<theta> \<and> \<theta> < pi / 2`"
   by (metis (no_types, lifting) L_gr_0 SEXP_def g_gr_0 tautI trig_prop(1) trig_prop(2))
