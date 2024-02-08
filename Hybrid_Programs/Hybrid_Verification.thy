@@ -33,4 +33,12 @@ unbundle Hybrid_Program_Syntax
 lit_vars
 no_notation (ASCII) disj (infixr "|" 30)
 
+(* Should lens gets appear in VCs, it's better they are concise and pretty *)
+
+syntax
+  "_lens_get_pretty" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("_<_>" [999,0] 999)
+
+translations
+  "_lens_get_pretty x s" == "CONST lens_get x s"
+
 end

@@ -1,7 +1,7 @@
 section \<open> Pendulum with force \<close>
 
 theory Pendulum_with_force
-  imports "Hybrid-Verification.Proof_Automation" "HOL-Decision_Procs.Approximation"
+  imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
 lemma trig_prop:
@@ -42,18 +42,17 @@ abbreviation "program \<equiv> LOOP (ctrl ; ode) INV (-pi \<le> \<theta> \<and> 
 
 abbreviation "invariant \<equiv> (-pi \<le> \<theta> \<and> \<theta> \<le> pi \<and> (g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L))\<^sup>e"
 
-lemma ode_correct: "\<^bold>{@(invariant)\<^bold>} ode \<^bold>{@(invariant)\<^bold>}"
-  apply dInduct_mega
-  using K_gr_0 by force
+lemma ode_correct: "\<^bold>{invariant\<^bold>} ode \<^bold>{invariant\<^bold>}"
+  by (dInduct_mega, meson K_gr_0 dual_order.order_iff_strict mult_nonneg_nonneg zero_le_square)
 
-lemma ctrl_correct: "\<^bold>{@(invariant)\<^bold>} ctrl \<^bold>{@(invariant)\<^bold>}"
+lemma ctrl_correct: "\<^bold>{invariant\<^bold>} ctrl \<^bold>{invariant\<^bold>}"
   apply wlp_simp
   apply (simp_all add: usubst_eval)
   apply (expr_auto)
   using L_gr_0 apply (simp add: field_simps)
   by (smt (verit, del_insts) factorR(1) mult.commute mult.left_commute mult_less_cancel_left_pos)
 
-lemma inv_impl_postcondition: "`@(invariant) \<longrightarrow> - pi / 2 < \<theta> \<and> \<theta> < pi / 2`"
+lemma inv_impl_postcondition: "`invariant \<longrightarrow> - pi / 2 < \<theta> \<and> \<theta> < pi / 2`"
   by (metis (no_types, lifting) L_gr_0 SEXP_def g_gr_0 tautI trig_prop(1) trig_prop(2))
 
 lemma program_correct: "\<^bold>{\<theta> = 0 \<and> \<omega> = 0\<^bold>} program \<^bold>{- pi / 2 < \<theta> \<and> \<theta> < pi / 2\<^bold>}"
