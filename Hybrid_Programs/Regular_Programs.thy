@@ -117,6 +117,9 @@ subsection \<open> Nondeterministic choice \<close>
 definition nondet_choice :: "'s prog \<Rightarrow> 's prog \<Rightarrow> 's prog" (infixr "\<sqinter>" 60) 
   where [prog_defs]: "nondet_choice F G = (\<lambda> s. F s \<union> G s)"
 
+lemma le_choice_iff[simp]: "\<alpha> \<sqinter> \<beta> \<le> \<gamma> \<longleftrightarrow> (\<alpha> \<le> \<gamma> \<and> \<beta> \<le> \<gamma>)"
+  by (auto simp: le_fun_def nondet_choice_def)
+
 lemma fbox_choice [wlp]: "|F \<sqinter> G] P = ( |F] P \<and> |G] P)\<^sub>e"
   unfolding fbox_def nondet_choice_def by auto
 
@@ -149,6 +152,9 @@ subsection \<open> Sequential composition \<close>
 
 definition kcomp :: "('a \<Rightarrow> 'b set) \<Rightarrow> ('b \<Rightarrow> 'c set) \<Rightarrow> ('a  \<Rightarrow> 'c set)" (infixl ";" 62) 
   where [prog_defs]: "F ; G = \<mu> \<circ> (`) G \<circ> F"
+
+lemma in_kcomp_iff[simp]: "c \<in> (\<alpha> ; \<beta>) a \<longleftrightarrow> (\<exists>b. b \<in> \<alpha> a \<and> c \<in> \<beta> b)"
+  by (auto simp: kcomp_def)
 
 lemma kcomp_eq: "(f ; g) x = \<Union> {g y |y. y \<in> f x}"
   unfolding kcomp_def image_def by auto
@@ -286,6 +292,11 @@ lemma kcomp_kpower: "(f ; kpower f n) = (kpower f n; f)"
   by (induct n, simp_all add: kpower_base kcomp_id 
       kpower_Suc kpower_Suc' kcomp_assoc[symmetric])
 
+lemma in_kpower_plus: 
+  "b \<in> kpower \<alpha> m a \<Longrightarrow> c \<in> kpower \<alpha> n b \<Longrightarrow> c \<in> kpower \<alpha> (m + n) a"
+  by (induct n arbitrary: m c)
+    (auto simp: kpower_0 kpower_Suc')
+
 lemma kpower_inv: 
   fixes F :: "'a \<Rightarrow> 'a set"
   assumes "\<forall>s. I s \<longrightarrow> (\<forall>s'. s' \<in> F s \<longrightarrow> I s')" 
@@ -357,6 +368,39 @@ next
   then show "s' \<in> (f; f\<^sup>*) s" 
     unfolding kcomp_eq kstar_def 
     by auto
+qed
+
+lemma le_kstar: "\<beta> \<le> \<beta>\<^sup>*"
+  by (clarsimp simp add: le_fun_def kstar_def Union_eq)
+    (metis kpower_Suc_0)
+
+lemma mono_kcompR: "\<alpha> \<le> \<beta> \<Longrightarrow> (\<alpha> ; \<gamma>) \<le> (\<beta> ; \<gamma>)"
+  by (auto simp add: le_fun_def kcomp_def Union_eq)
+
+lemma mono_kcompL: "\<alpha> \<le> \<beta> \<Longrightarrow> (\<gamma> ; \<alpha>) \<le> (\<gamma> ; \<beta>)"
+  by (auto simp add: le_fun_def kcomp_def Union_eq)
+
+lemma kcomp_kstarR_le [simp]: "\<alpha> ; \<alpha>\<^sup>* \<le> \<alpha>\<^sup>*"
+  apply (clarsimp simp: le_fun_def kcomp_def kstar_def Union_eq)
+   apply (rename_tac s  s' n m)
+   apply (rule_tac x="kpower \<alpha> (Suc m) s" in exI)
+   apply (clarsimp simp: kcomp_eq kpower_Suc)
+  by (metis (no_types) kcomp_eq kpower_Suc)
+
+lemma kcomp_kstarL_le [simp]: "\<alpha>\<^sup>* ; \<alpha> \<le> \<alpha>\<^sup>*"
+  by (metis kcomp_kstar kcomp_kstarR_le)
+
+lemma idemp_kstar: "(\<alpha>\<^sup>* ; \<alpha>\<^sup>*) = \<alpha>\<^sup>*"
+proof (rule Orderings.antisym)
+  show "\<alpha>\<^sup>* ; \<alpha>\<^sup>* \<le> \<alpha>\<^sup>*"
+    by (clarsimp simp: le_fun_def kcomp_eq subset_eq kstar_def Union_eq)
+      (metis in_kpower_plus)
+next 
+  have "skip \<le> \<alpha>\<^sup>*"
+    by (clarsimp simp: le_fun_def skip_def kstar_def)
+      (metis kpower_base(1) singletonI)
+  thus "\<alpha>\<^sup>* \<le> \<alpha>\<^sup>* ; \<alpha>\<^sup>*"
+    by (metis kcomp_skip(1) mono_kcompL)
 qed
 
 lemma fbox_kstar: "|F\<^sup>*] Q = (\<lambda>s. \<forall>n. ( |kpower F n] Q) s)"

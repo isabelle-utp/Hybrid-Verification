@@ -671,4 +671,5 @@ lemma darboux_eq:
   apply (subst lframeD_cont_var; (clarsimp simp: indeps(1) lens_indep_sym vwbs(1))?)
   using yGhost(1,2) indeps vwbs dbx_hyp by expr_simp
 
+
 end

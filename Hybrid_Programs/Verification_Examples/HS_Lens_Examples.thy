@@ -730,6 +730,8 @@ lemma "\<^bold>{g \<ge> 0\<^bold>} blood_sugar \<^bold>{g \<ge> 0\<^bold>}"
 end
 
 
+subsubsection \<open> Flight collision \<close>
+
 expr_vars
 
 lemma diffInvariant:
