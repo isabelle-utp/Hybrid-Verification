@@ -796,8 +796,12 @@ proof -
 
   have plant_safe_J: "\<^bold>{\<omega> = 1 \<and> @J\<^bold>} plant \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
     unfolding plant_def apply (dInv "(\<omega>=1 \<and> @J)\<^sup>e", dWeaken)
-    by (smt (z3) cos_le_one mult_if_delta mult_le_cancel_iff2 
-          mult_left_le sum_squares_gt_zero_iff v\<^sub>i_pos v\<^sub>o_pos)
+    by (metis add.right_neutral cos_le_one distrib_left less_add_same_cancel2 
+        linorder_not_le linordered_comm_semiring_strict_class.comm_mult_strict_left_mono 
+        mult.right_neutral mult_zero_left not_less_iff_gr_or_eq pos_add_strict 
+        sum_squares_gt_zero_iff v\<^sub>i_pos v\<^sub>o_pos)
+    (* by (smt (z3) cos_le_one mult_if_delta mult_le_cancel_iff2 
+          mult_left_le sum_squares_gt_zero_iff v\<^sub>i_pos v\<^sub>o_pos) *)
 
     show ?thesis
     unfolding flight_def apply (intro hoare_kstar_inv hoare_kcomp[OF ctrl_post])
