@@ -598,8 +598,9 @@ lemma increasing_on_trans:
   fixes f :: "'a::linorder \<Rightarrow> 'b::preorder"
   shows "a \<le> b \<Longrightarrow> b \<le> c \<Longrightarrow> increasing_on {a..b} f 
   \<Longrightarrow> increasing_on {b..c} f \<Longrightarrow> increasing_on {a..c} f"
-  unfolding increasing_on_def  
-  by auto (smt (verit, best) intervalE nle_le order_trans)
+  unfolding increasing_on_def 
+  by (auto simp: Ball_def)
+    (metis dual_order.trans nle_le)
 
 definition "decreasing_on T f \<longleftrightarrow> (\<forall>x\<in>T. \<forall>y\<in>T. x \<le> y \<longrightarrow> f y \<le> f x)"
 

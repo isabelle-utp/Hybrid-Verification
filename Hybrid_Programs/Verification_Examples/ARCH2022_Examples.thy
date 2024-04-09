@@ -329,7 +329,7 @@ lemma "(x \<ge> 0 \<and> y \<ge>0 \<and> z \<ge> 0)\<^sub>e \<le> |{x` = y, y` =
 end
 
 
-subsubsection \<open> 14. 4 \<close> (**)
+subsubsection \<open> 14. Dynamics: Triple integrator \<close> (**)
 
 dataspace four_vars =
   variables 
@@ -3317,7 +3317,7 @@ end
 
 
 
-(*
+(*N
 
 % Report/summary of unsolved problems
 % 1. Dynamics: Fractional Darboux equality: 
@@ -3337,5 +3337,6 @@ end
 % 8. Benchmarks/Nonlinear/Arrowsmith Place Fig_3_11 page 83:
       Requires darboux rule
 *)
+
 
 end
