@@ -2560,9 +2560,9 @@ lemma local_flow_LICS3: "local_flow_on [v \<leadsto> c, x \<leadsto> $v] (x +\<^
       {x' = v, v' = a, t' = 1 & v >= 0 & t <= ep()}
     }*@invariant(v^2<=2*b()*(m()-x))
   ]x<=m() *)
-lemma "`|{x` = v, v` = -b}](x\<le>m \<and> v \<ge> 0 \<and> A \<ge> 0 \<and> b > 0) 
+lemma "`|{x` = v, v` = -b}] (x\<le>m \<and> v \<ge> 0 \<and> A \<ge> 0 \<and> b > 0) 
   \<longrightarrow> |LOOP ((\<questiondown>(2*b*(m-x) \<ge> v\<^sup>2+(A + b)*(A*\<epsilon>\<^sup>2+2*\<epsilon>* v))?;a ::= A) \<sqinter> (a ::= -b)); t::=0;
-  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)} INV (v\<^sup>2 \<le> 2*b*(m - x))](x\<le>m)`"
+  {x` = v, v` = a, t` = 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)} INV (v\<^sup>2 \<le> 2*b*(m - x))] (x\<le>m)`"
   apply (clarsimp simp: wlp fbox_g_dL_easiest[OF local_flow_LICS3] taut_def)
   apply (rule in_fbox_loopI)
     apply (expr_simp, frule bspec[where x=0]; clarsimp)
@@ -2638,7 +2638,7 @@ context LICS
 begin
 
 (* v>=0 & b>0 -> ( v^2<=2*b*(m-x) <-> [{x'=v, v'=-b}]x<=m ) *)
-lemma "`v \<ge> 0 \<and> b > 0 \<longrightarrow> (v\<^sup>2 \<le> 2*b*(m-x) \<longleftrightarrow> |{x` = v, v` = -b}](x\<le>m))`"
+lemma "`v \<ge> 0 \<and> b > 0 \<longrightarrow> (v\<^sup>2 \<le> 2*b*(m-x) \<longleftrightarrow> |{x` = v, v` = -b}] (x\<le>m))`"
   by (clarsimp simp: taut_def wlp fbox_g_dL_easiest[OF local_flow_LICS3]; expr_simp)
     (auto simp: LICSexample5_arith1 LICSexample5_arith2)
 
@@ -2693,7 +2693,7 @@ lemma local_flow_LICS4: "local_flow_on [t \<leadsto> 1, v \<leadsto> c, x \<lead
     2*b*(m-x) >= v^2 + (A + b)*(A*ep^2 + 2*ep*v)
    ) *)
 lemma "`v \<ge> 0 \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0 \<longrightarrow> 
-    ( |t::=0; {x` = v, v` = A, t` = 1| (t \<le> \<epsilon>)}]|{x` = v, v` = -b}](x\<le>m))
+    ( |t::=0; {x` = v, v` = A, t` = 1| (t \<le> \<epsilon>)}]|{x` = v, v` = -b}] (x\<le>m))
     \<longleftrightarrow> 
     2*b*(m-x) \<ge> v\<^sup>2 + (A + b)*(A*\<epsilon>\<^sup>2 + 2*\<epsilon>* v)`"
   apply (clarsimp simp: wlp taut_def fbox_g_dL_easiest[OF local_flow_LICS3] 
@@ -2743,7 +2743,7 @@ lemma local_flow_LICS7: "local_flow_on [t \<leadsto> 1, v \<leadsto> a, x \<lead
       {x'=v, v'=a, t'=1 & v>=0 & t<=ep}
     }*@invariant([{x'=v, v'=-b}](x<=m))
   ] (x <= m) *)
-lemma "`(( |{x` = v, v` = -b}](x \<le> m))
+lemma "`(( |{x` = v, v` = -b}] (x \<le> m))
    \<and> v \<ge> 0
    \<and> A \<ge> 0
    \<and> b > 0)
@@ -2753,10 +2753,10 @@ lemma "`(( |{x` = v, v` = -b}](x \<le> m))
         a ::= A) \<sqinter> a ::= -b);
     t ::= 0;
     {x `= v, v `= a, t `= 1 | (v \<ge> 0 \<and> t \<le> \<epsilon>)}
-    ) INV ( |{x `= v, v `= -b}](x \<le> m))
+    ) INV ( |{x `= v, v `= -b}] (x \<le> m))
   ] (x \<le> m))`"
   apply (subst impl_eq_leq)
-  apply (subst change_loopI[where I="( |{x `= v, v `= -b}](x \<le> m) \<and> A \<ge> 0 \<and> b > 0)\<^sup>e"])
+  apply (subst change_loopI[where I="( |{x `= v, v `= -b}] (x \<le> m) \<and> A \<ge> 0 \<and> b > 0)\<^sup>e"])
   apply (rule fbox_loopI)
     apply (clarsimp)
   apply (wlp_flow local_flow: local_flow_LICS3, clarsimp simp: le_fun_def)
@@ -2946,6 +2946,8 @@ end
 
 subsection \<open> Harmonic oscillator \<close>
 
+find_theorems "0 < _ \<Longrightarrow> _ * _ \<le> _ * _ \<longleftrightarrow> _ \<le> _"
+
 lemma hosc_arith:
   assumes "b\<^sup>2 + 4 * a > 0" and "a < 0" and "b \<le> 0" and "t \<ge> 0" and "k > 0"
   shows "k * (b - sqrt (b\<^sup>2 + 4 * a)) * exp (t * (b + sqrt (b\<^sup>2 + 4 * a)) / 2) / (2 * sqrt (b\<^sup>2 + 4 * a))
@@ -2960,7 +2962,7 @@ proof-
     unfolding exp_le_cancel_iff 
     using assms(4) by (case_tac "t=0", simp_all)
   hence "?c2 * exp ?t2 \<le> ?c2 * exp ?t1"
-    using f1 f2 mult_le_cancel_iff2[of "-?c2" "exp ?t1" "exp ?t2"] by linarith 
+    using f1 f2 mult_le_cancel_left_pos[of "-?c2" "exp ?t1" "exp ?t2"] by linarith 
   also have "... < ?c1 * exp ?t1"
     using f1 by auto
   also have"... \<le> ?c1 * exp ?t1"

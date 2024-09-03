@@ -152,7 +152,8 @@ lemma vderiv_on_mtx_vec_multI[vderiv_intros]:
   unfolding has_vderiv_on_def has_vector_derivative_def 
   apply clarsimp
   apply(erule_tac x=x in ballE, simp_all)+
-  apply(rule derivative_eq_intros(160))
+  thm  derivative_eq_intros(162)
+  apply(rule derivative_eq_intros(162))
   by (auto simp: fun_eq_iff mtx_vec_scaleR_commute 
       pth_6 scaleR_mtx_vec_assoc)
 

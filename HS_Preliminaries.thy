@@ -1334,4 +1334,5 @@ proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
     by (rule_tac x=1 in exI, auto)
 qed
 
+
 end
