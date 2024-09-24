@@ -45,9 +45,8 @@ lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
 lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
   apply (simp add: wlp usubst_eval taut_def)
   \<comment> \<open> (4) Expand out lenses and split state space \<close>
-  apply (simp add:  lens_defs)
+  apply (simp add:  field_simps)
   \<comment> \<open> (5) Discharge the remaining proof obligation \<close>
-  apply (simp add: field_simps)
   using less_1_mult apply fastforce 
   done
 

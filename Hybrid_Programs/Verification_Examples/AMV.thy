@@ -314,17 +314,19 @@ abbreviation "AMV \<equiv> (Navigation ; LRE ; AP ; Kinematics)\<^sup>*"
 
 subsection \<open> Structural Properties \<close>
 
-lemma AP_nmods: "AP nmods {p, v, s, \<phi>, t}"
-  by (simp add: closure)
+lemma AP_nmods: "AP nmods (p, v, s, \<phi>, t)"
+  by (auto intro!: closure; subst_eval)
 
-lemma LRE_nmods: "LRE nmods {p, v, a, s, \<phi>, t}"
-  by (simp add: closure)
+lemma LRE_nmods: "LRE nmods (p, v, a, s, \<phi>, t)"
+  by (auto intro!: closure; subst_eval)
 
 lemma axAV_LRE_inv: "\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}LRE\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}"
-  by (rule nmods_invariant[OF LRE_nmods], unrest)
+  apply (rule nmods_invariant)
+  by (auto intro!: closure; subst_eval)
 
 lemma axAV_AP_inv: "\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}AP\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}"
-  by (rule nmods_invariant[OF AP_nmods], unrest)
+  apply (rule nmods_invariant)
+  by (auto intro!: closure; subst_eval)
 
 subsection \<open> Invariants \<close>
 

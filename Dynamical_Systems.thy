@@ -44,8 +44,9 @@ lemma ivp_solsD:
 lemma in_ivp_sols_subset:
   "t\<^sub>0 \<in> (U s) \<Longrightarrow> (U s) \<subseteq> (T s) \<Longrightarrow> X \<in> Sols T S f t\<^sub>0 s \<Longrightarrow> X \<in> Sols U S f t\<^sub>0 s "
   apply(rule ivp_solsI)
-  using ivp_solsD(1,2) has_vderiv_on_subset 
-     apply blast+
+  using ivp_solsD(1,2) has_vderiv_on_subset apply metis
+  using ivp_solsD(1,2) has_vderiv_on_subset apply fastforce
+  using ivp_solsD(1-3) has_vderiv_on_subset apply fastforce
   by (drule ivp_solsD(3)) auto
 
 abbreviation "down U t \<equiv> {\<tau> \<in> U. \<tau> \<le> t}"
