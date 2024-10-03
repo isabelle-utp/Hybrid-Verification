@@ -121,16 +121,16 @@ lemma cMax_finite_ex:
   apply(subst cSup_eq_Max[symmetric])
   using cSup_finite_ex by auto
 
-(* Updated shorted proof thanks to Vincent Jackson *)
+(* Update: shortened proof thanks to Vincent Jackson *)
 lemma finite_nat_minimal_witness:
   fixes P :: "('a::finite) \<Rightarrow> nat \<Rightarrow> bool"
   assumes "\<forall>i. \<exists>N::nat. \<forall>n \<ge> N. P i n"
   shows "\<exists>N. \<forall>i. \<forall>n \<ge> N. P i n" 
 proof-
-  obtain f where \<open>\<forall>i n. f i \<le> n \<longrightarrow> P i n\<close>
+  obtain f where "\<forall>i n. f i \<le> n \<longrightarrow> P i n"
      using assms
      by metis \<comment> \<open> using choice \<close>
-   then have \<open>\<forall>i. \<forall>n\<ge>Max (range f). P i n\<close>
+   then have "\<forall>i. \<forall>n\<ge>Max (range f). P i n"
      by simp
    then show ?thesis
      by blast
