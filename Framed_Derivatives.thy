@@ -30,6 +30,7 @@ abbreviation expr_differentiable ("differentiable\<^sub>e")
   where "expr_differentiable f \<equiv> differentiable\<^sub>e f on id_lens"
 
 named_theorems ldifferentiable
+full_exprs
 
 lemma differentiable_number [ldifferentiable]:
   "differentiable\<^bsub>x\<^esub> 0 within S when G" 

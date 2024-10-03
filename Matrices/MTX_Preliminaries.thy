@@ -121,29 +121,19 @@ lemma cMax_finite_ex:
   apply(subst cSup_eq_Max[symmetric])
   using cSup_finite_ex by auto
 
+(* Updated shorted proof thanks to Vincent Jackson *)
 lemma finite_nat_minimal_witness:
   fixes P :: "('a::finite) \<Rightarrow> nat \<Rightarrow> bool"
   assumes "\<forall>i. \<exists>N::nat. \<forall>n \<ge> N. P i n"
   shows "\<exists>N. \<forall>i. \<forall>n \<ge> N. P i n" 
 proof-
-  let "?bound i" = "(LEAST N. \<forall>n \<ge> N. P i n)"
-  let ?N = "Max {?bound i |i. i \<in> UNIV}"
-  {fix n::nat and i::'a 
-    assume "n \<ge> ?N" 
-    obtain M where "\<forall>n \<ge> M. P i n" 
-      using assms by blast
-    hence obs: "\<forall> m \<ge> ?bound i. P i m"
-      using LeastI[of "\<lambda>N. \<forall>n \<ge> N. P i n"] by blast
-    have "finite {?bound i |i. i \<in> UNIV}"
-      by simp
-    hence "?N \<ge> ?bound i"
-      using Max_ge by blast
-    hence "n \<ge> ?bound i" 
-      using \<open>n \<ge> ?N\<close> by linarith
-    hence "P i n" 
-      using obs by blast}
-  thus "\<exists>N. \<forall>i n. N \<le> n \<longrightarrow> P i n" 
-    by blast
+  obtain f where \<open>\<forall>i n. f i \<le> n \<longrightarrow> P i n\<close>
+     using assms
+     by metis \<comment> \<open> using choice \<close>
+   then have \<open>\<forall>i. \<forall>n\<ge>Max (range f). P i n\<close>
+     by simp
+   then show ?thesis
+     by blast
 qed
 
 
