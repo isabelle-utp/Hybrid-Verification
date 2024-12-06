@@ -103,10 +103,19 @@ Active
   where c = if active then h else 0
 *)
 
+subsection \<open> Improved thermostat \<close>
+
+text \<open>
+This thermostat hybrid model improves on the literature versions by adding 
+a guard and modifying the control so that it reacts before surpassing the
+comfortable temperatures @{term Tmin} and @{term Tmax}. The consequence
+is that we can prove that the room's temperature @{term T} always remains 
+within the comfortable range @{term "{Tmin--Tmax}"}.
+\<close>
+
 lemma local_flow1: "local_flow_on [T \<leadsto> - K * (T - c), t \<leadsto> 1] (T +\<^sub>L t) UNIV UNIV
   (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c, t \<leadsto> \<tau> + t])"
   by local_flow_on_auto
-
 
 abbreviation "dyn1 \<equiv> IF \<not> active 
   THEN {T` = - K * T, t` = 1 | t \<le> - (ln (Tmin/temp))/K} 
@@ -122,17 +131,14 @@ abbreviation "inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax)\<^sub>e"
 
 abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0)\<^sub>e"
 
-lemma weird_intro_rule: "(
-(inv1 \<le> |F] pos_inv1)
-\<Longrightarrow> (pos_inv1 \<le> |G] inv1)
-\<Longrightarrow> (inv1 \<le> |F] fbox G inv1)
-)"
+lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
+  \<Longrightarrow> (pos_inv1 \<le> |G] inv1)
+  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
   apply (expr_simp add: fbox_def)
   unfolding le_fun_def le_bool_def
   by blast
-  
 
-lemma
+lemma thermostat1:
   "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
     (LOOP (ctrl1; dyn1) INV (Tmin \<le> T \<and> T \<le> Tmax))
    \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
@@ -149,6 +155,56 @@ lemma
   apply (wlp_full local_flow: local_flow1[where c=h, simplified])
   using temp_dyn_up_real_arith[OF K_ge0 _ _ Tmax_le_Tlim] apply auto[1]
   using temp_dyn_up_real_arith[OF K_ge0 _ _ Tmax_le_Tlim] 
+  by expr_auto+
+
+
+subsection \<open> Original thermostat \<close>
+
+text \<open>
+This original thermostat model is reactionary. It changes when it detects that
+the temperature of the room is uncomfortable. Thus, it can only prove the
+weaker condition @{term "Tmin \<le> $T \<or> $T \<le> Tmax"}.
+\<close>
+
+
+abbreviation "dyn2 \<equiv> IF \<not> active THEN {T` = - K * T} ELSE {T` = - K * (T - h)}"
+
+abbreviation "pre_ctrl2 \<equiv> 
+  IF \<not> active \<and> temp \<le> Tmin THEN active ::= True
+  ELSE IF active \<and> temp \<ge> Tmax THEN active ::= False ELSE skip"
+
+abbreviation "ctrl2 \<equiv> temp ::= T; pre_ctrl1"
+
+abbreviation "inv2 \<equiv> (Tmin \<le> $T \<or> $T \<le> Tmax)\<^sub>e"
+
+abbreviation "pos_inv2 \<equiv> ((Tmin \<le> $T \<or> $T \<le> Tmax) \<and> temp = T)\<^sub>e"
+
+lemma weird_intro_rule2: "(inv1 \<le> |F] pos_inv2)
+  \<Longrightarrow> (pos_inv2 \<le> |G] inv2)
+  \<Longrightarrow> (inv2 \<le> |F] fbox G inv2)"
+  apply (expr_simp add: fbox_def)
+  unfolding le_fun_def le_bool_def
+  using Tmin_le_Tmax by linarith
+
+lemma local_flow2: "local_flow_on [T \<leadsto> - K * (T - c)] T UNIV UNIV
+  (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c])"
+  by local_flow_on_auto
+
+lemma thermostat2:
+  "\<^bold>{Tmin \<le> T \<or> T \<le> Tmax\<^bold>} 
+    (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<or> T \<le> Tmax))
+   \<^bold>{Tmin \<le> T \<or> T \<le> Tmax\<^bold>}"
+  apply (intro_loops)
+    apply (subst fbox_kcomp)
+  apply (rule weird_intro_rule2)
+     apply (wlp_full)
+    apply (rule hoare_if_then_else)
+     apply (wlp_full local_flow: local_flow2[where c=0, simplified])
+  using Tmin_le_Tmax apply linarith
+  using Tmin_le_Tmax apply linarith
+     apply (wlp_full local_flow: local_flow2[where c=h, simplified])
+  using Tmin_le_Tmax apply linarith
+  using Tmin_le_Tmax apply linarith
   by expr_auto+
 
 
