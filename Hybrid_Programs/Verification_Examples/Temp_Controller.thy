@@ -162,50 +162,59 @@ subsection \<open> Original thermostat \<close>
 
 text \<open>
 This original thermostat model is reactionary. It changes when it detects that
-the temperature of the room is uncomfortable. Thus, it can only prove the
-weaker condition @{term "Tmin \<le> $T \<or> $T \<le> Tmax"}.
+the temperature of the room is uncomfortable. Thus, the guards directly correspond 
+to the invariant to guarantee the preservation of @{term "Tmin \<le> $T \<and> $T \<le> Tmax"}.
 \<close>
 
 
-abbreviation "dyn2 \<equiv> IF \<not> active THEN {T` = - K * T} ELSE {T` = - K * (T - h)}"
+abbreviation "dyn2 \<equiv> IF \<not> active 
+  THEN {T` = - K * T | Tmin \<le> T} 
+  ELSE {T` = - K * (T - h) | T \<le> Tmax}"
 
 abbreviation "pre_ctrl2 \<equiv> 
   IF \<not> active \<and> temp \<le> Tmin THEN active ::= True
   ELSE IF active \<and> temp \<ge> Tmax THEN active ::= False ELSE skip"
 
-abbreviation "ctrl2 \<equiv> temp ::= T; pre_ctrl1"
+abbreviation "ctrl2 \<equiv> temp ::= T; pre_ctrl2"
 
-abbreviation "inv2 \<equiv> (Tmin \<le> $T \<or> $T \<le> Tmax)\<^sub>e"
-
-abbreviation "pos_inv2 \<equiv> ((Tmin \<le> $T \<or> $T \<le> Tmax) \<and> temp = T)\<^sub>e"
+abbreviation "pos_inv2 \<equiv> ((Tmin \<le> $T \<and> $T \<le> Tmax) \<and> temp = T)\<^sub>e"
 
 lemma weird_intro_rule2: "(inv1 \<le> |F] pos_inv2)
-  \<Longrightarrow> (pos_inv2 \<le> |G] inv2)
-  \<Longrightarrow> (inv2 \<le> |F] fbox G inv2)"
+  \<Longrightarrow> (pos_inv2 \<le> |G] inv1)
+  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
   apply (expr_simp add: fbox_def)
   unfolding le_fun_def le_bool_def
-  using Tmin_le_Tmax by linarith
+  using Tmin_le_Tmax
+  by meson
 
 lemma local_flow2: "local_flow_on [T \<leadsto> - K * (T - c)] T UNIV UNIV
   (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c])"
   by local_flow_on_auto
 
 lemma thermostat2:
-  "\<^bold>{Tmin \<le> T \<or> T \<le> Tmax\<^bold>} 
-    (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<or> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<or> T \<le> Tmax\<^bold>}"
+  assumes le0: "Tmin \<le> Tmax"
+  shows "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+    (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<and> T \<le> Tmax))
+   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
   apply (intro_loops)
     apply (subst fbox_kcomp)
   apply (rule weird_intro_rule2)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow2[where c=0, simplified])
-  using Tmin_le_Tmax apply linarith
-  using Tmin_le_Tmax apply linarith
-     apply (wlp_full local_flow: local_flow2[where c=h, simplified])
-  using Tmin_le_Tmax apply linarith
-  using Tmin_le_Tmax apply linarith
+     apply (smt (verit, best) K_ge0 Tmin_ge0 assms div_by_1 exp_ge_zero exp_le_one_iff 
+      max_zero_mult_nonneg_le minus_mult_minus mult.commute mult_eq_0_iff mult_le_0_iff 
+      mult_nonneg_nonneg mult_right_mono_neg nonzero_mult_div_cancel_left one_le_exp_iff 
+      times_divide_eq_left)
+    apply (wlp_full local_flow: local_flow2[where c=h, simplified])
+  using K_ge0 Tmin_ge0 assms
+    apply (smt (verit, best) Groups.mult_ac(2) Tmax_le_Tlim div_by_1 divide_self_if exp_zero 
+      landau_omega.R_mult_left_mono mult_eq_0_iff mult_sign_intros(1) nonzero_mult_div_cancel_left 
+      nonzero_mult_div_cancel_right one_le_exp_iff times_divide_eq_right) 
   by expr_auto+
+
+lemma "Tmin \<le> Tmax \<Longrightarrow> Tmin \<le> T' \<or> T' \<le> Tmax" for T'::real
+  by linarith
 
 
 end
