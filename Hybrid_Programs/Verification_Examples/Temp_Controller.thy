@@ -216,8 +216,66 @@ lemma thermostat2:
 lemma "Tmin \<le> Tmax \<Longrightarrow> Tmin \<le> T' \<or> T' \<le> Tmax" for T'::real
   by linarith
 
+(*
+T(\<tau>) = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
+\<and> t(\<tau>) = \<tau> + t\<^sub>0
+\<and> active \<longrightarrow> c = h \<and> \<not> active \<longrightarrow> c = 0
+
+where T\<^sub>0 is the initial value of the temperature that due to our precondition we 
+assume to satisfy Tmin \<le> T\<^sub>0 \<le> Tmax < h.
+Let N \<ge> 3, be the number of segments that we are splitting the interval [Tmin, Tmax]:
+
+If c=h (i.e. active):
+T\<^sub>0 + (Tmax - Tmin)/N = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
+\<Longrightarrow> (Tmax - Tmin)/N + T\<^sub>0 - h = - exp (-K * \<tau>) * (h - T\<^sub>0)
+\<Longrightarrow> (Tmax - Tmin)/N + N * (T\<^sub>0 - h)/N = exp (-K * \<tau>) * (T\<^sub>0 - h)
+\<Longrightarrow> (Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1 = exp (-K * \<tau>)
+\<Longrightarrow> ln ((Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1) = -K * \<tau>
+
+We want 1 \<ge> (Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1 > 0
+\<Longleftrightarrow> 0 \<ge> (Tmax - Tmin)/(N * (T\<^sub>0 - h)) > -1
+because in that way, the logarithm exists
+(due to the right inequality) and the 
+magnitudes have physical sense (ln returns a negative due 
+to the left inequality).
+
+Observe that because of Tmax > Tmin \<and> N \<ge> 3 \<and> T\<^sub>0 < h:
+0 > (Tmax - Tmin)/(N * (T\<^sub>0 - h))
+
+However, we must require Tmax - Tmin < N * (h - T\<^sub>0)
+to guarantee that (Tmax - Tmin)/(N * (h - T\<^sub>0)) < 1
+(and thus that (Tmax - Tmin)/(N * (T\<^sub>0 - h)) > -1).
+It suffices to require that Tmax - Tmin < h - Tmax
+(we could relax this condition).
+
+If this holds, then we could define the guard for active as
+\<tau> \<le> -K\<^sup>-\<^sup>1 * ln ((Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1) 
+
+Similarly, if c=0 (i.e. if inactive):
+T\<^sub>0 - (Tmax - Tmin)/N = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
+\<Longrightarrow> T\<^sub>0 - (Tmax - Tmin)/N = T\<^sub>0 * exp (-K * \<tau>)
+\<Longrightarrow> 1 - (Tmax - Tmin)/(N * T\<^sub>0) = exp (-K * \<tau>)
+
+Then we want 1 > 1 - (Tmax - Tmin)/(N * T\<^sub>0) > 0
+\<Longleftrightarrow> 0 < (Tmax - Tmin)/(N * T\<^sub>0) < 1
+
+Thus, we need Tmax - Tmin < N * T\<^sub>0
+It suffices to require that Tmax - Tmin < Tmin
+
+If this holds, then we could define the guard for inactive as
+\<tau> \<le> -K\<^sup>-\<^sup>1 * ln (1 - (Tmax - Tmin)/(N * T\<^sub>0))
+
+Now the condition for the control.
+At most, if the guards are defined as above, the temperature
+will increase (or decrease) (Tmax - Tmin)/N.
+Thus, we can define:
+pre_ctrl \<equiv> 
+  IF \<not> active \<and> temp - 1.1 * (Tmax - Tmin)/N \<le> Tmin THEN active ::= True
+  ELSE IF active \<and> temp + 1.1 * (Tmax - Tmin)/N \<ge> Tmax THEN active ::= False ELSE skip
+
+*)
+
 
 end
-
 
 end
