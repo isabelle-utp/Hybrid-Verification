@@ -94,7 +94,6 @@ lemma H_assign_floyd_hoare:
 lemma fdia_assign: "|x ::= e\<rangle> P = (P\<lbrakk>e/x\<rbrakk>)\<^sub>e"
   by (simp add: assigns_def expr_defs fdia_def)
 
-
 subsection \<open> Nondeterministic assignments \<close>
 
 definition nondet_assign :: "('a \<Longrightarrow> 's) \<Rightarrow> 's prog" ("(2_ ::= ?)" [64] 65)
@@ -218,7 +217,7 @@ subsection \<open> Conditional statement \<close>
 definition ifthenelse :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set)" where
   [prog_defs]: "ifthenelse P X Y \<equiv> (\<lambda>s. if P s then X s else Y s)"
 
-syntax "_ifthenelse" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("IF _ THEN _ ELSE _" [0,0,63] 64)
+syntax "_ifthenelse" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _ /ELSE _)" [0,0,63] 64)
 translations "IF P THEN X ELSE Y" == "CONST ifthenelse (P)\<^sub>e X Y"
 
 lemma if_then_else_eq: "IF T THEN X ELSE Y = \<questiondown>T? ; X \<sqinter> \<questiondown>\<not> T? ; Y"
@@ -734,7 +733,7 @@ subsection \<open> Loops with annotated invariants \<close>
 definition loopi :: "('a \<Rightarrow> 'a set) \<Rightarrow> 'a pred \<Rightarrow> ('a \<Rightarrow> 'a set)" 
   where [prog_defs]: "loopi F I \<equiv> (F\<^sup>*)"
 
-syntax "_loopi" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("LOOP _ INV _" [0, 63] 64)
+syntax "_loopi" :: "logic \<Rightarrow> logic \<Rightarrow> logic" ("(2LOOP _ /INV _)" [0, 63] 64)
 translations "_loopi F I" == "CONST loopi F (I)\<^sub>e"
 
 lemma change_loopI: "LOOP X INV G = LOOP X INV I"

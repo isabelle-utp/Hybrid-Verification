@@ -122,7 +122,8 @@ too (\<forall>s'. Q s' \<longrightarrow> (\<exists>s. s' \<in> F s \<and> P s)).
 subsection \<open> Hoare triple \<close>
 
 syntax
-  "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("\<^bold>{_\<^bold>}/ _ /\<^bold>{_\<^bold>}")
+  "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2\<^bold>{_\<^bold>}/_) /\<^bold>{_\<^bold>}")
+  "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2H{_} /_) /{_}")
 
 translations
   "\<^bold>{p\<^bold>}S\<^bold>{q\<^bold>}" == "(p)\<^sub>e \<le> |S] q"
