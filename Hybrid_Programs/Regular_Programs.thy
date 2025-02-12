@@ -166,7 +166,7 @@ lemma kcomp_id:
 
 lemmas kcomp_skip = kcomp_id[unfolded skip_def[symmetric]]
 
-lemma kcomp_assoc: "f ; g ; h = f ; (g ; h)"
+lemma kcomp_assoc: "(f ; g) ; h = f ; (g ; h)"
   unfolding kcomp_eq 
   by (auto simp: fun_eq_iff)
 
@@ -223,9 +223,12 @@ translations "IF P THEN X ELSE Y" == "CONST ifthenelse (P)\<^sub>e X Y"
 lemma if_then_else_eq: "IF T THEN X ELSE Y = \<questiondown>T? ; X \<sqinter> \<questiondown>\<not> T? ; Y"
   by (auto simp: fun_eq_iff test_def kcomp_def ifthenelse_def nondet_choice_def)
 
-lemma fbox_if_then_else [simp]:
+lemma fbox_if_then_else (* [simp] *)[wlp]:
   "|IF T THEN X ELSE Y] Q = ((T \<longrightarrow> |X] Q) \<and> (\<not> T \<longrightarrow> |Y] Q))\<^sub>e"
   unfolding fbox_def ifthenelse_def by auto
+
+lemma seq_ifthenelse_distl: "(IF B THEN P ELSE Q) ; R = IF B THEN (P ; R) ELSE (Q ; R)"
+  by (simp add: ifthenelse_def fun_eq_iff kcomp_def)
 
 lemma hoare_if_then_else:
   assumes "\<^bold>{P \<and> T\<^bold>} X \<^bold>{Q\<^bold>}"
