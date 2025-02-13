@@ -63,7 +63,7 @@ proof-
 qed
 
 
-dataspace sys = 
+dataspace thermostat = 
   constants 
     Tmax :: real (* maximum comfortable temp. *)
     Tmin :: real (* minimum comfortable temp. *)
@@ -81,7 +81,7 @@ dataspace sys =
     (* program *)
     temp :: real   (* for temperature measurements *)
     active :: bool (* whether thermostat is on or off *)
-context sys
+context thermostat
 begin
 
 (*
@@ -147,7 +147,6 @@ lemma thermostat1:
     apply(intro conjI weird_intro_rule)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
-  using Tmin_ge0
   apply (wlp_full local_flow: local_flow1[where c=0, simplified])
       apply (wlp_full local_flow: local_flow1)
   using temp_dyn_down_real_arith[OF K_ge0 Tmin_ge0] apply auto[1]
@@ -216,6 +215,180 @@ lemma thermostat2:
 lemma "Tmin \<le> Tmax \<Longrightarrow> Tmin \<le> T' \<or> T' \<le> Tmax" for T'::real
   by linarith
 
+
+end
+
+lemma decr_in_ivl:
+  assumes "(K::real) > 0" and "0 < \<epsilon>" and "\<epsilon> < Tmin" and "h > Tmax + \<epsilon>" and "t \<ge> 0"
+    and T_ivl1: "\<not> T \<le> Tmin + 11 * \<epsilon> / 10"
+    and key: "t \<le> - (ln (1 - \<epsilon> / T) / K)" (is "t \<le> - (ln ?expr / K)")
+  shows "Tmin \<le> exp (- (K * t)) * T"
+proof-
+  have "?expr > 0"
+    using assms by auto
+  hence "exp (- (K * t)) \<ge> 1 - \<epsilon> / T"
+    using key
+    by (metis add.inverse_inverse \<open>K > 0\<close> pos_le_minus_divide_eq
+        exp_le_cancel_iff exp_ln mult.commute neg_le_iff_le) 
+  hence "T - T *  exp (- (K * t)) \<le> \<epsilon>"
+    by (smt (verit, ccfv_SIG) T_ivl1 \<open>0 < \<epsilon>\<close> \<open>\<epsilon> < Tmin\<close> 
+        divide_less_eq_1_pos factor_fracR(2) mult_left_le 
+        mult_pos_pos times_divide_eq_right zero_le_divide_iff)
+  moreover have "T - Tmin \<ge> 1.1 * \<epsilon>"
+    using T_ivl1 
+    by auto
+  ultimately show "Tmin \<le> exp (- (K * t)) * T"
+    using \<open>0 < \<epsilon>\<close> by argo
+qed
+
+lemma incr_in_ivl:
+  assumes "(K::real) > 0" and "0 < \<epsilon>" and "\<epsilon> < Tmin" and "h > Tmax + \<epsilon>" and "t \<ge> 0"
+    and "Tmin \<le> T"
+    and T_ivl2: "\<not> Tmax - 11 * \<epsilon> / 10 \<le> T"
+    and key: "t \<le> - (ln (\<epsilon> / (T - h) + 1) / K)" (is "t \<le> - (ln ?expr / K)")
+  shows "h - exp (- (K * t)) * (h - T) \<le> Tmax"
+proof-
+  have "exp (- (K * t)) * T \<le> T"
+    using assms
+    by force
+  hence "?expr > 0"
+    using \<open>\<epsilon> > 0\<close>
+    by (smt (verit) \<open>h > Tmax + \<epsilon>\<close> T_ivl2 divide_less_eq_1_neg 
+        divide_minus_left divide_nonneg_nonneg) 
+  hence "?expr \<le> exp (- K * t)"
+    using key
+    by (smt (verit, best) \<open>K > 0\<close> divide_minus_left divide_pos_pos exp_ln 
+        factor_fracR(4) ln_ge_iff mult_eq_0_iff mult_minus_left mult_nonneg_nonneg)
+  hence "h - exp (- (K * t)) * (h - T) \<le> h + ?expr * (T - h)"
+    using assms
+    by (smt (verit, ccfv_threshold) divide_pos_pos mult_minus_left 
+        mult_minus_right nonzero_mult_div_cancel_right pos_le_divide_eq)
+  also have "... = h + (\<epsilon> / (T - h) + (T - h)/(T - h)) * (T - h)"
+    by simp
+  also have "... = \<epsilon> + T"
+    by (smt (verit, ccfv_SIG) assms diff_divide_eq_iff divide_cancel_right divide_pos_pos)
+  finally have "h - exp (- (K * t)) * (h - T) \<le> \<epsilon> + T" .
+  moreover have "\<epsilon> + T < 1.1 * \<epsilon> + T"
+    using assms
+    by auto
+  ultimately show ?thesis
+    using T_ivl2
+    by auto
+qed
+
+
+dataspace time_triggered_thermostat = 
+  constants 
+    Tmax :: real (* maximum comfortable temp. *)
+    Tmin :: real (* minimum comfortable temp. *)
+    h :: real (* highest temp. when thermostat is on *)
+    K :: real (* heating rate *)    
+    \<epsilon> :: real (* max increment/decrement of temp per sensing interval *)
+  assumes 
+    K_ge0: "K > 0"
+    and eps_ge0: "\<epsilon> > 0"
+    and eps_le_Tmin: "\<epsilon> < Tmin"
+    and delta_ge_3eps: "Tmax - Tmin > 3 * \<epsilon>" 
+    and h_ge_Tmax_eps: "h > Tmax + \<epsilon>"
+  variables 
+    (* physical *)
+    T :: real      (* temperature *)
+    t :: real      (* time *)
+    (* program *)
+    temp :: real   (* for temperature measurements *)
+    active :: bool (* whether thermostat is on or off *)
+context time_triggered_thermostat
+begin
+
+lemma 
+  shows Tmin_le_Tmax: "Tmin < Tmax"
+    and Tmax_le_h: "Tmax < h"
+  using delta_ge_3eps eps_ge0 h_ge_Tmax_eps
+  by linarith+
+
+lemma local_flow: "local_flow_on [T \<leadsto> - K * (T - c), t \<leadsto> 1] (T +\<^sub>L t) UNIV UNIV
+  (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c, t \<leadsto> \<tau> + t])"
+  by local_flow_on_auto
+
+(* Temperature advances at most \<epsilon> units upwards or downwards 
+before our sensor makes a measurement. *)
+abbreviation "dyn \<equiv> IF \<not> active 
+  THEN {T` = - K * T, t` = 1 | t \<le> - ln (1 - \<epsilon> / temp) / K} 
+  ELSE {T` = - K * (T - h), t` = 1 | t \<le> - ln (\<epsilon> / (temp - h) + 1) / K}"
+
+(* Drawing:
+|--------h
+|
+|--------Tmax
+|--------close_to_Tmax
+|
+|
+|--------close_to_Tmin
+|--------Tmin
+*)
+abbreviation "close_to_Tmin \<T> \<equiv> \<T> \<le> Tmin + 1.1 * \<epsilon>"
+abbreviation "close_to_Tmax \<T> \<equiv> \<T> \<ge> Tmax - 1.1 * \<epsilon>"
+
+abbreviation "pre_ctrl \<equiv> 
+  IF \<not> active \<and> close_to_Tmin temp THEN active ::= True
+  ELSE IF active \<and> close_to_Tmax temp THEN active ::= False ELSE skip"
+
+abbreviation "ctrl \<equiv> t ::= 0; temp ::= T; pre_ctrl"
+
+abbreviation "inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax)\<^sub>e"
+
+abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0 
+  \<and> (close_to_Tmin temp \<longrightarrow> active) \<and> (close_to_Tmax temp \<longrightarrow> \<not> active))\<^sub>e"
+
+lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
+  \<Longrightarrow> (pos_inv1 \<le> |G] inv1)
+  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
+  apply (expr_simp add: fbox_def)
+  unfolding le_fun_def le_bool_def
+  by blast
+
+lemma thermostat2:
+  "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+    (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
+   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
+  (* apply (wlp_flow local_flow: local_flow) *)
+  apply (intro_loops)
+    apply (subst fbox_kcomp)
+    apply (rule weird_intro_rule)
+  using delta_ge_3eps 
+     apply (wlp_full)
+    apply (rule hoare_if_then_else)
+     apply (wlp_full local_flow: local_flow[where c=0, simplified])
+  subgoal 
+    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
+    by blast
+  subgoal 
+    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
+        mult_left_le_one_le zero_le_mult_iff)
+  subgoal 
+    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
+    by blast
+  subgoal 
+    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
+        mult_left_le_one_le zero_le_mult_iff)
+    apply (wlp_full local_flow: local_flow[where c=h, simplified])
+  subgoal
+    by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
+        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
+  subgoal
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    by blast
+  subgoal
+    by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
+        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
+  subgoal
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    by blast
+  by expr_auto+
+
+end
+
+
 (*
 T(\<tau>) = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
 \<and> t(\<tau>) = \<tau> + t\<^sub>0
@@ -223,59 +396,50 @@ T(\<tau>) = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
 
 where T\<^sub>0 is the initial value of the temperature that due to our precondition we 
 assume to satisfy Tmin \<le> T\<^sub>0 \<le> Tmax < h.
-Let N \<ge> 3, be the number of segments that we are splitting the interval [Tmin, Tmax]:
+Let \<epsilon> > 0 be a temperature increment:
 
 If c=h (i.e. active):
-T\<^sub>0 + (Tmax - Tmin)/N = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
-\<Longrightarrow> (Tmax - Tmin)/N + T\<^sub>0 - h = - exp (-K * \<tau>) * (h - T\<^sub>0)
-\<Longrightarrow> (Tmax - Tmin)/N + N * (T\<^sub>0 - h)/N = exp (-K * \<tau>) * (T\<^sub>0 - h)
-\<Longrightarrow> (Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1 = exp (-K * \<tau>)
-\<Longrightarrow> ln ((Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1) = -K * \<tau>
+T\<^sub>0 + \<epsilon> = - exp (-K * \<tau>) * (h - T\<^sub>0) + h
+\<Longrightarrow> \<epsilon> + T\<^sub>0 - h = - exp (-K * \<tau>) * (h - T\<^sub>0)
+\<Longrightarrow> \<epsilon> + T\<^sub>0 - h = exp (-K * \<tau>) * (T\<^sub>0 - h)
+\<Longrightarrow> \<epsilon> / (T\<^sub>0 - h) + 1 = exp (-K * \<tau>)
+\<Longrightarrow> ln (\<epsilon>/(T\<^sub>0 - h) + 1) = -K * \<tau>
 
-We want 1 \<ge> (Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1 > 0
-\<Longleftrightarrow> 0 \<ge> (Tmax - Tmin)/(N * (T\<^sub>0 - h)) > -1
+We want 1 \<ge> \<epsilon> / (T\<^sub>0 - h) + 1 > 0
+\<Longleftrightarrow> 0 \<ge> \<epsilon> / (T\<^sub>0 - h) > -1
 because in that way, the logarithm exists
 (due to the right inequality) and the 
 magnitudes have physical sense (ln returns a negative due 
 to the left inequality).
 
-Observe that because of Tmax > Tmin \<and> N \<ge> 3 \<and> T\<^sub>0 < h:
-0 > (Tmax - Tmin)/(N * (T\<^sub>0 - h))
-
-However, we must require Tmax - Tmin < N * (h - T\<^sub>0)
-to guarantee that (Tmax - Tmin)/(N * (h - T\<^sub>0)) < 1
-(and thus that (Tmax - Tmin)/(N * (T\<^sub>0 - h)) > -1).
-It suffices to require that Tmax - Tmin < h - Tmax
-(we could relax this condition).
+Observe that since \<epsilon> > 0 \<and> T\<^sub>0 < h, the lhs
+(0 > \<epsilon> / (T\<^sub>0 - h)) holds. However, we must 
+require \<epsilon> < h - T\<^sub>0 to guarantee the rhs 
+(\<epsilon> / (T\<^sub>0 - h) > -1).
 
 If this holds, then we could define the guard for active as
-\<tau> \<le> -K\<^sup>-\<^sup>1 * ln ((Tmax - Tmin)/(N * (T\<^sub>0 - h)) + 1) 
+\<tau> \<le> -K\<^sup>-\<^sup>1 * ln (\<epsilon>/(T\<^sub>0 - h) + 1) 
 
 Similarly, if c=0 (i.e. if inactive):
-T\<^sub>0 - (Tmax - Tmin)/N = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
-\<Longrightarrow> T\<^sub>0 - (Tmax - Tmin)/N = T\<^sub>0 * exp (-K * \<tau>)
-\<Longrightarrow> 1 - (Tmax - Tmin)/(N * T\<^sub>0) = exp (-K * \<tau>)
+T\<^sub>0 - \<epsilon> = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
+(c = 0) \<Longrightarrow> T\<^sub>0 - \<epsilon> = T\<^sub>0 * exp (-K * \<tau>)
+\<Longrightarrow> 1 - \<epsilon> / T\<^sub>0 = exp (-K * \<tau>)
+\<Longrightarrow> ln (1 - \<epsilon> / T\<^sub>0) = - K * \<tau>
 
-Then we want 1 > 1 - (Tmax - Tmin)/(N * T\<^sub>0) > 0
-\<Longleftrightarrow> 0 < (Tmax - Tmin)/(N * T\<^sub>0) < 1
-
-Thus, we need Tmax - Tmin < N * T\<^sub>0
-It suffices to require that Tmax - Tmin < Tmin
+Then we want 1 > 1 - \<epsilon> / T\<^sub>0 > 0
+\<Longleftrightarrow> 0 < \<epsilon> / T\<^sub>0 < 1
+Thus, we need \<epsilon> < T\<^sub>0.
 
 If this holds, then we could define the guard for inactive as
-\<tau> \<le> -K\<^sup>-\<^sup>1 * ln (1 - (Tmax - Tmin)/(N * T\<^sub>0))
+\<tau> \<le> -K\<^sup>-\<^sup>1 * ln (1 - \<epsilon> / T\<^sub>0)
 
-Now the condition for the control.
-At most, if the guards are defined as above, the temperature
-will increase (or decrease) (Tmax - Tmin)/N.
-Thus, we can define:
+Now the condition for the control. At most, if the guards 
+are defined as above, the temperature will increase (or 
+decrease) \<epsilon> units. Thus, we can define:
 pre_ctrl \<equiv> 
-  IF \<not> active \<and> temp - 1.1 * (Tmax - Tmin)/N \<le> Tmin THEN active ::= True
-  ELSE IF active \<and> temp + 1.1 * (Tmax - Tmin)/N \<ge> Tmax THEN active ::= False ELSE skip
+  IF \<not> active \<and> temp \<le> Tmin - 1.1 * \<epsilon> THEN active ::= True
+  ELSE IF active \<and> temp \<ge> Tmax - 1.1 * \<epsilon> THEN active ::= False ELSE skip
 
 *)
-
-
-end
 
 end
