@@ -388,6 +388,9 @@ lemma thermostat2:
 
 end
 
+thm time_triggered_thermostat_def
+ time_triggered_thermostat_def[of 25 20 30 "0.2" "1.6", simplified]
+
 
 (*
 T(\<tau>) = - exp (-K * \<tau>) * (c - T\<^sub>0) + c
