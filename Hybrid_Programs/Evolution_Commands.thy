@@ -359,6 +359,13 @@ lemma fbox_g_dl_ode_frame_g_evol: (* delete *)
 
 lemmas fbox_g_dL_easiest = fbox_g_dl_ode_frame_g_evol[of _ _ UNIV, simplified]
 
+text \<open> A specialised version for Hoare logic, which uses substitution restriction. \<close>
+
+lemma hl_ode_frame:
+  assumes "local_flow_on f' a UNIV UNIV f" "vwb_lens a" 
+          "`P \<longrightarrow> (\<forall>t\<ge>0. (\<forall>\<tau>\<in>{0..\<guillemotleft>t\<guillemotright>}. f \<tau> \<restriction>\<^sub>s $a \<dagger> B) \<longrightarrow> f t \<restriction>\<^sub>s $a \<dagger> Q)`"
+  shows "H{P} g_dl_ode_frame a f' B {Q}"
+  using assms by (simp add: fbox_solve[OF assms(1)], expr_simp add: le_fun_def)
 
 subsection \<open> Differential invariants \<close>
 
