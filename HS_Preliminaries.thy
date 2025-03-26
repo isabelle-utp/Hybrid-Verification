@@ -48,20 +48,20 @@ abbreviation power5 :: "'a::power \<Rightarrow> 'a"  ("(_\<^sup>5)" [1000] 999)
 bundle power_notation
 begin
 
-notation power2 ("(_\<^sup>2)" [1000] 999)
-  and power3 ("(_\<^sup>3)" [1000] 999) 
-  and power4 ("(_\<^sup>4)" [1000] 999)
-  and power5 ("(_\<^sup>5)" [1000] 999)
+notation power2 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>2)\<close> [1000] 999)
+  and power3 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>3)\<close> [1000] 999)
+  and power4 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>4)\<close> [1000] 999)
+  and power5 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>5)\<close> [1000] 999)
 
 end
 
 bundle power_no_notation
 begin
 
-no_notation power2 ("(_\<^sup>2)" [1000] 999)
-  and power3 ("(_\<^sup>3)" [1000] 999) 
-  and power4 ("(_\<^sup>4)" [1000] 999)
-  and power5 ("(_\<^sup>5)" [1000] 999)
+no_notation power2 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>2)\<close> [1000] 999)
+  and power3 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>3)\<close> [1000] 999)
+  and power4 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>4)\<close> [1000] 999)
+  and power5 (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>5)\<close> [1000] 999)
 
 end
 

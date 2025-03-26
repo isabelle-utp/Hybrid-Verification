@@ -449,6 +449,7 @@ subsection \<open> Weakest liberal preconditions \<close>
   * fbox_solve (which is essentially the one above)
   * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
 *)
+
 method intro_loops = (rule hoare_loopI hoare_whileI hoare_loopI_break hoare_whileI_break)
 
 method wlp_simp uses simp = (intro_loops?; (simp add: wlp simp)?)

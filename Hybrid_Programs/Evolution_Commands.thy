@@ -266,8 +266,6 @@ lemma g_ode_frame_syntax_sugar:
   = g_ode_frame (x +\<^sub>L y) [x \<leadsto> f(y \<leadsto> h)] (G)\<^sub>e (U)\<^sub>e S t\<^sub>0"
     and "g_ode_frame (x +\<^sub>L y) [x \<leadsto> f(y \<leadsto> h)] (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 
   = g_orbital_on (x +\<^sub>L y) (\<lambda>t s. put\<^bsub>x\<^esub> s (put\<^bsub>y\<^esub> (f s) (h s))) G U S t\<^sub>0"
-   apply (rule_tac f="\<lambda>s. g_ode_frame (x +\<^sub>L y) s (G)\<^sub>e (U)\<^sub>e S t\<^sub>0" in arg_cong)
-  prefer 3 apply (rule_tac f="\<lambda>s. g_ode_frame (x +\<^sub>L y) s (G)\<^sub>e (U)\<^sub>e S t\<^sub>0" in arg_cong)
   using lens_indep_comm lens_indep_get lens_indep_get[OF lens_indep_sym]
   by expr_simp+
 
@@ -278,8 +276,7 @@ lemma g_ode_on_syntax_sugar:
 lemma g_ode_frame_prod_sugar:
   "h \<bowtie> t \<Longrightarrow> {h` = \<guillemotleft>k\<guillemotright>, t` = 1 | $t \<le> (H\<^sub>u - h\<^sub>m)/\<guillemotleft>k\<guillemotright>} = {(h, t)` = (\<guillemotleft>k\<guillemotright>, 1) | $t \<le> (H\<^sub>u - h\<^sub>m)/\<guillemotleft>k\<guillemotright>}"
   unfolding g_orbital_on_def apply(clarsimp simp add: fun_eq_iff)
-  by (rule_tac x="[h \<leadsto> \<guillemotleft>k\<guillemotright>, t \<leadsto> 1]" in arg_cong)
-    (expr_simp add: lens_indep.lens_put_comm)
+  by (expr_simp add: lens_indep.lens_put_comm)
 
 text \<open> We use the local-flow results to show the generalised counterparts. \<close>
 

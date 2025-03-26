@@ -9,8 +9,7 @@ theory Regular_Programs
   imports "Framed_ODEs.HS_Preliminaries" Correctness_Specs
 begin
 
-no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
-
+no_notation Transitive_Closure.rtrancl (\<open>(\<open>notation=\<open>postfix *\<close>\<close>_\<^sup>*)\<close> [1000] 999)
 
 subsection \<open> Skip \<close>
 
@@ -324,7 +323,6 @@ lemma fdia_kpower_0: "|kpower F 0\<rangle> Q = Q"
 
 lemma fdia_kpower_Suc: "|kpower F (Suc n)\<rangle> Q = ( |F\<rangle> |kpower F n\<rangle> Q)"
   by (simp only: kpower_Suc fdia_kcomp)
-
 
 subsection \<open> Finite iteration \<close>
 
@@ -834,10 +832,7 @@ lemma fdia_while_variantI:
   apply (rename_tac s s' m)
   apply (erule_tac P="\<lambda>s. \<forall>k. V k s \<longrightarrow> ( |X\<rangle> @(V (k - 1))) s" and x=s' in allE)
   apply (erule_tac x="int m" in allE, simp add: fdia_kcomp fdia_test)
-  apply (rule conjI)
-  by force 
-    (metis One_nat_def Suc_leI of_nat_1 of_nat_diff)
-
+  using of_nat_0_less_iff by blast
 
 subsection \<open> Framing \<close>
 
