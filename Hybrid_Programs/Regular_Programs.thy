@@ -217,8 +217,12 @@ subsection \<open> Conditional statement \<close>
 definition ifthenelse :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set) \<Rightarrow> ('a \<Rightarrow> 'b set)" where
   [prog_defs]: "ifthenelse P X Y \<equiv> (\<lambda>s. if P s then X s else Y s)"
 
-syntax "_ifthenelse" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _ /ELSE _)" [0,0,63] 64)
-translations "IF P THEN X ELSE Y" == "CONST ifthenelse (P)\<^sub>e X Y"
+syntax 
+  "_ifthenelse" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _ /ELSE _)" [0,0,63] 64)
+  "_ifthen" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _ )" [0,63] 64)
+translations 
+  "IF P THEN X ELSE Y" == "CONST ifthenelse (P)\<^sub>e X Y"
+  "IF P THEN X" == "IF P THEN X ELSE CONST skip"
 
 lemma if_then_else_eq: "IF T THEN X ELSE Y = \<questiondown>T? ; X \<sqinter> \<questiondown>\<not> T? ; Y"
   by (auto simp: fun_eq_iff test_def kcomp_def ifthenelse_def nondet_choice_def)
