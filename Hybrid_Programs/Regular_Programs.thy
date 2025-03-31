@@ -22,7 +22,7 @@ lemma fbox_skip [wlp]: "|skip] P = P"
 lemma fdia_skip: "|skip\<rangle> P = P"
   unfolding fdia_def skip_def by simp
 
-lemma hoare_skip: "\<^bold>{P\<^bold>} skip \<^bold>{P\<^bold>}"
+lemma hoare_skip: "H{P} skip {P}"
   by (auto simp: fbox_skip)
 
 
@@ -36,7 +36,7 @@ lemma fbox_abort [wlp]: "|abort] P = (True)\<^sub>e"
 lemma fdia_abort: "|abort\<rangle> P = (False)\<^sub>e"
   unfolding fdia_def abort_def by expr_simp
 
-lemma hoare_abort: "\<^bold>{P\<^bold>} abort \<^bold>{Q\<^bold>}"
+lemma hoare_abort: "H{P} abort {Q}"
   by (auto simp: fbox_abort)
 
 
@@ -57,7 +57,7 @@ lemma fbox_test [wlp]: "|\<questiondown>P?] Q = (P \<longrightarrow> Q)\<^sub>e"
 lemma fdia_test: "|\<questiondown>P?\<rangle> Q = (P \<and> Q)\<^sub>e"
   unfolding fdia_def test_def by expr_simp
 
-lemma hoare_test: "\<^bold>{P\<^bold>} \<questiondown>T? \<^bold>{P \<and> T\<^bold>}"
+lemma hoare_test: "H{P} \<questiondown>T? {P \<and> T}"
   by (auto simp: fbox_test)
 
 
@@ -79,7 +79,7 @@ translations
 lemma fbox_assign: "|x ::= e] Q = (Q\<lbrakk>e/x\<rbrakk>)\<^sub>e"
   by (simp add: assigns_def subst_app_def fbox_def fun_eq_iff)
 
-lemma hoare_assign: "\<^bold>{Q\<lbrakk>e/x\<rbrakk>\<^bold>} (x ::= e) \<^bold>{Q\<^bold>}"
+lemma hoare_assign: "H{Q\<lbrakk>e/x\<rbrakk>} (x ::= e) {Q}"
   by (auto simp: fbox_assign)
 
 lemma fbox_assigns [wlp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (Q)\<^sub>e"
@@ -87,7 +87,7 @@ lemma fbox_assigns [wlp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (
 
 lemma H_assign_floyd_hoare:
   assumes "vwb_lens x"
-  shows "\<^bold>{p\<^bold>} x ::= e \<^bold>{\<exists> v . p\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk> \<and> $x = e\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk>\<^bold>}"
+  shows "H{p} x ::= e {\<exists> v . p\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk> \<and> $x = e\<lbrakk>\<guillemotleft>v\<guillemotright>/x\<rbrakk>}"
   using assms apply (simp add: wlp, expr_auto)
   by (metis vwb_lens_def wb_lens.source_stability)
 
@@ -103,7 +103,7 @@ lemma fbox_nondet_assign [wlp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>\<guillemo
   unfolding fbox_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)
 
-lemma hoare_nondet_assign: "\<^bold>{\<forall>k. Q\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>\<^bold>} (x ::= ?) \<^bold>{Q\<^bold>}"
+lemma hoare_nondet_assign: "H{\<forall>k. Q\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>} (x ::= ?) {Q}"
   by (simp add: fbox_nondet_assign)
 
 lemma fdia_nondet_assign: "|x ::= ?\<rangle> P = (\<exists>k. P\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>)\<^sub>e"
@@ -129,7 +129,7 @@ lemma le_fbox_choice_iff': "P \<le> ( |F \<sqinter> G] Q)\<^sub>e \<longleftrigh
   unfolding fbox_def nondet_choice_def by expr_auto
 
 lemma hoare_choice: 
-  "\<^bold>{P\<^bold>} F \<^bold>{Q\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} G \<^bold>{Q\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} (F \<sqinter> G) \<^bold>{Q\<^bold>}"
+  "H{P} F {Q} \<Longrightarrow> H{P} G {Q} \<Longrightarrow> H{P} (F \<sqinter> G) {Q}"
   by (subst le_fbox_choice_iff, simp)
 
 lemma fdia_choice: "|F \<sqinter> G\<rangle> P = ( |F\<rangle> P \<or> |G\<rangle> P)\<^sub>e"
@@ -174,23 +174,23 @@ lemma fbox_kcomp[wlp]: "|G ; F] P = |G] |F] P"
   unfolding fbox_def kcomp_def by auto
 
 lemma hoare_kcomp:
-  assumes "\<^bold>{P\<^bold>} G \<^bold>{R\<^bold>}" and "\<^bold>{R\<^bold>} F \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P\<^bold>} G ; F \<^bold>{Q\<^bold>}"
+  assumes "H{P} G {R}" and "H{R} F {Q}"
+  shows "H{P} G ; F {Q}"
   apply(subst fbox_kcomp)
   using assms fbox_iso
   by (metis (mono_tags, lifting) SEXP_def predicate1D predicate1I) 
 
 lemma hoare_kcomp_inv:
-  assumes "\<^bold>{I\<^bold>} G \<^bold>{I\<^bold>}" and "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>}"
-  shows "\<^bold>{I\<^bold>} G ; F \<^bold>{I\<^bold>}"
+  assumes "H{I} G {I}" and "H{I} F {I}"
+  shows "H{I} G ; F {I}"
   using assms hoare_kcomp by fastforce
 
 lemma fdia_kcomp: "|G ; F\<rangle> P = |G\<rangle> |F\<rangle> P"
   unfolding fdia_def kcomp_def by auto
 
 lemma hoare_fwd_assign:
-  assumes "vwb_lens x" "\<And> x\<^sub>0. \<^bold>{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>\<^bold>} S \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P\<^bold>} x ::= e ; S \<^bold>{Q\<^bold>}"
+  assumes "vwb_lens x" "\<And> x\<^sub>0. H{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>} S {Q}"
+  shows "H{P} x ::= e ; S {Q}"
   using assms
   unfolding kcomp_def assigns_def fbox_def le_fun_def
   by (expr_simp) (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
@@ -201,7 +201,7 @@ lemma fbox_invI_break:
   by (rule fbox_invI) auto
 
 lemma hoare_invI_break: 
-  "\<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> I \<le> Q \<Longrightarrow> \<^bold>{P\<^bold>} Y ; X INV I\<^bold>{Q\<^bold>}"
+  "H{P} Y {I} \<Longrightarrow> H{I} X {I} \<Longrightarrow> I \<le> Q \<Longrightarrow> H{P} Y ; X INV I{Q}"
   by (rule fbox_invI_break; expr_auto)
 
 lemma fdia_invI_break: 
@@ -235,14 +235,14 @@ lemma seq_ifthenelse_distl: "(IF B THEN P ELSE Q) ; R = IF B THEN (P ; R) ELSE (
   by (simp add: ifthenelse_def fun_eq_iff kcomp_def)
 
 lemma hoare_if_then_else:
-  assumes "\<^bold>{P \<and> T\<^bold>} X \<^bold>{Q\<^bold>}"
-    and "\<^bold>{P \<and> \<not> T\<^bold>} Y \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P\<^bold>} (IF T THEN X ELSE Y) \<^bold>{Q\<^bold>}"
+  assumes "H{P \<and> T} X {Q}"
+    and "H{P \<and> \<not> T} Y {Q}"
+  shows "H{P} (IF T THEN X ELSE Y) {Q}"
   using assms unfolding fbox_def ifthenelse_def by auto
 
 lemma hoare_if_then_else_inv:
-  assumes "\<^bold>{b \<and> I\<^bold>}P\<^bold>{b \<and> I\<^bold>}" "\<^bold>{\<not>b \<and> I\<^bold>}Q\<^bold>{\<not>b \<and> I\<^bold>}" 
-  shows "\<^bold>{I\<^bold>}IF b THEN P ELSE Q\<^bold>{I\<^bold>}"
+  assumes "H{b \<and> I}P{b \<and> I}" "H{\<not>b \<and> I}Q{\<not>b \<and> I}" 
+  shows "H{I}IF b THEN P ELSE Q{I}"
   using assms
   by (auto simp add: fbox_def expr_defs ifthenelse_def)
 
@@ -427,7 +427,7 @@ lemma fbox_kstar_inv: "I \<le> |F] I \<Longrightarrow> I \<le> |F\<^sup>*] I"
   apply(unfold le_fun_def, subgoal_tac "\<forall>x. I x \<longrightarrow> (\<forall>s'. s' \<in> F x \<longrightarrow> I s')")
   using kpower_inv[of I F] by blast simp
 
-lemma hoare_kstar_inv: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} F\<^sup>* \<^bold>{I\<^bold>}"
+lemma hoare_kstar_inv: "H{I} F {I} \<Longrightarrow> H{I} F\<^sup>* {I}"
   by (metis SEXP_def fbox_kstar_inv)
 
 lemma fdia_kstar_inv: "I \<le> |F\<rangle> I \<Longrightarrow> I \<le> |F\<^sup>*\<rangle> I"
@@ -449,7 +449,7 @@ proof-
   finally show ?thesis .
 qed
 
-lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} F\<^sup>* \<^bold>{Q\<^bold>}"
+lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> H{I} F {I} \<Longrightarrow> H{P} F\<^sup>* {Q}"
   by (rule le_fbox_kstarI) (auto simp: SEXP_def taut_def)
 
 lemma le_fdia_kstarI:
@@ -756,14 +756,14 @@ lemma in_fbox_loopI: "I s \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> 
 lemma fbox_loopI': "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> fbox F I \<Longrightarrow> P \<le> fbox (loopi F I) Q"
   by (metis clarify_fbox le_fbox_kstarI loopi_def)
 
-lemma hoare_loopI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} LOOP F INV I \<^bold>{Q\<^bold>}"
+lemma hoare_loopI: "H{I} F {I} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> H{P} LOOP F INV I {Q}"
   by (rule fbox_loopI) (auto simp: SEXP_def taut_def)
 
 lemma fdia_loopI: "P \<le> I \<Longrightarrow> I \<le> Q \<Longrightarrow> I \<le> |F\<rangle> I \<Longrightarrow> P \<le> |LOOP F INV I\<rangle> Q"
   unfolding loopi_def using le_fdia_kstarI[of "P"] by (auto simp: SEXP_def)
 
-lemma hoare_loop_seqI: "\<^bold>{I\<^bold>} F \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} G \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` 
-  \<Longrightarrow> \<^bold>{P\<^bold>} LOOP (F ; G) INV I \<^bold>{Q\<^bold>}"
+lemma hoare_loop_seqI: "H{I} F {I} \<Longrightarrow> H{I} G {I} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` 
+  \<Longrightarrow> H{P} LOOP (F ; G) INV I {Q}"
   by (rule fbox_loopI, simp_all add: wlp refine_iff_implies)
      (metis (full_types) fbox_iso order.trans refine_iff_implies)
 
@@ -773,7 +773,7 @@ lemma fbox_loopI_break:
   by (rule hoare_loopI, auto simp: SEXP_def taut_def)
 
 lemma hoare_loopI_break: 
-  "\<^bold>{I\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} (Y ; (LOOP X INV I)) \<^bold>{Q\<^bold>}"
+  "H{I} X {I} \<Longrightarrow> H{P} Y {I} \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> H{P} (Y ; (LOOP X INV I)) {Q}"
   by (rule hoare_kcomp, force) (rule hoare_loopI, simp_all)
 
 
@@ -786,7 +786,7 @@ syntax "_while" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> 
 translations "WHILE T DO X" == "CONST while (T)\<^sub>e X"
 
 lemma hoare_while:
-  "\<^bold>{I \<and> T\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>} (WHILE T DO X) \<^bold>{\<not> T \<and> I\<^bold>}"
+  "H{I \<and> T} X {I} \<Longrightarrow> H{I} (WHILE T DO X) {\<not> T \<and> I}"
   unfolding while_def 
   apply (simp add: fbox_test fbox_kcomp)
   apply (rule_tac p\<^sub>2=I and q\<^sub>2=I in hoare_conseq)
@@ -798,8 +798,8 @@ lemma hoare_while:
   apply (rule_tac R="(I \<and> T)\<^sup>e" in hoare_kcomp)
   by (auto simp: fbox_test fbox_kcomp)
 
-lemma hoare_whileI: "\<^bold>{I \<and> T\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q`
-  \<Longrightarrow> \<^bold>{P\<^bold>} WHILE T DO X INV I \<^bold>{Q\<^bold>}"
+lemma hoare_whileI: "H{I \<and> T} X {I} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q`
+  \<Longrightarrow> H{P} WHILE T DO X INV I {Q}"
   by (rule hoare_conseq, subst invar_def)
     (rule hoare_while, assumption, auto simp: taut_def)
 
@@ -809,7 +809,7 @@ lemma fbox_whileI: "P \<le> I \<Longrightarrow> (I \<and> T)\<^sub>e \<le> |X] I
   by expr_auto
 
 lemma hoare_whileI_break: 
-  "\<^bold>{I \<and> T\<^bold>} X \<^bold>{I\<^bold>} \<Longrightarrow> \<^bold>{P\<^bold>} Y \<^bold>{I\<^bold>} \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q` \<Longrightarrow> \<^bold>{P\<^bold>} Y ; WHILE T DO X INV I \<^bold>{Q\<^bold>}"
+  "H{I \<and> T} X {I} \<Longrightarrow> H{P} Y {I} \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q` \<Longrightarrow> H{P} Y ; WHILE T DO X INV I {Q}"
   by (rule hoare_kcomp, force)
     (rule hoare_whileI; expr_auto)
 
@@ -947,14 +947,14 @@ text \<open> Important principle: If @{term P} does not modify @{term a}, and pr
   not refers only variables outside of @{term a} then @{term b} is an invariant of @{term P}. \<close>
 
 lemma nmods_frame_law:
-  assumes "S nmods I" "\<^bold>{P\<^bold>}S\<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P \<and> I\<^bold>}S\<^bold>{Q \<and> I\<^bold>}"
+  assumes "S nmods I" "H{P}S{Q}"
+  shows "H{P \<and> I}S{Q \<and> I}"
   using assms
   by (auto simp add: prog_defs fbox_def expr_defs not_modifies_def)
 
 lemma nmods_invariant:
   assumes "P nmods b"
-  shows "\<^bold>{b\<^bold>}P\<^bold>{b\<^bold>}"
+  shows "H{b}P{b}"
   using assms
   by (auto simp add: prog_defs fbox_def expr_defs not_modifies_def)
 

@@ -139,9 +139,9 @@ lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
   by blast
 
 lemma thermostat1:
-  "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl1; dyn1) INV (Tmin \<le> T \<and> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
+   {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
     apply (subst fbox_kcomp)
     apply(intro conjI weird_intro_rule)
@@ -192,9 +192,9 @@ lemma local_flow2: "local_flow_on [T \<leadsto> - K * (T - c)] T UNIV UNIV
 
 lemma thermostat2:
   assumes le0: "Tmin \<le> Tmax"
-  shows "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+  shows "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<and> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
+   {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
     apply (subst fbox_kcomp)
   apply (rule weird_intro_rule2)
@@ -348,9 +348,9 @@ lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
   by blast
 
 lemma thermostat2:
-  "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
+   {Tmin \<le> T \<and> T \<le> Tmax}"
   (* apply (wlp_flow local_flow: local_flow) *)
   apply (intro_loops)
     apply (subst fbox_kcomp)

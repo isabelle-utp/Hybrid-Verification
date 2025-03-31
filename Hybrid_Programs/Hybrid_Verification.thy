@@ -23,8 +23,8 @@ syntax
   "_preserves_under" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("_ preserves _ under _" [40, 0, 40] 40)
 
 translations
-  "_preserves S P" => "\<^bold>{P\<^bold>} S \<^bold>{P\<^bold>}"
-  "_preserves_under S P Q" => "\<^bold>{P \<and> Q\<^bold>} S \<^bold>{P\<^bold>}"
+  "_preserves S P" => "H{P} S {P}"
+  "_preserves_under S P Q" => "H{P \<and> Q} S {P}"
 
 unbundle Hybrid_Program_Syntax
 

@@ -390,7 +390,7 @@ lemma fbox_diff_inv:
   by (auto simp: diff_inv_def ivp_sols_def fbox_def g_orbital_eq)
 
 lemma hoare_diff_inv:
-  "\<^bold>{I\<^bold>} (g_orbital f G U S t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv (U)\<^sub>e S (G)\<^sub>e f t\<^sub>0 (I)\<^sub>e"
+  "H{I} (g_orbital f G U S t\<^sub>0) {I} = diff_inv (U)\<^sub>e S (G)\<^sub>e f t\<^sub>0 (I)\<^sub>e"
   using fbox_diff_inv[of I f G U S t\<^sub>0] by (simp add: SEXP_def)
 
 lemma fbox_diff_inv_on:
@@ -402,12 +402,12 @@ lemma fbox_diff_inv_on':
   by (simp add: fbox_diff_inv_on expr_defs)
 
 lemma hoare_diff_inv_on:
-  "\<^bold>{I\<^bold>} (g_orbital_on a f G U S t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv_on a f G U S t\<^sub>0 I"
+  "H{I} (g_orbital_on a f G U S t\<^sub>0) {I} = diff_inv_on a f G U S t\<^sub>0 I"
   using fbox_diff_inv_on[of I a f G U S]
   by (simp add: SEXP_def)
 
 lemma hoare_diff_inv_on':
-  "\<^bold>{I\<^bold>} (g_orbital_on a f G U S t\<^sub>0) \<^bold>{I\<^bold>} = diff_inv_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 (I)\<^sub>e"
+  "H{I} (g_orbital_on a f G U S t\<^sub>0) {I} = diff_inv_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 (I)\<^sub>e"
   using fbox_diff_inv_on[of I a f G U S]
   by (simp add: SEXP_def)
 
@@ -452,8 +452,8 @@ lemma fbox_g_odei: "P \<le> I \<Longrightarrow> I \<le> |g_orbital f G U S t\<^s
   apply(subst fbox_g_orbital_guard, simp)
   by (rule fbox_iso, force)
 
-lemma hoare_g_odei: " \<^bold>{I\<^bold>} (g_orbital f G U S t\<^sub>0) \<^bold>{I\<^bold>}  \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> G \<longrightarrow> Q` \<Longrightarrow> 
- \<^bold>{P\<^bold>} (x\<acute>= f & G on U S @ t\<^sub>0 DINV I) \<^bold>{Q\<^bold>}"
+lemma hoare_g_odei: "H{I} (g_orbital f G U S t\<^sub>0) {I}  \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> G \<longrightarrow> Q` \<Longrightarrow> 
+ H{P} (x\<acute>= f & G on U S @ t\<^sub>0 DINV I) {Q}"
   by (rule fbox_g_odei, simp_all add: SEXP_def taut_def le_fun_def)
 
 lemma fbox_diff_invI: "(I)\<^sub>e \<le> |g_orbital_on a f G U S t\<^sub>0] I \<Longrightarrow> P \<le> (I)\<^sub>e \<Longrightarrow> (I \<and> G)\<^sub>e \<le> Q
@@ -466,8 +466,8 @@ lemma fbox_diff_invI: "(I)\<^sub>e \<le> |g_orbital_on a f G U S t\<^sub>0] I \<
 lemmas fbox_diff_inv_rawI = fbox_diff_invI[unfolded clarify_fbox expr_defs]
 
 lemma hoare_diff_inv_on_post_inv: (* generalise and wrap in tactic *)
-  assumes "`P \<longrightarrow> Q`" "\<^bold>{Q\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P\<^bold>} {a` = f | G on U S @ t\<^sub>0} \<^bold>{Q\<^bold>}"
+  assumes "`P \<longrightarrow> Q`" "H{Q} {a` = f | G on U S @ t\<^sub>0} {Q}"
+  shows "H{P} {a` = f | G on U S @ t\<^sub>0} {Q}"
   using assms(2) by (rule hoare_conseq; simp add: assms)
 
 

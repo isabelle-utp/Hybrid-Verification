@@ -509,6 +509,26 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
 
 end
 
+pretty_exprs
+full_exprs
+
+term "\<lambda>x. [x]\<^sub>e"
+
+lemma "H{I} F {I}"
+  unfolding SEXP_def
+  apply(subst SEXP_def[of \<open>\<lambda>\<s>. I\<close>, symmetric])
+  apply(subst SEXP_def[of \<open>\<lambda>\<s>. I\<close>, symmetric])
+  back
+  oops
+
+
+lemma "P \<le> |F] Q"
+  oops
+
+ML \<open>Outer_Syntax.local_theory \<close>
+ML \<open>Proof_Context.concealed\<close>
+
+
 
 end
 (**)

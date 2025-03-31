@@ -122,35 +122,34 @@ too (\<forall>s'. Q s' \<longrightarrow> (\<exists>s. s' \<in> F s \<and> P s)).
 subsection \<open> Hoare triple \<close>
 
 syntax
-  "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2\<^bold>{_\<^bold>}/_) /\<^bold>{_\<^bold>}")
   "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2H{_} /_) /{_}")
 
 translations
-  "\<^bold>{p\<^bold>}S\<^bold>{q\<^bold>}" == "(p)\<^sub>e \<le> |S] q"
+  "H{p} S {q}" == "(p)\<^sub>e \<le> |S] q"
 
-lemma fbox_to_hoare: "P \<le> |F] Q \<longleftrightarrow> \<^bold>{P\<^bold>}F\<^bold>{Q\<^bold>}"
+lemma fbox_to_hoare: "P \<le> |F] Q \<longleftrightarrow> H{P} F {Q}"
   by auto
 
 text \<open> Need to generalise these laws \<close>
 
 lemma hoare_conj_preI: 
-  "\<^bold>{@a\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> P = (@a \<and> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  "H{@a}X{@Q} \<Longrightarrow> P = (@a \<and> @b)\<^sub>e \<Longrightarrow> H{@P}X{@Q}"
   by (auto simp: fun_eq_iff)
 
 lemma hoare_conj_posI: 
-  "\<^bold>{@P\<^bold>}X\<^bold>{@a\<^bold>} \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@b\<^bold>} \<Longrightarrow> Q = (@a \<and> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  "H{@P}X{@a} \<Longrightarrow> H{@P}X{@b} \<Longrightarrow> Q = (@a \<and> @b)\<^sub>e \<Longrightarrow> H{@P}X{@Q}"
   by (auto simp: fun_eq_iff fbox_def)
 
 lemma hoare_conj_pos: 
-  "(\<^bold>{@P\<^bold>} X \<^bold>{@Q1 \<and> @Q2\<^bold>}) = (\<^bold>{@P\<^bold>} X \<^bold>{@Q1\<^bold>} \<and> \<^bold>{@P\<^bold>} X \<^bold>{@Q2\<^bold>})"
+  "(H{@P} X {@Q1 \<and> @Q2}) = (H{@P} X {@Q1} \<and> H{@P} X {@Q2})"
   by (auto simp: fbox_def)
 
 lemma hoare_disj_preI:
-  "\<^bold>{@a \<and> @b\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> \<^bold>{@a \<and> @c\<^bold>}X\<^bold>{@Q\<^bold>} \<Longrightarrow> P = (@a \<and> (@b \<or> @c))\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  "H{@a \<and> @b}X{@Q} \<Longrightarrow> H{@a \<and> @c}X{@Q} \<Longrightarrow> P = (@a \<and> (@b \<or> @c))\<^sub>e \<Longrightarrow> H{@P}X{@Q}"
   by (auto simp: le_fun_def fbox_def)
 
 lemma hoare_disj_posI: 
-  "\<^bold>{@P\<^bold>}X\<^bold>{@a\<^bold>} \<Longrightarrow> Q = (@a \<or> @b)\<^sub>e \<Longrightarrow> \<^bold>{@P\<^bold>}X\<^bold>{@Q\<^bold>}"
+  "H{@P}X{@a} \<Longrightarrow> Q = (@a \<or> @b)\<^sub>e \<Longrightarrow> H{@P}X{@Q}"
   by (auto simp: le_fun_def fbox_def)
 
 lemma fbox_conseq:
@@ -160,8 +159,8 @@ lemma fbox_conseq:
   by (auto simp add: fbox_def expr_defs)
 
 lemma hoare_conseq: 
-  assumes "\<^bold>{p\<^sub>2\<^bold>}S\<^bold>{q\<^sub>2\<^bold>}" "`p\<^sub>1 \<longrightarrow> p\<^sub>2`" "`q\<^sub>2 \<longrightarrow> q\<^sub>1`"
-  shows "\<^bold>{p\<^sub>1\<^bold>}S\<^bold>{q\<^sub>1\<^bold>}"
+  assumes "H{p\<^sub>2}S{q\<^sub>2}" "`p\<^sub>1 \<longrightarrow> p\<^sub>2`" "`q\<^sub>2 \<longrightarrow> q\<^sub>1`"
+  shows "H{p\<^sub>1}S{q\<^sub>1}"
   using assms 
   by (auto simp add: fbox_def expr_defs)
 
@@ -196,9 +195,9 @@ lemma fbox_invs:
 lemmas fbox_invs_raw = fbox_invs[unfolded expr_defs]
 
 lemma hoare_invs:
-  assumes "\<^bold>{I\<^sub>1\<^bold>}F\<^bold>{I\<^sub>1\<^bold>}" and "\<^bold>{I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>2\<^bold>}"
-  shows hoare_conj_inv: "\<^bold>{I\<^sub>1 \<and> I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>1 \<and> I\<^sub>2\<^bold>}"
-    and hoare_disj_inv: "\<^bold>{I\<^sub>1 \<or> I\<^sub>2\<^bold>}F\<^bold>{I\<^sub>1 \<or> I\<^sub>2\<^bold>}"
+  assumes "H{I\<^sub>1}F{I\<^sub>1}" and "H{I\<^sub>2}F{I\<^sub>2}"
+  shows hoare_conj_inv: "H{I\<^sub>1 \<and> I\<^sub>2}F{I\<^sub>1 \<and> I\<^sub>2}"
+    and hoare_disj_inv: "H{I\<^sub>1 \<or> I\<^sub>2}F{I\<^sub>1 \<or> I\<^sub>2}"
   using fbox_invs[OF assms] by auto
 
 definition invar :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a set)"

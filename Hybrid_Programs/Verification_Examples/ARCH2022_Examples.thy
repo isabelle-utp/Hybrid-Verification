@@ -76,7 +76,7 @@ begin
 
 (* using differential induction. Can this be better automated? *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
-lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; {x` = 2} \<^bold>{x \<ge> 1\<^bold>}"
+lemma "H{x \<ge> 0} x ::= x + 1 ; {x` = 2} {x \<ge> 1}"
   apply (rule_tac R="(x \<ge> 1)\<^sup>e" in hoare_kcomp)
   by wlp_full dInduct
 
@@ -101,7 +101,7 @@ context two_vars
 begin
 
 (* x>=0 -> [x:=x+1;][x:=*; ?x>=1;]x>=1 *)
-lemma "\<^bold>{x \<ge> 0\<^bold>} x ::= x + 1 ; x ::= ? ; \<questiondown>x\<ge>1? \<^bold>{x \<ge> 1\<^bold>}"
+lemma "H{x \<ge> 0} x ::= x + 1 ; x ::= ? ; \<questiondown>x\<ge>1? {x \<ge> 1}"
   by wlp_full
 
 end
@@ -136,9 +136,9 @@ lemma "(x \<ge> 0 \<and> y \<ge>1)\<^sub>e \<le>
   by (subst fbox_loopI, auto simp: wlp)
     expr_simp+
 
-lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 1\<^bold>} 
+lemma "H{x \<ge> 0 \<and> y \<ge> 1} 
   x ::= x + 1; ((LOOP x ::= x + 1 INV (x \<ge> 1) \<sqinter> y ::= x + 1); {y` = 2}; x ::= y) 
-  \<^bold>{x \<ge> 1\<^bold>}"
+  {x \<ge> 1}"
   apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
    apply (hoare_wp_auto)
   apply (rule hoare_kcomp[where R="(x \<ge> 1 \<and> y \<ge> 1)\<^sup>e"])
@@ -167,9 +167,9 @@ begin
 
 (* x>0 & y>0 -> [{x'=5}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
 
-lemma "\<^bold>{x > 0 \<and> y > 0\<^bold>} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) \<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>}"
+lemma "H{x > 0 \<and> y > 0} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) {x \<ge> 0 \<and> y \<ge> 0}"
 proof -
-  have "\<^bold>{x > 0 \<and> y > 0\<^bold>} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) \<^bold>{x > 0 \<and> y > 0\<^bold>}"
+  have "H{x > 0 \<and> y > 0} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) {x > 0 \<and> y > 0}"
     apply (rule hoare_kcomp_inv)
      apply (dInduct_mega)
     apply (rule hoare_choice)
@@ -285,12 +285,12 @@ begin
 
 (* proof with invariants *)
 (* x=0->[{x'=1}]x>=0 *)
-lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
+lemma "H{x = 0} {x` = 1} {x \<ge> 0}"
   by (rule_tac I="(x\<ge>0)\<^sup>e" in fbox_diff_invI; (dInduct | expr_auto))
 
 (* proof with solutions *)
 (* x=0->[{x'=1}]x>=0 *)
-lemma "\<^bold>{x = 0\<^bold>} {x` = 1} \<^bold>{x \<ge> 0\<^bold>}"
+lemma "H{x = 0} {x` = 1} {x \<ge> 0}"
   by (wlp_solve "\<lambda>t. [x \<leadsto> t + x]")
 
 end
@@ -302,13 +302,13 @@ context two_vars
 begin
 
 (* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
-lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
+lemma "H{x \<ge> 0 \<and> y \<ge> 0} {x` = y} {x \<ge> 0}"
   by (wlp_solve "\<lambda>t. [x \<leadsto> y * t + x]")
 
 (* x>=0 & y>=0 -> [{x'=y}]x>=0 *)
-lemma "\<^bold>{x \<ge> 0 \<and> y \<ge> 0\<^bold>} {x` = y} \<^bold>{x \<ge> 0\<^bold>}"
+lemma "H{x \<ge> 0 \<and> y \<ge> 0} {x` = y} {x \<ge> 0}"
 proof -
-  have "\<^bold>{y \<ge> 0 \<and> x \<ge> 0\<^bold>} {x` = y} \<^bold>{y \<ge> 0 \<and> x \<ge> 0\<^bold>}"
+  have "H{y \<ge> 0 \<and> x \<ge> 0} {x` = y} {y \<ge> 0 \<and> x \<ge> 0}"
     by (dInduct_mega)
   thus ?thesis
     by (rule hoare_conseq; simp)
@@ -3141,12 +3141,12 @@ lemma local_flow_hosc: "a \<noteq> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0
 
 
 lemma "a < 0 \<Longrightarrow> b \<le> 0 \<Longrightarrow> b\<^sup>2 + 4 * a > 0 \<Longrightarrow>
-  \<^bold>{x=0\<^bold>} 
+  H{x=0} 
   LOOP (
     (x ::= ?);(y ::= 0); \<questiondown>x>0?;
     {x` = y, y` = a * x + b * y}
   ) INV (x\<ge>0)
-  \<^bold>{x\<ge>0\<^bold>}"
+  {x\<ge>0}"
   apply (rule hoare_loopI)
     prefer 3 apply expr_simp
    prefer 2 apply expr_simp
@@ -3184,16 +3184,16 @@ begin
   [
     {x'=-x+x*y , y'=-y}@invariant(y>=0)
   ] !(-0.8>=x & x>=-1 & -0.7>=y & y>=-1) *)
-lemma "\<^bold>{0.5 \<le> x & x \<le> 0.7 & 0 \<le> y & y \<le> 0.3\<^bold>}
+lemma "H{0.5 \<le> x & x \<le> 0.7 & 0 \<le> y & y \<le> 0.3}
     {x` = -x + x* y , y` = - y} INV (y \<ge> 0)
-  \<^bold>{ \<not> (-0.8 \<ge> x \<and> x \<ge> -1 & -0.7 \<ge> y \<and> y \<ge> -1)\<^bold>}"
+  { \<not> (-0.8 \<ge> x \<and> x \<ge> -1 & -0.7 \<ge> y \<and> y \<ge> -1)}"
   unfolding invar_def
   apply (rule_tac C="(y \<ge> 0)\<^sup>e" in diff_cut_on_rule)
    apply (rule_tac I="(y \<ge> 0)\<^sup>e" in fbox_diff_invI)
      apply (rule_tac J="(z > 0 \<and> z * y \<ge> 0)\<^sup>e" and y=z and k="1" in diff_ghost_rule_very_simple)
           apply (rule hoare_invs)
            prefer 2
-  subgoal (* \<^bold>{0 \<le> $z * $y\<^bold>} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} \<^bold>{0 \<le> $z * $y\<^bold>} *)
+  subgoal (* {0 \<le> $z * $y} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} {0 \<le> $z * $y} *)
     by (diff_inv_on_ineq "(0)\<^sub>e" "(z * y - z * y)\<^sup>e") vderiv
 (* alternative proof 
            apply ((intro hoare_invs)?; subst fbox_diff_inv_on; 
@@ -3217,7 +3217,7 @@ lemma "\<^bold>{0.5 \<le> x & x \<le> 0.7 & 0 \<le> y & y \<le> 0.3\<^bold>}
       apply (simp add: lens_plus_sub_lens(1))
     using bounded_linear_fst bounded_linear_snd_comp by expr_auto+
   done *)
-  subgoal (*  \<^bold>{0 < $z\<^bold>} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} \<^bold>{0 < $z\<^bold>} *)
+  subgoal (*  {0 < $z} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} {0 < $z} *)
     apply (dGhost "w" "(z*w\<^sup>2 = 1)\<^sub>e" "-1/2")
     apply (diff_inv_on_eq)
     using exp_ghost_arith by auto

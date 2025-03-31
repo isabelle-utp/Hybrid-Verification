@@ -320,47 +320,47 @@ lemma AP_nmods: "AP nmods (p, v, s, \<phi>, t)"
 lemma LRE_nmods: "LRE nmods (p, v, a, s, \<phi>, t)"
   by (auto intro!: closure; subst_eval)
 
-lemma axAV_LRE_inv: "\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}LRE\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}"
+lemma axAV_LRE_inv: "H{@ax\<^sub>A\<^sub>V}LRE{@ax\<^sub>A\<^sub>V}"
   apply (rule nmods_invariant)
   by (auto intro!: closure; subst_eval)
 
-lemma axAV_AP_inv: "\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}AP\<^bold>{@ax\<^sub>A\<^sub>V\<^bold>}"
+lemma axAV_AP_inv: "H{@ax\<^sub>A\<^sub>V}AP{@ax\<^sub>A\<^sub>V}"
   apply (rule nmods_invariant)
   by (auto intro!: closure; subst_eval)
 
 subsection \<open> Invariants \<close>
 
 lemma time_pos:
-"\<^bold>{t \<ge> 0\<^bold>} ODE \<^bold>{t \<ge> 0\<^bold>}"
+"H{t \<ge> 0} ODE {t \<ge> 0}"
   by (dInduct)
 
-lemma "\<^bold>{s = \<parallel>v\<parallel>\<^bold>} ODE \<^bold>{s = \<parallel>v\<parallel>\<^bold>}"
+lemma "H{s = \<parallel>v\<parallel>} ODE {s = \<parallel>v\<parallel>}"
   by (rule diff_weak_on_rule, expr_auto)
 
-lemma "\<^bold>{rs = s \<and> rh = \<phi>\<^bold>} AP \<^bold>{a = 0\<^bold>}"
+lemma "H{rs = s \<and> rh = \<phi>} AP {a = 0}"
   by hoare_wp_simp
 
-lemma AP_no_accel_lemma: "\<^bold>{\<parallel>rs - s\<parallel> \<le> s\<^sub>\<epsilon> \<and> rh = \<phi>\<^bold>}AP\<^bold>{a = 0\<^bold>}"
+lemma AP_no_accel_lemma: "H{\<parallel>rs - s\<parallel> \<le> s\<^sub>\<epsilon> \<and> rh = \<phi>}AP{a = 0}"
   by hoare_wp_simp
 
-lemma AP_no_accel: "\<^bold>{s \<in> {rs - s\<^sub>\<epsilon>..rs + s\<^sub>\<epsilon>} \<and> rh = \<phi>\<^bold>}AP\<^bold>{a = 0\<^bold>}"
+lemma AP_no_accel: "H{s \<in> {rs - s\<^sub>\<epsilon>..rs + s\<^sub>\<epsilon>} \<and> rh = \<phi>}AP{a = 0}"
   using AP_no_accel_lemma
   by (rule hoare_conseq, simp_all add: abs_diff_le_iff[THEN sym] abs_minus_commute)
     
-lemma "\<^bold>{rs < s - s\<^sub>\<epsilon> \<and> rh = \<phi>\<^bold>}AP\<^bold>{\<parallel>a\<parallel> > 0\<^bold>}"
+lemma "H{rs < s - s\<^sub>\<epsilon> \<and> rh = \<phi>}AP{\<parallel>a\<parallel> > 0}"
   using sin_zero_abs_cos_one by (hoare_wp_auto, fastforce)
 
 declare vec_simps [simp del]
 
 lemma collinear_AP: 
-  "\<^bold>{s \<ge> 0 \<and> rs \<ge> s \<and> v = s *\<^sub>R \<^bold>[[sin(\<phi>),cos(\<phi>)]\<^bold>] \<and> \<parallel>rh - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>\<^bold>}
+  "H{s \<ge> 0 \<and> rs \<ge> s \<and> v = s *\<^sub>R \<^bold>[[sin(\<phi>),cos(\<phi>)]\<^bold>] \<and> \<parallel>rh - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>}
    AP
-   \<^bold>{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}"
+   {a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}"
   by hoare_wp_auto
 
 declare vec_simps [simp]
 
-lemma "\<^bold>{path = [] \<and> @atWP\<^bold>} Navigation \<^bold>{path = [] \<and> rs = 0 \<and> @atWP\<^bold>}"
+lemma "H{path = [] \<and> @atWP} Navigation {path = [] \<and> rs = 0 \<and> @atWP}"
   by (hoare_wp_simp)
 
 text \<open> If the LRE is in MOM, the way point is in the north-east quadrant wrt. the AMV, and there
@@ -368,9 +368,9 @@ text \<open> If the LRE is in MOM, the way point is in the north-east quadrant w
   within the north-east quadrant. \<close>
 
 lemma LRE_quad1_heading:
-  "\<^bold>{mode = MOM \<and> w\<^sub>x > p\<^sub>x \<and> w\<^sub>y > p\<^sub>y \<and> (\<forall> o. o \<in> obsReg \<longrightarrow> \<parallel>p - o\<parallel> > 7.5)\<^bold>}
+  "H{mode = MOM \<and> w\<^sub>x > p\<^sub>x \<and> w\<^sub>y > p\<^sub>y \<and> (\<forall> o. o \<in> obsReg \<longrightarrow> \<parallel>p - o\<parallel> > 7.5)}
   LRE
-  \<^bold>{mode = MOM \<and> rs = 1 \<and> rh \<in> {0<..<pi / 2}\<^bold>}"
+  {mode = MOM \<and> rs = 1 \<and> rh \<in> {0<..<pi / 2}}"
   apply hoare_wp_auto
    apply (rename_tac p w r)
    apply (case_tac p rule: vector_2_cases)
@@ -406,15 +406,15 @@ lemma LRE_quad1_heading:
   done
 
 lemma LRE_HCM:
-  "\<^bold>{mode = MOM \<and> (\<exists> o. o \<in> obsReg \<and> \<parallel>p - o\<parallel> \<le> 7.5) \<and> \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>\<^bold>}
+  "H{mode = MOM \<and> (\<exists> o. o \<in> obsReg \<and> \<parallel>p - o\<parallel> \<le> 7.5) \<and> \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>}
      LRE
-   \<^bold>{mode = HCM \<and> rs = 0.1 \<and> \<parallel>rh - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>\<^bold>}"
+   {mode = HCM \<and> rs = 0.1 \<and> \<parallel>rh - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>}"
   by hoare_wp_simp
 
 lemma 
-  "\<^bold>{rs = s \<and> \<phi> = 0 \<and> rh = pi\<^bold>}
+  "H{rs = s \<and> \<phi> = 0 \<and> rh = pi}
     AP
-   \<^bold>{a = \<^bold>[[kp\<^sub>g\<^sub>r * pi / m, 0]\<^bold>]\<^bold>}"
+   {a = \<^bold>[[kp\<^sub>g\<^sub>r * pi / m, 0]\<^bold>]}"
 proof -
   have 1: "(kp\<^sub>g\<^sub>r * pi) < (1765197 / 20000)"
     by (approximation 20)
@@ -425,9 +425,9 @@ proof -
     done
 qed
 
-lemma "\<^bold>{t = 0 \<and> v = $old:v\<^bold>}ODE\<^bold>{v = $old:v + t *\<^sub>R a\<^bold>}"
+lemma "H{t = 0 \<and> v = $old:v}ODE{v = $old:v + t *\<^sub>R a}"
 proof -
-  have 1: "\<^bold>{v = $old:v + t *\<^sub>R a\<^bold>}ODE\<^bold>{v = $old:v + t *\<^sub>R a\<^bold>}"
+  have 1: "H{v = $old:v + t *\<^sub>R a}ODE{v = $old:v + t *\<^sub>R a}"
     by (dInduct)
   thus ?thesis
     by (rule hoare_conseq, simp_all)
@@ -437,18 +437,18 @@ text \<open> If the AMV is accelerating in the same direction as the velocity, t
   to do so. \<close>
 
 lemma collinear_vector_accel:
-  "\<^bold>{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}
+  "H{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}
     ODE
-   \<^bold>{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}"
+   {a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}"
 proof -
-  have "\<^bold>{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)\<^bold>}
+  have "H{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)}
         ODE
-       \<^bold>{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)\<^bold>}"
+       {a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)}"
     apply (dInduct_mega)
     using inner_commute by blast
-  hence "\<^bold>{a \<bullet> v \<ge> 0 \<and> a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}
+  hence "H{a \<bullet> v \<ge> 0 \<and> a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}
           ODE
-         \<^bold>{a \<bullet> v \<ge> 0 \<and> a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}"
+         {a \<bullet> v \<ge> 0 \<and> a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}"
     apply (rule hoare_conseq)
     apply (expr_auto)
      apply (simp add: power2_norm_eq_inner power_mult_distrib)
@@ -467,16 +467,16 @@ lemma "`a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<long
   apply (simp add: algebra_simps)
   by (smt inner_gt_zero_iff mult_nonneg_nonneg norm_ge_zero)
 
-lemma "\<^bold>{(a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<and> s = \<parallel>v\<parallel>) \<and> t \<ge> 0 \<and> t < \<epsilon> \<and> 
+lemma "H{(a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<and> s = \<parallel>v\<parallel>) \<and> t \<ge> 0 \<and> t < \<epsilon> \<and> 
         v = t *\<^sub>R a + $old:v \<and>
-        p = (t\<^sup>2 * 0.5) *\<^sub>R a + t *\<^sub>R $old:v + $old:p\<^bold>}
+        p = (t\<^sup>2 * 0.5) *\<^sub>R a + t *\<^sub>R $old:v + $old:p}
         ODE
-       \<^bold>{t \<ge> 0 \<and> t < \<epsilon> \<and> 
+       {t \<ge> 0 \<and> t < \<epsilon> \<and> 
         v = t *\<^sub>R a + $old:v \<and>
-        p = (t\<^sup>2 * 0.5) *\<^sub>R a + t *\<^sub>R $old:v + $old:p\<^bold>}"
+        p = (t\<^sup>2 * 0.5) *\<^sub>R a + t *\<^sub>R $old:v + $old:p}"
   by (dInduct_mega facts: collinear_vector_accel)
 
-lemma "\<^bold>{a = 0 \<and> v = V\<^bold>}ODE\<^bold>{a = 0 \<and> v = V\<^bold>}"
+lemma "H{a = 0 \<and> v = V}ODE{a = 0 \<and> v = V}"
   by (dInduct_mega)
 
 declare eq_divide_eq_numeral1 [simp del]
@@ -490,10 +490,10 @@ lemma [simp]: "sqrt (9 / 64) = 0.375"
 text \<open> If the AMV is on course then the calculate acceleration vector is always
   collinear with the velocity vector. \<close>
 
-lemma "\<^bold>{s \<ge> 0 \<and> rs > s \<and> \<phi> = pi / 2 \<and> rh = pi / 2 
-        \<and> v = s *\<^sub>R \<^bold>[[sin(\<phi>),cos(\<phi>)]\<^bold>]\<^bold>}
+lemma "H{s \<ge> 0 \<and> rs > s \<and> \<phi> = pi / 2 \<and> rh = pi / 2 
+        \<and> v = s *\<^sub>R \<^bold>[[sin(\<phi>),cos(\<phi>)]\<^bold>]}
         AP
-       \<^bold>{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}"
+       {a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}"
   apply (hoare_wp_auto)
   apply (rename_tac s rs)
   apply (simp add: vec_norm)
@@ -504,27 +504,27 @@ declare vec_simps [simp del]
 lemma vs1: "\<^bold>[[k * x, k * y]\<^bold>] = k *\<^sub>R \<^bold>[[x, y]\<^bold>]"
   by (simp add: vec_simps(1))
 
-lemma "\<^bold>{s \<ge> 0 \<and> rs > s \<and> \<parallel>rh - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>
-        \<and> v = s *\<^sub>R \<^bold>[[sin(\<phi>),cos(\<phi>)]\<^bold>]\<^bold>}
+lemma "H{s \<ge> 0 \<and> rs > s \<and> \<parallel>rh - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon>
+        \<and> v = s *\<^sub>R \<^bold>[[sin(\<phi>),cos(\<phi>)]\<^bold>]}
         AP
-       \<^bold>{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>\<^bold>}"
+       {a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel>}"
   by (hoare_wp_auto)
 
 text \<open> If the AMV is accelerating towards its orientation then the speed increases. \<close>
 
 
 lemma 
-  "\<^bold>{(a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<and> (a \<bullet> a) > 0) \<and> s \<ge> $old:s\<^bold>}
+  "H{(a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<and> (a \<bullet> a) > 0) \<and> s \<ge> $old:s}
     ODE
-   \<^bold>{s \<ge> $old:s\<^bold>}"
+   {s \<ge> $old:s}"
   by (dInduct_mega facts: collinear_vector_accel, simp add: inner_commute)
 
 lemma no_turn_no_accel:
-"\<^bold>{(a = 0 \<and> s > 0) \<and> \<phi> = X\<^bold>} ODE \<^bold>{\<phi> = X\<^bold>}"
+"H{(a = 0 \<and> s > 0) \<and> \<phi> = X} ODE {\<phi> = X}"
   by (dInduct_mega)
 
 lemma no_turn_when_straight:
- "\<^bold>{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<and> \<phi> = X\<^bold>} ODE \<^bold>{\<phi> = X\<^bold>}"
+ "H{a \<bullet> v = \<parallel>a\<parallel> * \<parallel>v\<parallel> \<and> \<phi> = X} ODE {\<phi> = X}"
   apply (dInduct_mega facts: collinear_vector_accel)
   oops
 
@@ -533,7 +533,7 @@ text \<open> Link with CyPhyCircus. Differentiation on a domain. Unit vector d? 
 lemma "\<lbrakk> \<And> x y. P \<^bold>[[x, y]\<^bold>] \<rbrakk> \<Longrightarrow> P X"
   by (metis vector_2_cases)
 
-lemma translational_speed: "\<^bold>{s\<^sup>2 = (v \<bullet> v)\<^bold>}  ODE \<^bold>{s\<^sup>2 = (v \<bullet> v)\<^bold>}" by (dWeaken)
+lemma translational_speed: "H{s\<^sup>2 = (v \<bullet> v)}  ODE {s\<^sup>2 = (v \<bullet> v)}" by (dWeaken)
 
 lemma "`s > 0 \<and> s\<^sup>2 = (v \<bullet> v) \<longrightarrow> s = \<parallel>v\<parallel>`"
   by (expr_simp, metis less_eq_real_def norm_eq_square)
@@ -546,25 +546,25 @@ lemma "\<lbrakk> (x::real) \<ge> 0; y \<ge> 0 \<rbrakk> \<Longrightarrow> x < y 
 lemma "0 \<le> arccos x \<longleftrightarrow> (-1 \<le> x \<and> x \<le> 1)"
   oops
 
-lemma "\<^bold>{True\<^bold>} AP \<^bold>{ft \<le> f\<^sub>m\<^sub>a\<^sub>x\<^bold>}"
+lemma "H{True} AP {ft \<le> f\<^sub>m\<^sub>a\<^sub>x}"
   apply (simp add: wlp usubst_eval)
   oops
 
 (*
-lemma "\<^bold>{\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m\<^bold>} AP \<^bold>{\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m\<^bold>}"
+lemma "{\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m} AP {\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m}"
   apply (hoare_wp_auto)
 *)
 
-lemma "\<^bold>{\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m\<^bold>} ODE \<^bold>{\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m\<^bold>}"
+lemma "H{\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m} ODE {\<parallel>a\<parallel> \<le> f\<^sub>m\<^sub>a\<^sub>x / m}"
   oops
 
-lemma "\<^bold>{\<phi> \<ge> 0\<^bold>} ODE \<^bold>{\<phi> \<ge> 0\<^bold>}"
+lemma "H{\<phi> \<ge> 0} ODE {\<phi> \<ge> 0}"
   apply (dInduct)
   apply (expr_auto)
    apply (auto intro!: arccos_lbound)
   oops
 
-lemma "\<^bold>{ (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 < \<phi>\<^sub>\<epsilon>\<^sup>2 \<^bold>} ODE \<^bold>{ (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 < \<phi>\<^sub>\<epsilon>\<^sup>2 \<^bold>}"
+lemma "H{ (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 < \<phi>\<^sub>\<epsilon>\<^sup>2 } ODE { (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 < \<phi>\<^sub>\<epsilon>\<^sup>2 }"
   apply (subst hoare_diff_inv_on')
   apply (subgoal_tac "(Collect ((\<le>) 0))\<^sub>e = ({t. t \<ge> 0})\<^sub>e")
    prefer 2 apply simp
@@ -574,7 +574,7 @@ lemma "\<^bold>{ (\<parallel>angOfVec(nextWP - p) - \<phi>\<parallel>)\<^sup>2 <
    apply (rule ldifferentiable, simp, expr_simp)
   oops
 
-lemma "\<^bold>{ \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon> \<^bold>} ODE \<^bold>{ \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon> \<^bold>}"
+lemma "H{ \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon> } ODE { \<parallel>angOfVec(nextWP - p) - \<phi>\<parallel> < \<phi>\<^sub>\<epsilon> }"
   apply (dInduct)
   oops
 
