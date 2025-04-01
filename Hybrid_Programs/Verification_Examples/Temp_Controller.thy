@@ -409,29 +409,29 @@ lemma
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow[where c=0, simplified])
-  subgoal 
+  subgoal for s t
     using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
     by blast
-  subgoal 
+  subgoal for s t
     by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
         mult_left_le_one_le zero_le_mult_iff)
-  subgoal 
+  subgoal for s t
     using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
     by blast
-  subgoal 
+  subgoal for s t
     by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
         mult_left_le_one_le zero_le_mult_iff)
     apply (wlp_full local_flow: local_flow[where c=h, simplified])
-  subgoal
+  subgoal for s t
     by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
         h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
-  subgoal
+  subgoal for s t
     using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
     by blast
-  subgoal
+  subgoal for s t
     by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
         h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
-  subgoal
+  subgoal for s t
     using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
     by blast
   by expr_auto+
