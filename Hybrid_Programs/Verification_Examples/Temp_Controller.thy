@@ -131,20 +131,12 @@ abbreviation "inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax)\<^sub>e"
 
 abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0)\<^sub>e"
 
-lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
-  \<Longrightarrow> (pos_inv1 \<le> |G] inv1)
-  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
-  apply (expr_simp add: fbox_def)
-  unfolding le_fun_def le_bool_def
-  by blast
-
 lemma thermostat1:
   "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl1; dyn1) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
-    apply (subst fbox_kcomp)
-    apply(intro conjI weird_intro_rule)
+    apply (rule_tac R="pos_inv1" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
   apply (wlp_full local_flow: local_flow1[where c=0, simplified])
@@ -178,14 +170,6 @@ abbreviation "ctrl2 \<equiv> temp ::= T; pre_ctrl2"
 
 abbreviation "pos_inv2 \<equiv> ((Tmin \<le> $T \<and> $T \<le> Tmax) \<and> temp = T)\<^sub>e"
 
-lemma weird_intro_rule2: "(inv1 \<le> |F] pos_inv2)
-  \<Longrightarrow> (pos_inv2 \<le> |G] inv1)
-  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
-  apply (expr_simp add: fbox_def)
-  unfolding le_fun_def le_bool_def
-  using Tmin_le_Tmax
-  by meson
-
 lemma local_flow2: "local_flow_on [T \<leadsto> - K * (T - c)] T UNIV UNIV
   (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c])"
   by local_flow_on_auto
@@ -196,8 +180,7 @@ lemma thermostat2:
     (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
-    apply (subst fbox_kcomp)
-  apply (rule weird_intro_rule2)
+    apply (rule_tac R="pos_inv2" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow2[where c=0, simplified])
