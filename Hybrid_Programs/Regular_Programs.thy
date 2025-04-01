@@ -173,12 +173,18 @@ lemma kcomp_assoc: "(f ; g) ; h = f ; (g ; h)"
 lemma fbox_kcomp[wlp]: "|G ; F] P = |G] |F] P"
   unfolding fbox_def kcomp_def by auto
 
+lemma fbox_kcompI: "(P \<le> |F] @R)
+  \<Longrightarrow> (R \<le> |G] @Q)
+  \<Longrightarrow> (P \<le> |F; G] Q)"
+  apply (expr_simp add: fbox_def)
+  unfolding le_fun_def le_bool_def
+  by blast
+
 lemma hoare_kcomp:
   assumes "H{P} G {R}" and "H{R} F {Q}"
   shows "H{P} G ; F {Q}"
-  apply(subst fbox_kcomp)
-  using assms fbox_iso
-  by (metis (mono_tags, lifting) SEXP_def predicate1D predicate1I) 
+  apply (rule_tac R=R in fbox_kcompI)
+  using assms by expr_simp+ 
 
 lemma hoare_kcomp_inv:
   assumes "H{I} G {I}" and "H{I} F {I}"
@@ -188,12 +194,38 @@ lemma hoare_kcomp_inv:
 lemma fdia_kcomp: "|G ; F\<rangle> P = |G\<rangle> |F\<rangle> P"
   unfolding fdia_def kcomp_def by auto
 
+lemma hoare_kcomp_assign: 
+  assumes "vwb_lens x" 
+  shows "H{@(P)} x ::= @(f) ; X {@(Q)} = (\<forall>x\<^sub>0. H{$x = [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> @(f) \<and> [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> @(P)} X {@(Q)})"
+proof(rule iffI)
+  show "H{P} x ::= f ; X {Q} \<Longrightarrow> \<forall>x\<^sub>0. H{$x = [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> f \<and> [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> P} X {Q}"
+    by (expr_simp add: fbox_def le_fun_def assigns_def)
+      (metis \<open>vwb_lens x\<close> vwb_lens.put_eq)
+  show "\<forall>x\<^sub>0. H{$x = [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> f \<and> [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> P} X {Q} \<Longrightarrow> H{P} x ::= f ; X {Q}"
+  proof (expr_simp add: fbox_def le_fun_def assigns_def, clarsimp)
+    fix s s'
+    let "?get_x_eq st x\<^sub>0" = "get\<^bsub>x\<^esub> st = f (put\<^bsub>x\<^esub> st x\<^sub>0)"
+    assume "P s" 
+      and "s' \<in> X (put\<^bsub>x\<^esub> s (f s))"
+      and key: "\<forall>x\<^sub>0 s. ?get_x_eq s x\<^sub>0  \<and> P (put\<^bsub>x\<^esub> s x\<^sub>0) \<longrightarrow> (\<forall>s'. s' \<in> X s \<longrightarrow> Q s')"
+    have obs1: "?get_x_eq (put\<^bsub>x\<^esub> s (f s)) (get\<^bsub>x\<^esub> s)"
+      using \<open>vwb_lens x\<close>
+      by expr_auto
+    have obs2: "P (put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> s (f s)) (get\<^bsub>x\<^esub> s))"
+      using \<open>vwb_lens x\<close> \<open>P s\<close>
+      by auto
+    show "Q s'"
+      using key[rule_format, OF conjI, OF obs1 obs2] 
+        \<open>s' \<in> X (put\<^bsub>x\<^esub> s (f s))\<close>
+      by expr_auto
+  qed
+qed
+
 lemma hoare_fwd_assign:
   assumes "vwb_lens x" "\<And> x\<^sub>0. H{$x = e\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk>} S {Q}"
   shows "H{P} x ::= e ; S {Q}"
-  using assms
-  unfolding kcomp_def assigns_def fbox_def le_fun_def
-  by (expr_simp) (metis vwb_lens.put_eq vwb_lens_wb wb_lens_def weak_lens.put_get)
+  apply (rule hoare_kcomp_assign[THEN iffD2, OF assms(1)])
+  using assms by expr_auto
 
 lemma fbox_invI_break: 
   "P \<le> |Y] I \<Longrightarrow> I \<le> |X] I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I] Q"
