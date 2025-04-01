@@ -419,7 +419,7 @@ lemma
     by blast
   by expr_auto+
 
-lemma thermostat2:
+lemma thermostat:
   "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
