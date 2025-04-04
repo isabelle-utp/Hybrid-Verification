@@ -530,6 +530,5 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
 
 end
 
-
 end
 (**)

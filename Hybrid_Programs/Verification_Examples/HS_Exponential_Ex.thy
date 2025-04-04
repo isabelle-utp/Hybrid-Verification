@@ -19,7 +19,7 @@ abbreviation "exp_flow \<tau> \<equiv> [x \<leadsto> x * exp (- \<tau>)]"
 lemma "D (\<lambda>t. exp_flow t s) = (\<lambda>t. exp_f (exp_flow t s)) on {0--t}"
   by (expr_auto, auto intro!: vderiv_intros)
 
-lemma "\<^bold>{x > 0\<^bold>}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0}))\<^bold>{x > 0\<^bold>}"
+lemma "H{x > 0}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0})) {x > 0}"
   by (simp add: fbox_g_evol) expr_auto
 
 \<comment> \<open>Verified with the flow \<close>
@@ -37,7 +37,7 @@ lemma local_flow_exp_flow: "local_flow exp_f UNIV UNIV exp_flow"
   done
 
 (* x>0 -> [{x'=-x}](x>0) *)
-lemma "\<^bold>{x > 0\<^bold>}(x\<acute>= exp_f & G)\<^bold>{x > 0\<^bold>}"
+lemma "H{x > 0}(x\<acute>= exp_f & G){x > 0}"
   apply (subst local_flow.fbox_g_ode_subset[OF local_flow_exp_flow])
    apply (simp)
   apply (expr_auto)
@@ -59,7 +59,7 @@ lemma exp_arith: "0 < (a::real) \<longleftrightarrow> (\<exists>b. a * b\<^sup>2
      (metis not_square_less_zero power2_eq_square zero_less_mult_iff zero_less_one)
 
 (* x>0 -> [{x'=-x}](x>0) *)
-lemma dG_example: "\<^bold>{x > 0\<^bold>}dyn\<^bold>{x > 0\<^bold>}"
+lemma dG_example: "H{x > 0}dyn{x > 0}"
   apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
   apply (dInduct_auto)
   apply (expr_auto add: exp_arith)
@@ -81,19 +81,19 @@ term "(\<lambda>t. exp_f (exp_flow t s))"
 
 term "tsubst2vecf x (\<lambda> t. exp_f)"
 
-lemma "\<^bold>{x > 0\<^bold>}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0}))\<^bold>{x > 0\<^bold>}"
+lemma "H{x > 0}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0})){x > 0}"
   by (simp add: fbox_g_evol) expr_auto
 
-lemma "\<^bold>{x > 0\<^bold>}{EVOL x = x * exp (- \<tau>)}\<^bold>{x > 0\<^bold>}"
+lemma "H{x > 0}{EVOL x = x * exp (- \<tau>)}{x > 0}"
   by (hoare_wp_auto)
 
 lemma local_flow_exp_flow: "local_flow_on exp_f x UNIV UNIV exp_flow"
   by (local_flow 1)
 
-lemma flow_example: "\<^bold>{x > 0\<^bold>}dyn\<^bold>{x > 0\<^bold>}"
+lemma flow_example: "H{x > 0}dyn{x > 0}"
   by (hoare_wp_auto local_flow: local_flow_exp_flow)
 
-lemma "\<^bold>{x \<ge> 0\<^bold>}dyn\<^bold>{x \<ge> 0\<^bold>}"
+lemma "H{x \<ge> 0}dyn{x \<ge> 0}"
   apply (rule darboux_geq[of x y z, where g="-1"]; expr_simp add: framed_derivs 
       ldifferentiable closure usubst unrest_ssubst unrest usubst_eval; clarsimp?)
   subgoal

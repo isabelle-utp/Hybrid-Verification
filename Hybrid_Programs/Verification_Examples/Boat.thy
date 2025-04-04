@@ -224,16 +224,16 @@ lemma "ODE nmods (rs, rh, wps, org)"
 lemma "Autopilot nmods (p, a, v, s)"
   by (auto intro!: closure; subst_eval)
 
-lemma "\<^bold>{s\<^sup>2 = v \<bullet> v\<^bold>} ODE \<^bold>{s\<^sup>2 = v \<bullet> v\<^bold>}"
+lemma "H{s\<^sup>2 = v \<bullet> v} ODE {s\<^sup>2 = v \<bullet> v}"
   by (dWeaken, metis orient_vec_mag_n self_dot)
 
-lemma "\<^bold>{a = 0 \<and> v = V\<^bold>} ODE \<^bold>{a = 0 \<and> v = V\<^bold>}" by dInduct_mega
+lemma "H{a = 0 \<and> v = V} ODE {a = 0 \<and> v = V}" by dInduct_mega
 
-lemma "\<^bold>{(a = 0 \<and> s > 0) \<and> \<phi> = X\<^bold>} ODE \<^bold>{\<phi> = X\<^bold>}" by dInduct_mega
+lemma "H{(a = 0 \<and> s > 0) \<and> \<phi> = X} ODE {\<phi> = X}" by dInduct_mega
 
-lemma "\<^bold>{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)\<^bold>}
+lemma "H{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)}
         ODE
-       \<^bold>{a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)\<^bold>}"
+       {a \<bullet> v \<ge> 0 \<and> (a \<bullet> v)\<^sup>2 = (a \<bullet> a) * (v \<bullet> v)}"
   by (dInduct_mega, metis inner_commute)
 
 end

@@ -131,20 +131,12 @@ abbreviation "inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax)\<^sub>e"
 
 abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0)\<^sub>e"
 
-lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
-  \<Longrightarrow> (pos_inv1 \<le> |G] inv1)
-  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
-  apply (expr_simp add: fbox_def)
-  unfolding le_fun_def le_bool_def
-  by blast
-
 lemma thermostat1:
-  "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl1; dyn1) INV (Tmin \<le> T \<and> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
+   {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
-    apply (subst fbox_kcomp)
-    apply(intro conjI weird_intro_rule)
+    apply (rule_tac R="pos_inv1" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
   apply (wlp_full local_flow: local_flow1[where c=0, simplified])
@@ -178,26 +170,17 @@ abbreviation "ctrl2 \<equiv> temp ::= T; pre_ctrl2"
 
 abbreviation "pos_inv2 \<equiv> ((Tmin \<le> $T \<and> $T \<le> Tmax) \<and> temp = T)\<^sub>e"
 
-lemma weird_intro_rule2: "(inv1 \<le> |F] pos_inv2)
-  \<Longrightarrow> (pos_inv2 \<le> |G] inv1)
-  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
-  apply (expr_simp add: fbox_def)
-  unfolding le_fun_def le_bool_def
-  using Tmin_le_Tmax
-  by meson
-
 lemma local_flow2: "local_flow_on [T \<leadsto> - K * (T - c)] T UNIV UNIV
   (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c])"
   by local_flow_on_auto
 
 lemma thermostat2:
   assumes le0: "Tmin \<le> Tmax"
-  shows "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+  shows "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<and> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
+   {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
-    apply (subst fbox_kcomp)
-  apply (rule weird_intro_rule2)
+    apply (rule_tac R="pos_inv2" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow2[where c=0, simplified])
@@ -276,6 +259,7 @@ proof-
     by auto
 qed
 
+(* full_exprs *)
 
 dataspace time_triggered_thermostat = 
   constants 
@@ -329,6 +313,18 @@ abbreviation "dyn \<equiv> IF \<not> active
 abbreviation "close_to_Tmin \<T> \<equiv> \<T> \<le> Tmin + 1.1 * \<epsilon>"
 abbreviation "close_to_Tmax \<T> \<equiv> \<T> \<ge> Tmax - 1.1 * \<epsilon>"
 
+lemma close_Tmin_not_close_Tmax: "close_to_Tmin \<T> \<Longrightarrow> \<not> close_to_Tmax \<T>"
+proof-
+  assume "close_to_Tmin \<T>"
+  moreover have "1.1 * \<epsilon> < 3 * \<epsilon>"
+    using eps_ge0
+    by auto
+  ultimately show "\<not> close_to_Tmax \<T>"
+    using delta_ge_3eps
+    by linarith
+qed
+
+
 abbreviation "pre_ctrl \<equiv> 
   IF \<not> active \<and> close_to_Tmin temp THEN active ::= True
   ELSE IF active \<and> close_to_Tmax temp THEN active ::= False ELSE skip"
@@ -340,22 +336,14 @@ abbreviation "inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax)\<^sub>e"
 abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0 
   \<and> (close_to_Tmin temp \<longrightarrow> active) \<and> (close_to_Tmax temp \<longrightarrow> \<not> active))\<^sub>e"
 
-lemma weird_intro_rule: "(inv1 \<le> |F] pos_inv1)
-  \<Longrightarrow> (pos_inv1 \<le> |G] inv1)
-  \<Longrightarrow> (inv1 \<le> |F] fbox G inv1)"
-  apply (expr_simp add: fbox_def)
-  unfolding le_fun_def le_bool_def
-  by blast
-
-lemma thermostat2:
-  "\<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>} 
+(* proof 1 *)
+lemma 
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
-   \<^bold>{Tmin \<le> T \<and> T \<le> Tmax\<^bold>}"
-  (* apply (wlp_flow local_flow: local_flow) *)
-  apply (intro_loops)
-    apply (subst fbox_kcomp)
-    apply (rule weird_intro_rule)
-  using delta_ge_3eps 
+   {Tmin \<le> T \<and> T \<le> Tmax}"
+  apply (rule hoare_loopI)
+    apply (rule_tac R="pos_inv1" in fbox_kcompI)
+  using delta_ge_3eps
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow[where c=0, simplified])
@@ -385,6 +373,96 @@ lemma thermostat2:
     using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
     by blast
   by expr_auto+
+
+
+(* proof 2 *)
+lemma 
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
+    (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
+   {Tmin \<le> T \<and> T \<le> Tmax}"
+               apply (intro_loops)
+    apply (subst kcomp_assoc)+
+  apply(subst hoare_kcomp_assign, simp)+
+    apply (subst subst_unrest, simp, expr_simp)+
+    apply (subst subst_id_apply)+
+    apply (subst SEXP_apply)+
+    apply (intro allI)
+  apply (rule_tac R="pos_inv1" in hoare_kcomp)
+  using delta_ge_3eps
+     apply (wlp_full)
+    apply (rule hoare_if_then_else)
+     apply (wlp_full local_flow: local_flow[where c=0, simplified])
+  subgoal for s t
+    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
+    by blast
+  subgoal for s t
+    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
+        mult_left_le_one_le zero_le_mult_iff)
+  subgoal for s t
+    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
+    by blast
+  subgoal for s t
+    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
+        mult_left_le_one_le zero_le_mult_iff)
+    apply (wlp_full local_flow: local_flow[where c=h, simplified])
+  subgoal for s t
+    by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
+        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
+  subgoal for s t
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    by blast
+  subgoal for s t
+    by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
+        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
+  subgoal for s t
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    by blast
+  by expr_auto+
+
+lemma thermostat:
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
+    (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
+   {Tmin \<le> T \<and> T \<le> Tmax}"
+  apply (wlp_flow local_flow: local_flow[where c=0, simplified])
+  apply (wlp_flow local_flow: local_flow[where c=h, simplified])
+  apply (expr_simp add: le_fun_def)
+  apply (safe; clarsimp?)
+  subgoal
+    by (smt (verit) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff mult_left_le_one_le split_mult_pos_le)
+  subgoal for s t
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+      close_Tmin_not_close_Tmax[of "T<s>"] by auto
+  subgoal for s t
+    by (metis K_ge0 add_mono_thms_linordered_field(5) close_Tmin_not_close_Tmax 
+        decr_in_ivl eps_ge0 eps_le_Tmin less_eq_real_def times_divide_eq_left)
+  subgoal for s t
+    by (smt (verit, ccfv_SIG) K_ge0 eps_le_Tmin exp_ge_zero exp_le_one_iff 
+        mult_left_le_one_le mult_sign_intros(1) zero_le_divide_iff)
+  subgoal for s t
+    by (smt (verit, ccfv_SIG) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff 
+        mult_left_le_one_le split_mult_pos_le)
+  subgoal for s t
+    using K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps incr_in_ivl by blast
+  subgoal for s t
+    using K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin h_ge_Tmax_eps by blast
+  subgoal for s t
+    by (smt (verit, ccfv_SIG) K_ge0 eps_le_Tmin exp_ge_zero exp_le_one_iff 
+        mult_left_le_one_le mult_sign_intros(1) zero_le_divide_iff)
+  subgoal for s t
+    using K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin h_ge_Tmax_eps by blast
+  subgoal for s t
+    by (smt (verit, del_insts) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
+        mult_left_le_one_le zero_le_mult_iff)
+  subgoal for s t
+    by (meson K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin h_ge_Tmax_eps less_eq_real_def)
+  subgoal for s t
+    by (smt (verit, del_insts) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff mult_left_le_one_le zero_le_mult_iff)
+  subgoal for s t
+    by (smt (verit, ccfv_SIG) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff 
+        mult_left_le_one_le split_mult_pos_le)
+  subgoal for s t
+    using K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps incr_in_ivl by blast
+  done
 
 end
 
@@ -442,6 +520,48 @@ decrease) \<epsilon> units. Thus, we can define:
 pre_ctrl \<equiv> 
   IF \<not> active \<and> temp \<le> Tmin - 1.1 * \<epsilon> THEN active ::= True
   ELSE IF active \<and> temp \<ge> Tmax - 1.1 * \<epsilon> THEN active ::= False ELSE skip
+
+*)
+
+(* Other proof attempts
+
+
+  (* apply (subst seq_ifthenelse_distl)+
+    apply (rule hoare_if_then_else)
+     apply(subst forward_assign2, simp, expr_simp)+
+     apply (subst subst_unrest, simp, expr_simp)
+     apply (subst subst_id_apply)+
+  apply (intro allI)
+    apply (rule hoare_if_then_else)
+     apply (wlp_full local_flow: local_flow[where c=0, simplified]) *)
+
+(* apply (subst fbox_kcomp)
+    apply (subst fbox_kcomp)
+    apply (subst fbox_kcomp)
+  thm wlp
+    apply (subst fbox_assign)
+    apply (subst fbox_assign)
+  using subst_comp[of t 0 temp, where Q="fbox dyn inv1"]
+  apply (subst subst_comp) *)
+
+(*
+
+find_theorems "subst_upd" "_ \<dagger> _"
+
+lemma coso: "[x \<leadsto> a] \<dagger> ([y \<leadsto> b] \<dagger> (K x y)) = ([x \<leadsto> a, y \<leadsto> b] \<dagger> (K x y))"
+  unfolding SEXP_def
+  by expr_simp
+
+
+lemma subst_comp[wlp]: "[subst_upd [\<leadsto>] x [\<lambda>\<s>. a]\<^sub>e \<dagger>
+        [[subst_upd [\<leadsto>] y [get\<^bsub>T\<^esub>]\<^sub>e \<dagger>
+          [fbox F
+            [fbox G inv1]\<^sub>e]\<^sub>e]\<^sub>e]\<^sub>e]\<^sub>e = k"
+  using coso
+  unfolding SEXP_def
+  by expr_simp
+
+*)
 
 *)
 

@@ -53,7 +53,7 @@ lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
 lemma "(r\<^sup>2 = x\<^sup>2 + y\<^sup>2)\<^sub>e \<le> |x ::= 4; y ::= 3] (5\<^sup>2 = x\<^sup>2 + y\<^sup>2)"
   by (auto simp: wlp usubst_eval)
 
-lemma pendulum: "\<^bold>{r\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{r\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
+lemma pendulum: "H{r\<^sup>2 = x\<^sup>2 + y\<^sup>2} {(x, y)` = (y, -x)} {r\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   by dInduct
 
 \<comment> \<open> Partial derivatives? \<close>
@@ -135,10 +135,10 @@ definition BBall :: "'st prog" where "BBall = (Dynamics ; Ctrl)\<^sup>*"
 
 text \<open> We first prove that it is an invariant of the dynamics using Hoare logic. \<close>
 
-lemma "\<^bold>{@Inv\<^bold>}Dynamics\<^bold>{@Inv\<^bold>}"
+lemma "H{@Inv}Dynamics{@Inv}"
   by dInduct_mega
 
-lemma l1: "\<^bold>{@Inv\<^bold>}Dynamics\<^bold>{@Inv\<^bold>}"
+lemma l1: "H{@Inv}Dynamics{@Inv}"
   apply (rule hoare_conj_inv)
   apply (rule diff_weak_on_rule) \<comment> \<open> Differential weakening (invariant first conjunct) \<close>
    apply (simp)
@@ -147,13 +147,13 @@ lemma l1: "\<^bold>{@Inv\<^bold>}Dynamics\<^bold>{@Inv\<^bold>}"
 
 text \<open> Next, we prove its also an invariant of the controller. This requires a call to sledgehammer. \<close>
 
-lemma l2: "\<^bold>{@Inv\<^bold>}Ctrl\<^bold>{@Inv\<^bold>}"
+lemma l2: "H{@Inv}Ctrl{@Inv}"
   by (hoare_wp_auto)
      (smt c_le_one c_pos mult_less_cancel_right1 power_le_one_iff power_mult_distrib zero_le_power2)
 
 text \<open> As a consequence, it is an invariant of the whole system. \<close>
 
-lemma l3: "\<^bold>{@Inv\<^bold>}BBall\<^bold>{@Inv\<^bold>}"
+lemma l3: "H{@Inv}BBall{@Inv}"
   unfolding BBall_def
   using hoare_kcomp_inv hoare_kstar_inv l1 l2
   by blast
@@ -162,7 +162,7 @@ lemma l3: "\<^bold>{@Inv\<^bold>}BBall\<^bold>{@Inv\<^bold>}"
 text \<open> We can now show the safety property we desire using the consequence rule and sledgehammer. \<close>
 
 lemma safety_property_1:
-  "\<^bold>{0 \<le> h \<and> v\<^sup>2 \<le> 2*g*(H - h)\<^bold>}BBall\<^bold>{0 \<le> h \<and> h \<le> H\<^bold>}"
+  "H{0 \<le> h \<and> v\<^sup>2 \<le> 2*g*(H - h)}BBall{0 \<le> h \<and> h \<le> H}"
   apply (rule hoare_conseq[OF l3]) \<comment> \<open> Consequence rule \<close>
   apply (simp)
   apply (expr_simp)
@@ -172,7 +172,7 @@ lemma safety_property_1:
 text \<open> A more specific version -- the ball starts stationary and at height $h$. \<close>
 
 lemma safety_property_2:
-  "\<^bold>{h = H \<and> v = 0\<^bold>}BBall\<^bold>{0 \<le> h \<and> h \<le> H\<^bold>}"
+  "H{h = H \<and> v = 0}BBall{0 \<le> h \<and> h \<le> H}"
   apply (rule hoare_conseq[OF safety_property_1])
   apply (simp add: H_pos)
   apply simp

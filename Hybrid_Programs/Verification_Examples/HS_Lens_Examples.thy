@@ -19,7 +19,7 @@ lemma num3I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> 
 lemma num4I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> P 4 \<Longrightarrow> P j" for j::4
   by (meson forall_4)
 
-lemma hoare_cases: "\<^bold>{p \<and> I\<^bold>}S\<^bold>{p \<and> I\<^bold>} \<Longrightarrow> \<^bold>{\<not> p \<and> I\<^bold>}S\<^bold>{\<not> p \<and> I\<^bold>} \<Longrightarrow> \<^bold>{I\<^bold>}S\<^bold>{I\<^bold>}"
+lemma hoare_cases: "H{p \<and> I}S{p \<and> I} \<Longrightarrow> H{\<not> p \<and> I}S{\<not> p \<and> I} \<Longrightarrow> H{I}S{I}"
   by (auto simp add: fbox_def SEXP_def)
 
 abbreviation (input) real_of_bool :: "bool \<Rightarrow> real" where "real_of_bool \<equiv> of_bool"
@@ -67,17 +67,17 @@ abbreviation "pend_flow \<tau> \<equiv> [
   y \<leadsto> - x * \<guillemotleft>sin \<tau>\<guillemotright> + y * \<guillemotleft>cos \<tau>\<guillemotright>]"
 
 lemma pendulum_dyn: 
-  "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2\<^bold>} (EVOL pend_flow G U) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2\<^bold>}"
+  "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2} (EVOL pend_flow G U) {\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2}"
   by (simp add: fbox_g_evol) expr_auto
 
 \<comment> \<open>Verified with Framed derivatives \<close>
 
-lemma pendulum_lie: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
+lemma pendulum_lie: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} {(x, y)` = (y, -x)} {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   by dInduct
 
 \<comment> \<open>Verified with differential invariants as cartesian product \<close>
 
-lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} {(x, y)` = (y, -x)} \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
+lemma pendulum_inv: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} {(x, y)` = (y, -x)} {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   apply(simp add: hoare_diff_inv_on')
   apply(rule diff_inv_on_eqI)
   by clarsimp+ (expr_auto, auto intro!: vderiv_intros simp: case_prod_beta)
@@ -96,7 +96,7 @@ begin
 abbreviation fpend :: "real^2 \<Rightarrow> real^2" ("f") 
   where "fpend \<equiv> [x \<leadsto> y, y \<leadsto> -x]"
 
-lemma pendulum_inv: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
+lemma pendulum_inv: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} (x\<acute>= f & G) {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   by (simp add: hoare_diff_inv, expr_auto) 
     (auto intro!: diff_inv_rules vderiv_intros)
 
@@ -121,7 +121,7 @@ lemma "local_flow f UNIV UNIV \<phi>"
    apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by (auto simp: vec_eq_iff)
 
-lemma pendulum_flow: "\<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>} (x\<acute>= f & G) \<^bold>{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2\<^bold>}"
+lemma pendulum_flow: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} (x\<acute>= f & G) {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   apply(subst local_flow.fbox_g_ode_subset[OF local_flow_pend], simp)
   by (auto, expr_auto)
 
@@ -167,13 +167,13 @@ abbreviation "BBall_dinv \<equiv>
     IF v = 0 THEN v ::= - \<guillemotleft>c\<guillemotright> * v ELSE skip) 
   INV (0 \<le> y \<and> v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y))"
 
-lemma ball_diff_inv: "\<^bold>{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y)\<^bold>} (x\<acute>= f & (0 \<le> $y)\<^sub>e) \<^bold>{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y)\<^bold>}"
+lemma ball_diff_inv: "H{v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y)} (x\<acute>= f & (0 \<le> $y)\<^sub>e) {v\<^sup>2 \<le> 2 * \<guillemotleft>g\<guillemotright> * (\<guillemotleft>H\<guillemotright> - y)}"
   apply(subst hoare_diff_inv)
    apply(rule_tac \<mu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" and \<nu>'="(2 * \<guillemotleft>g\<guillemotright> * v)\<^sub>e" in diff_inv_leq_law)
       apply (simp_all add: is_interval_def)
   by expr_auto (auto intro!: vderiv_intros)
 
-lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall_dinv \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
+lemma "H{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>} BBall_dinv {0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>}"
   apply(rule hoare_loopI, simp only: wlp fbox_if_then_else)
     apply(rule hoare_g_odei)
   using ball_diff_inv apply simp
@@ -208,7 +208,7 @@ proof-
     using g_pos by auto
 qed
 
-lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall_dyn \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
+lemma "H{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>} BBall_dyn {0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>}"
   apply(rule hoare_loopI, simp only: wlp fbox_if_then_else fbox_g_evol)
     apply(expr_auto, auto simp: field_simps)
   using c_pos c_le_one H_pos apply expr_auto
@@ -239,7 +239,7 @@ lemma "local_flow f UNIV UNIV \<phi>"
    apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by (auto simp: vec_eq_iff)
 
-lemma "\<^bold>{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>\<^bold>} BBall \<^bold>{0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>\<^bold>}"
+lemma "H{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>} BBall {0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>}"
   apply(rule hoare_loopI, simp only: wlp fbox_if_then_else)
     apply(subst local_flow.fbox_g_ode_subset[OF local_flow_ball], simp)
   using g_pos apply(expr_simp, clarsimp simp: field_simps)
@@ -393,9 +393,9 @@ abbreviation "therm_dyn \<equiv>
 lemmas fbox_therm_dyn = local_flow.fbox_g_ode_subset[OF local_flow_therm]
 
 lemma 
-  "\<^bold>{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M \<and> \<theta> = 0\<^bold>} 
+  "H{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M \<and> \<theta> = 0} 
     (LOOP (therm_ctrl; therm_dyn) INV (T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M \<and> (\<theta> = 0 \<or> \<theta> = 1)))
-   \<^bold>{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M\<^bold>}"
+   {T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M}"
   apply(rule hoare_loopI, simp only: wlp fbox_if_then_else)
     apply(subst fbox_therm_dyn, expr_simp)+
   using temp_dyn_up_real_arith[OF a_ge0 _ _ TM_less_L, of "T\<^sub>m"]
@@ -466,33 +466,33 @@ lemma "dyn nmods {flw, h\<^sub>m}"
 lemma nm: "dyn nmods $flw = F"
   by (subst closure(4); (subst closure(12))?; expr_auto)
 
-lemma "\<^bold>{flw = F\<^bold>}dyn\<^bold>{flw = F\<^bold>}"
+lemma "H{flw = F}dyn{flw = F}"
   by (rule nmods_invariant[OF nm])
 
 lemma 
-  "\<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 
+  "H{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u} 
     LOOP ctrl ; dyn INV (H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
-   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+   {H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
   using tank_arith[OF _ co ci]
   by (hoare_wp_auto local_flow: lflow_tank)
 
-lemma "\<^bold>{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+lemma "H{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}
          dyn'
-       \<^bold>{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+       {flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
   using ci
   apply dInduct_mega'
   by (rule nmods_invariant, subst closure; expr_simp)
     dInduct_mega
 
-lemma "\<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+lemma "H{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}
          {h` = c\<^sub>i - c\<^sub>o, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/(c\<^sub>i - c\<^sub>o)}
-       \<^bold>{0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+       {0 \<le> t \<and> h = (c\<^sub>i - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
   using ci by dInduct_mega
 
 lemma tank_correct:
-  "\<^bold>{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}
+  "H{t = 0 \<and> h = h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}
       LOOP ctrl ; dyn INV (0 \<le> t \<and> h = ((flw * c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
-   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+   {H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
   using ci co
   apply (rule_tac hoare_loop_seqI)
   by hoare_wp_auto
@@ -516,9 +516,9 @@ method hyb_hoare for P::"'b \<Rightarrow> bool"
 
 
 lemma tank_diff_inv:
-  "\<^bold>{h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 
+  "{h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u} 
     {h` = k, t` = 1 | t \<le> (H\<^sub>u - h\<^sub>m)/k}
-   \<^bold>{h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+   {h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
   apply(subst subst_ode)
   apply(intro hoare_invs)
     apply(dInduct_mega)[1]
@@ -529,9 +529,9 @@ lemma tank_diff_inv:
 
 
 lemma 
-  "\<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>} 
+  "{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u} 
     LOOP ctrl ; dyn INV (h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
-   \<^bold>{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u\<^bold>}"
+   {H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
   apply(hyb_hoare "(h = k * t + h\<^sub>0 \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)\<^sub>e")
         prefer 4 prefer 5
   using tank_diff_inv 
@@ -598,7 +598,7 @@ abbreviation "tank_dinv c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau> \<equiv> 
 
 lemma tank_inv:
   assumes "0 \<le> \<tau>" and "0 < c\<^sub>o" and "c\<^sub>o < c\<^sub>i"
-  shows "\<^bold>{I h\<^sub>l h\<^sub>h\<^bold>} tank_dinv c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau> \<^bold>{I h\<^sub>l h\<^sub>h\<^bold>}"
+  shows "{I h\<^sub>l h\<^sub>h} tank_dinv c\<^sub>i c\<^sub>o h\<^sub>l h\<^sub>h \<tau> {I h\<^sub>l h\<^sub>h}"
   apply(hyb_hoare "\<^U>(I h\<^sub>l h\<^sub>h \<and> t = 0 \<and> h\<^sub>0 = h)")
             prefer 4 prefer 7 using tank_diff_inv assms apply force+
   using assms tank_inv_arith1 tank_inv_arith2 by (rel_auto' simp: eucl_nth_def) *)
@@ -716,14 +716,14 @@ abbreviation "flow \<tau> \<equiv> [g \<leadsto> g * exp (- \<tau>)]"
 
 abbreviation "blood_sugar \<equiv> LOOP (ctrl; dyn) INV (g \<ge> 0)"
 
-lemma "\<^bold>{g \<ge> 0\<^bold>} blood_sugar \<^bold>{g \<ge> 0\<^bold>}"
+lemma "H{g \<ge> 0} blood_sugar {g \<ge> 0}"
   apply (wlp_simp) \<comment> \<open> @{term "( |dyn] (0 \<le> $g))"} appears\<close>
   apply (subst fbox_solve[where \<phi>=flow])
      apply ((clarsimp simp: local_flow_on_def)?, unfold_locales; clarsimp?)
        apply (rule c1_local_lipschitz)
   oops
 
-lemma "\<^bold>{g \<ge> 0\<^bold>} blood_sugar \<^bold>{g \<ge> 0\<^bold>}"
+lemma "H{g \<ge> 0} blood_sugar {g \<ge> 0}"
   apply (wlp_expr_solve "flow")
   using ge_gm by force
 
@@ -735,9 +735,9 @@ subsubsection \<open> Flight collision \<close>
 expr_vars
 
 lemma diffInvariant:
-  assumes "\<^bold>{I\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{I\<^bold>}" "`P \<longrightarrow> I`"
-          "\<^bold>{P\<^bold>} g_orbital_on a f (G \<and> I)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
+  assumes "H{I} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {I}" "`P \<longrightarrow> I`"
+          "H{P} g_orbital_on a f (G \<and> I)\<^sub>e (U)\<^sub>e S t\<^sub>0 {Q}"
+  shows "H{P} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {Q}"
   apply (rule diff_cut_on_rule[where C=I])
   using assms weaken apply fastforce
   using assms by simp
@@ -748,7 +748,7 @@ method dInv for I :: "'s \<Rightarrow> bool" uses facts =
    (expr_auto)[1])
 
 lemma hoare_disj_split:
-  "\<^bold>{P\<^bold>} F \<^bold>{R\<^bold>} \<Longrightarrow> \<^bold>{Q\<^bold>} F \<^bold>{R\<^bold>} \<Longrightarrow> \<^bold>{P \<or> Q\<^bold>} F \<^bold>{R\<^bold>}"
+  "H{P} F {R} \<Longrightarrow> H{Q} F {R} \<Longrightarrow> H{P \<or> Q} F {R}"
   unfolding fbox_def by (simp add: le_fun_def)
 
 lit_vars
@@ -785,16 +785,16 @@ definition "plant \<equiv> {x` = v\<^sub>i * cos \<theta> - v\<^sub>o + \<omega>
 
 definition "flight \<equiv> (ctrl; plant)\<^sup>*"
 
-lemma flight_safe: "\<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>} flight \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
+lemma flight_safe: "H{x\<^sup>2 + y\<^sup>2 > 0} flight {x\<^sup>2 + y\<^sup>2 > 0}"
 proof -
-  have ctrl_post: "\<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>} ctrl \<^bold>{(\<omega> = 0 \<and> @I) \<or> (\<omega> = 1 \<and> @J)\<^bold>}"
+  have ctrl_post: "H{x\<^sup>2 + y\<^sup>2 > 0} ctrl {(\<omega> = 0 \<and> @I) \<or> (\<omega> = 1 \<and> @J)}"
     unfolding ctrl_def by wlp_full
 
-  have plant_safe_I: "\<^bold>{\<omega> = 0 \<and> @I\<^bold>} plant \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
+  have plant_safe_I: "H{\<omega> = 0 \<and> @I} plant {x\<^sup>2 + y\<^sup>2 > 0}"
     unfolding plant_def apply (dInv "($\<omega> = 0 \<and> @I)\<^sup>e", dWeaken)
     using v\<^sub>o_pos v\<^sub>i_pos sum_squares_gt_zero_iff by fastforce
 
-  have plant_safe_J: "\<^bold>{\<omega> = 1 \<and> @J\<^bold>} plant \<^bold>{x\<^sup>2 + y\<^sup>2 > 0\<^bold>}"
+  have plant_safe_J: "H{\<omega> = 1 \<and> @J} plant {x\<^sup>2 + y\<^sup>2 > 0}"
     unfolding plant_def apply (dInv "(\<omega>=1 \<and> @J)\<^sup>e", dWeaken)
     by (metis add.right_neutral cos_le_one distrib_left less_add_same_cancel2 
         linorder_not_le linordered_comm_semiring_strict_class.comm_mult_strict_left_mono 

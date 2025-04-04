@@ -112,9 +112,9 @@ next show "\<And>s. {x` = f | G \<and> C on U S @ t\<^sub>0} s \<subseteq> {x` =
 qed
 
 lemma diff_cut_on_rule:
-  assumes fbox_C: "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{C\<^bold>}"
-    and fbox_Q: "\<^bold>{P\<^bold>} g_orbital_on a f (G \<and> C)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
+  assumes fbox_C: "H{P} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {C}"
+    and fbox_Q: "H{P} g_orbital_on a f (G \<and> C)\<^sub>e (U)\<^sub>e S t\<^sub>0 {Q}"
+  shows "H{P} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {Q}"
 proof(subst fbox_def, subst g_orbital_on_eq, clarsimp simp: tsubst2vecf_eq)
   fix t::real and X::"real \<Rightarrow> 'b" and s   
   assume "P s" and "t \<in> U (get\<^bsub>a\<^esub> s)"
@@ -132,8 +132,8 @@ proof(subst fbox_def, subst g_orbital_on_eq, clarsimp simp: tsubst2vecf_eq)
 qed
 
 lemma diff_cut_on_split:
-  assumes "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{P\<^bold>}" "\<^bold>{Q\<^bold>} g_orbital_on a f (G \<and> P)\<^sub>e (U)\<^sub>e S t\<^sub>0\<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P \<and> Q\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{P \<and> Q\<^bold>}"
+  assumes "H{P} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {P}" "H{Q} g_orbital_on a f (G \<and> P)\<^sub>e (U)\<^sub>e S t\<^sub>0{Q}"
+  shows "H{P \<and> Q} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {P \<and> Q}"
   apply (rule diff_cut_on_rule[where C="P"])
   using assms(1) apply (force intro!: hoare_conj_preI)
   apply (clarsimp simp: hoare_conj_pos)
@@ -143,8 +143,8 @@ lemma diff_cut_on_split:
   by (force intro!: hoare_conj_preI)
 
 lemma diff_cut_on_split':
-  assumes "\<^bold>{P\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{P\<^bold>}" "\<^bold>{Q\<^bold>} g_orbital_on a f (G \<and> P)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
-  shows "\<^bold>{P \<and> Q\<^bold>} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 \<^bold>{Q\<^bold>}"
+  assumes "H{P} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {P}" "H{Q} g_orbital_on a f (G \<and> P)\<^sub>e (U)\<^sub>e S t\<^sub>0 {Q}"
+  shows "H{P \<and> Q} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {Q}"
   by (metis (mono_tags) assms diff_cut_on_split hoare_conj_pos)
 
 lemma diff_inv_axiom1:
@@ -194,7 +194,7 @@ lemma diff_inv_rule:
 
 lemma diff_inv_on_rule:
   assumes "`P \<longrightarrow> I`" and "diff_inv_on a f G U S t\<^sub>0 I" and "`I \<longrightarrow> Q`"
-  shows "\<^bold>{P\<^bold>} (g_orbital_on a f G U S t\<^sub>0) \<^bold>{Q\<^bold>}"
+  shows "H{P} (g_orbital_on a f G U S t\<^sub>0) {Q}"
   using assms unfolding fbox_diff_inv_on[THEN sym] refine_iff_implies[THEN sym]
   by (metis (mono_tags, lifting) SEXP_def fbox_iso order.trans)
 
@@ -202,20 +202,20 @@ lemma diff_inv_on_rule:
 subsubsection \<open> Differential ghosts \<close>
 
 lemma diff_ghost_gen_rule:
-  assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>\<eta>\<guillemotright> ($y))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}"
+  assumes hyp: "H{P} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> \<guillemotleft>\<eta>\<guillemotright> ($y))) G (U \<circ> fst) UNIV 0) {Q}"
     and x_hyps: "vwb_lens x" and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G" 
-  (* assumes "\<^bold>{G\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (\<sigma>(y \<leadsto> \<eta>)) B \<^bold>{G\<^bold>}"
-  shows "\<^bold>{G \\ $y\<^bold>} g_dl_ode_frame a \<sigma> B \<^bold>{G \\ $y\<^bold>}" *)
-  shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
+  (* assumes "{G} g_dl_ode_frame (a +\<^sub>L y) (\<sigma>(y \<leadsto> \<eta>)) B {G}"
+  shows "{G \\ $y} g_dl_ode_frame a \<sigma> B {G \\ $y}" *)
+  shows "H{P \\ $y} (g_orbital_on x (\<lambda>t. f) G U S 0) {Q \\ $y}"
   oops (* generalise and finish proof *)
 
 lemma diff_ghost_gen_rule:
   fixes A :: "('n::finite) sq_mtx" and b :: "real ^ 'n" 
   fixes x :: "'c :: real_normed_vector \<Longrightarrow> 's"
   defines "gen_sol \<equiv> (\<lambda>\<tau> \<s>. exp (\<tau> *\<^sub>R A) *\<^sub>V  \<s> + exp (\<tau> *\<^sub>R A) *\<^sub>V (\<integral>\<^sub>0\<^sup>\<tau>(exp (- r *\<^sub>R A) *\<^sub>V b)\<partial>r))" 
-  assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
+  assumes hyp: "H{P} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) {Q}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
-  shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
+  shows "H{P \\ $y} (g_orbital_on x (\<lambda>t. f) G U S 0) {Q \\ $y}"
   using hyp
     (* unfolding defs *)
   apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def)
@@ -252,9 +252,9 @@ lemma diff_ghost_gen_rule:
 
 lemma diff_ghost_rule:
   fixes b :: "real ^ 'n" 
-  assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q'\<^bold>}"
+  assumes hyp: "H{P} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>A\<guillemotright> *\<^sub>V ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) {Q'}"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G" and q_eq: "Q = Q' \\ $y"
-  shows "\<^bold>{P\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q\<^bold>}"
+  shows "H{P} (g_orbital_on x (\<lambda>t. f) G U S 0) {Q}"
   unfolding SEXP_def q_eq
   apply (rule order.trans[OF _ diff_ghost_gen_rule[OF hyp y_hyps, where S=S, unfolded SEXP_def]])
   by (clarsimp simp add: liberate_lens'[OF vwb_lens_mwb[OF y_hyps(1)]] le_fun_def)
@@ -280,9 +280,9 @@ lemma diff_ghost_gen_1rule:
   fixes b :: "'d :: real_normed_vector" and k :: real
   fixes x :: "'c :: real_normed_vector \<Longrightarrow> 's"
   defines "sol \<equiv> (\<lambda>s t. (- b + exp (k * t) *\<^sub>R (b + k *\<^sub>R s))/\<^sub>R k)"
-  assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}" (* S' \<times> UNIV where S \<subseteq> S'*)
+  assumes hyp: "H{P} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) {Q}" (* S' \<times> UNIV where S \<subseteq> S'*)
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
-  shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
+  shows "H{P \\ $y} (g_orbital_on x (\<lambda>t. f) G U S 0) {Q \\ $y}"
   using hyp
     (* unfolding defs *)
   apply (clarsimp simp: fbox_g_orbital_on taut_def le_fun_def)
@@ -326,9 +326,9 @@ lemma diff_ghost_gen_1rule:
 
 lemma diff_ghost_1rule:
   fixes b :: "'d :: real_normed_vector"
-  assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q'\<^bold>}"
+  assumes hyp: "H{P} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) {Q'}"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G" and Q_eq: "Q = Q' \\ $y"
-  shows "\<^bold>{P\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q\<^bold>}"
+  shows "H{P} (g_orbital_on x (\<lambda>t. f) G U S 0) {Q}"
   unfolding SEXP_def Q_eq
   apply (rule order.trans[OF _ diff_ghost_gen_1rule[OF hyp y_hyps, where S=S, unfolded SEXP_def]])
   by (clarsimp simp add: liberate_lens'[OF vwb_lens_mwb[OF y_hyps(1)]] le_fun_def)
@@ -339,9 +339,9 @@ lemma diag_mult_eq_scaleR: "(\<d>\<i>\<a>\<g> i. k) *\<^sub>V s = k *\<^sub>R s"
 
 lemma \<comment> \<open>2 one-line proofs means there is a more general result \<close>
   fixes b :: "real ^ ('n::finite)" 
-  assumes hyp: "\<^bold>{P\<^bold>} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) \<^bold>{Q\<^bold>}"
+  assumes hyp: "H{P} (g_orbital_on (x +\<^sub>L y) (\<lambda>t. f(y \<leadsto> (\<guillemotleft>k\<guillemotright> *\<^sub>R ($y) + \<guillemotleft>b\<guillemotright>))) G (U \<circ> fst) UNIV 0) {Q}"
     and y_hyps: "vwb_lens y" "y \<bowtie> x" "($y \<sharp>\<^sub>s f)" "$y \<sharp> G"
-  shows "\<^bold>{P \\ $y\<^bold>} (g_orbital_on x (\<lambda>t. f) G U S 0) \<^bold>{Q \\ $y\<^bold>}"
+  shows "H{P \\ $y} (g_orbital_on x (\<lambda>t. f) G U S 0) {Q \\ $y}"
   thm diff_ghost_gen_rule diff_ghost_gen_1rule
   \<comment> \<open> this also works: @{text "by (rule diff_ghost_gen_1rule[OF hyp y_hyps])"}\<close>
   by (rule diff_ghost_gen_rule[OF hyp[folded diag_mult_eq_scaleR] y_hyps])
@@ -363,10 +363,10 @@ lemma diff_ghost_inv_very_simple:
   by expr_simp
 
 lemma diff_ghost_rule_very_simple:
-  assumes inv_hyp:"\<^bold>{J\<^bold>} g_dl_ode_frame (a +\<^sub>L y) (f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) G \<^bold>{J\<^bold>}"
+  assumes inv_hyp:"H{J} g_dl_ode_frame (a +\<^sub>L y) (f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) G {J}"
     and y_hyps: "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G"
     and I_eq:  "(I)\<^sub>e = J \\ $y" 
-  shows "\<^bold>{I\<^bold>} g_dl_ode_frame a f G \<^bold>{I\<^bold>}"
+  shows "H{I} g_dl_ode_frame a f G {I}"
   using assms
   by (metis SEXP_def diff_ghost_inv_very_simple fbox_diff_inv_on) 
 

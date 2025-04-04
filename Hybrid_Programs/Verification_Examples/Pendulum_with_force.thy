@@ -42,10 +42,10 @@ abbreviation "program \<equiv> LOOP (ctrl ; ode) INV (-pi \<le> \<theta> \<and> 
 
 abbreviation "invariant \<equiv> (-pi \<le> \<theta> \<and> \<theta> \<le> pi \<and> (g / L * (1 - cos(\<theta>)) + (1/2 * \<omega>\<^sup>2) < g / L))\<^sup>e"
 
-lemma ode_correct: "\<^bold>{invariant\<^bold>} ode \<^bold>{invariant\<^bold>}"
+lemma ode_correct: "H{invariant} ode {invariant}"
   by (dInduct_mega, meson K_gr_0 dual_order.order_iff_strict mult_nonneg_nonneg zero_le_square)
 
-lemma ctrl_correct: "\<^bold>{invariant\<^bold>} ctrl \<^bold>{invariant\<^bold>}"
+lemma ctrl_correct: "H{invariant} ctrl {invariant}"
   apply wlp_simp
   apply (simp_all add: usubst_eval)
   apply (expr_auto)
@@ -55,7 +55,7 @@ lemma ctrl_correct: "\<^bold>{invariant\<^bold>} ctrl \<^bold>{invariant\<^bold>
 lemma inv_impl_postcondition: "`invariant \<longrightarrow> - pi / 2 < \<theta> \<and> \<theta> < pi / 2`"
   by (metis (no_types, lifting) L_gr_0 SEXP_def g_gr_0 tautI trig_prop(1) trig_prop(2))
 
-lemma program_correct: "\<^bold>{\<theta> = 0 \<and> \<omega> = 0\<^bold>} program \<^bold>{- pi / 2 < \<theta> \<and> \<theta> < pi / 2\<^bold>}"
+lemma program_correct: "H{\<theta> = 0 \<and> \<omega> = 0} program {- pi / 2 < \<theta> \<and> \<theta> < pi / 2}"
   apply intro_loops
   apply (rule hoare_kcomp_inv)
   using ctrl_correct apply blast
