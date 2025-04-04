@@ -424,6 +424,26 @@ lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens y \<Lo
   (\<lambda>t. [x \<leadsto> $x * cos \<guillemotleft>t\<guillemotright> + - 1 * $y * sin \<guillemotleft>t\<guillemotright>, y \<leadsto> $y * cos \<guillemotleft>t\<guillemotright> + $x * sin \<guillemotleft>t\<guillemotright>])"
   by local_flow_on_auto
 
+subsection \<open> Application of solutions to ODEs \<close>
+
+named_theorems local_flow
+
+method ode_invariant = 
+  ((rule local_flow[THEN hl_ode_frame], simp, simp add: usubst usubst_eval, expr_taut, expr_simp))
+
+subsection \<open> Program Normalisation \<close>
+
+method normalise_prog =
+  (simp add: kcomp_skip kcomp_assoc seq_ifthenelse_distl)
+
+subsection \<open> Symbolic Execution \<close>
+
+method forward_assign =
+  (rule hoare_fwd_assign, simp, subst_eval)
+
+method symbolic_exec =
+  (normalise_prog?
+  ,(forward_assign | (rule hoare_if_then_else))+)
 
 subsection \<open> Hoare Logic \<close>
 

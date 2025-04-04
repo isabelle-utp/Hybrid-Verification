@@ -28,9 +28,12 @@ translations
 
 unbundle Hybrid_Program_Syntax
 
-(* People will mainly be using this theory for doing verification, so we turn on literal variables *)
+(* People will mainly be using this theory for doing verification, so we turn on literal variables,
+   and enable pretty printing of expressions  *)
 
 lit_vars
+pretty_exprs
+expr_no_mark_vars
 no_notation (ASCII) disj (infixr "|" 30)
 
 (* Should lens gets appear in VCs, it's better they are concise and pretty *)
@@ -40,5 +43,12 @@ syntax
 
 translations
   "_lens_get_pretty x s" == "CONST lens_get x s"
+
+(* Optional: Pretty printing of Hoare triples *)
+
+(* 
+syntax
+  "_hoare" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("Precondition: _//Program: _//Postcondition: _")
+*)
 
 end
