@@ -250,7 +250,7 @@ definition ifthenelse :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'b set) \<Righ
 
 syntax 
   "_ifthenelse" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _ /ELSE _)" [0,0,63] 64)
-  "_ifthen" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _ )" [0,63] 64)
+  "_ifthen" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(2IF _ /THEN _)" [0,63] 64)
 translations 
   "IF P THEN X ELSE Y" == "CONST ifthenelse (P)\<^sub>e X Y"
   "IF P THEN X" == "IF P THEN X ELSE CONST skip"

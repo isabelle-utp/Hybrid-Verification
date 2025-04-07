@@ -10,7 +10,7 @@ begin
 bundle Hybrid_Program_Syntax
 begin
 
-no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
+no_notation Transitive_Closure.rtrancl (\<open>(\<open>notation=\<open>postfix *\<close>\<close>_\<^sup>*)\<close> [1000] 999)
 no_notation (ASCII) disj (infixr "|" 30)
 no_notation (ASCII)
   Set.member  ("'(:')") and

@@ -5,13 +5,13 @@ begin
 
 ML \<open>
 fun match_term (top, _) = case top of
-     Const ("Framed_Dyn_Sys.g_orbital_on", _) => true
+     Const (@{const_name g_orbital_on}, _) => true
    | _ => false
 
 fun find_ode term =
 let
 open Zipper
-val matches = Seq.filter match_term (EqSubst.search_lr_all (mktop term))
+val matches = (Seq.filter match_term (EqSubst.search_lr_all (mktop term)))
 val get_ode = (move_up_right #> move_up_right #> move_down_right #> move_down_abs #> trm)
 in
   get_ode (Seq.hd matches)
@@ -33,8 +33,9 @@ fun solve_subst_ode_cmd ctx term =
 fun find_local_flow_cmd state =
     let
       val ctx = Proof.context_of state
-      val {goal = g, ...} = Proof.goal state
-      val term = Thm.concl_of g
+      val {goal = g, ...} = (Proof.goal state)
+      val prems = Thm.prems_of g
+      val term = if prems = [] then Thm.concl_of g else hd prems
       val sode = find_ode term
       val tm = Solve_Subst_ODE.solve_subst_ode ctx sode
     in 
