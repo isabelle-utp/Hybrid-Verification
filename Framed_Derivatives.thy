@@ -52,6 +52,11 @@ lemma differentiable_plus [ldifferentiable]:
   shows "differentiable\<^bsub>x\<^esub> (expr1 + expr2) within S when G"
   using assms by (simp add: expr_defs)
 
+lemma differentiable_uminus [ldifferentiable]:
+  assumes "differentiable\<^bsub>x\<^esub> expr within S when G" 
+  shows "differentiable\<^bsub>x\<^esub> (- expr) within S when G"
+  using assms by (simp add: expr_defs)
+
 lemma differentiable_minus [ldifferentiable]:
   assumes "differentiable\<^bsub>x\<^esub> expr1 within S when G" 
     and "differentiable\<^bsub>x\<^esub> expr2 within S when G"
@@ -176,6 +181,11 @@ lemma lframeD_minus [framed_derivs]:
   "\<lbrakk>differentiable\<^bsub>x\<^esub> expr1 ; differentiable\<^bsub>x\<^esub> expr2 \<rbrakk> 
   \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1 - expr2) = (\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 - \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2)\<^sub>e"
   by (simp add: expr_defs fun_eq_iff frechet_derivative_minus)
+
+lemma lframeD_uminus [framed_derivs]:
+  "\<lbrakk>differentiable\<^bsub>x\<^esub> expr\<rbrakk> 
+  \<Longrightarrow> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (- expr) = (- \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr)\<^sub>e"
+  by (simp add: expr_defs fun_eq_iff frechet_derivative_uminus)
 
 lemma lframeD_times [framed_derivs]:
   fixes expr1 expr2 :: "'s \<Rightarrow> 'v::real_normed_algebra"
