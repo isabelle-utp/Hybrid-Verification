@@ -44,13 +44,12 @@ fun find_local_flow_cmd state =
    end
 ;
 
-
 val _ =
   Outer_Syntax.command \<^command_keyword>\<open>find_local_flow\<close>
     "search for solutions to ODEs using a CAS"
     (Scan.option Parse.string >>
-      (fn (_) =>
-        Toplevel.keep_proof
-          (find_local_flow_cmd o Toplevel.proof_of)))
+      (fn n =>
+        case n of NONE => Toplevel.keep_proof (find_local_flow_cmd o Toplevel.proof_of) |
+                  SOME t => Toplevel.keep ((fn ctx => solve_subst_ode_cmd ctx (Syntax.read_term ctx t)) o Toplevel.context_of)))
 \<close>
 end
