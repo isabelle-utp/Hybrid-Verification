@@ -114,7 +114,6 @@ lemma fdia_nondet_assign: "|x ::= ?\<rangle> P = (\<exists>k. P\<lbrakk>\<guille
   unfolding fdia_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)
 
-
 subsection \<open> Nondeterministic choice \<close>
 
 definition nondet_choice :: "'s prog \<Rightarrow> 's prog \<Rightarrow> 's prog" (infixr "\<sqinter>" 60) 
@@ -135,11 +134,11 @@ lemma le_fbox_choice_iff': "P \<le> ( |F \<sqinter> G] Q)\<^sub>e \<longleftrigh
 lemma hoare_choice: 
   "H{P} F {Q} \<Longrightarrow> H{P} G {Q} \<Longrightarrow> H{P} (F \<sqinter> G) {Q}"
   by (subst le_fbox_choice_iff, simp)
-
+                       
 lemma fdia_choice: "|F \<sqinter> G\<rangle> P = ( |F\<rangle> P \<or> |G\<rangle> P)\<^sub>e"
   unfolding fdia_def nondet_choice_def by expr_auto
 
-definition Nondet_choice :: "('i \<Rightarrow> 's prog) \<Rightarrow> 'i set \<Rightarrow> 's prog"
+definition Nondet_choice :: "('i \<Rightarrow> ('a \<Rightarrow> 'b set)) \<Rightarrow> 'i set \<Rightarrow> 'a \<Rightarrow> 'b set"
   where "Nondet_choice F I = (\<lambda>s. \<Union> i\<in>I. F i s)"
 
 syntax
@@ -150,6 +149,11 @@ translations "_Nondet_choice i I P" == "CONST Nondet_choice (\<lambda> i. P) I"
 lemma fbox_Choice [wlp]: "|\<Sqinter> i\<in>I. F(i)] P = (\<forall> i\<in>\<guillemotleft>I\<guillemotright>. |F(i)] P)\<^sub>e"
   by (auto simp add: fbox_def Nondet_choice_def fun_eq_iff)
 
+lemma hoare_Choice: "\<lbrakk> \<And> i. i \<in> I \<Longrightarrow> H{P} F(i) {Q} \<rbrakk> \<Longrightarrow> H{P} \<Sqinter> i\<in>I. F(i) {Q}"
+  by (simp add: wlp, expr_auto)
+
+lemma nondet_assign_as_Nondet_assign: "(x ::= ?) = (\<Sqinter> v\<in>UNIV. x ::= \<guillemotleft>v\<guillemotright>)"
+  by (auto simp add: Nondet_choice_def assigns_def nondet_assign_def fun_eq_iff expr_defs)
 
 subsection \<open> Sequential composition \<close>
 
@@ -173,6 +177,9 @@ lemmas kcomp_skip = kcomp_id[unfolded skip_def[symmetric]]
 lemma kcomp_assoc: "(f ; g) ; h = f ; (g ; h)"
   unfolding kcomp_eq 
   by (auto simp: fun_eq_iff)
+
+lemma Choice_kcomp_distr: "(\<Sqinter> i\<in>I. F(i)) ; P = (\<Sqinter> i\<in>I. F(i) ; P)"
+  by (auto simp add: Nondet_choice_def kcomp_eq fun_eq_iff)
 
 lemma fbox_kcomp[wlp]: "|G ; F] P = |G] |F] P"
   unfolding fbox_def kcomp_def by auto
@@ -235,6 +242,18 @@ lemma hoare_bwd_assign:
   assumes "H{P} S {Q\<lbrakk>e/x\<rbrakk>}"
   shows "H{P} S ; x ::= e {Q}"
   using assms by (simp add: hoare_kcomp hoare_assign)
+
+lemma hoare_nondet_fwd_assign: 
+  assumes "vwb_lens x" "\<And> x\<^sub>0 v. H{P\<lbrakk>x\<^sub>0/x\<rbrakk> \<and> $x = \<guillemotleft>v\<guillemotright>} S {Q}" 
+  shows "H{P} (x ::= ?) ; S {Q}"
+  using assms unfolding nondet_assign_as_Nondet_assign
+  apply (simp add: Choice_kcomp_distr)
+  apply (rule hoare_Choice)
+  apply (rule hoare_fwd_assign)
+   apply (simp_all add: conj_commute)
+  apply subst_eval
+  apply force
+  done
 
 lemma fbox_invI_break: 
   "P \<le> |Y] I \<Longrightarrow> I \<le> |X] I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I] Q"

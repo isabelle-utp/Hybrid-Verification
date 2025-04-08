@@ -444,7 +444,7 @@ method normalise_prog =
 subsection \<open> Symbolic Execution \<close>
 
 method forward_assign =
-  (rule hoare_fwd_assign, simp, subst_eval)
+  (rule hoare_fwd_assign hoare_nondet_fwd_assign, simp, subst_eval)
 
 method backward_assign =
   (rule hoare_bwd_assign hoare_assign_impl, subst_eval, (expr_auto add: field_simps)[1])
