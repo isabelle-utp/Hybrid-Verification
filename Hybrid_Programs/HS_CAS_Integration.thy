@@ -27,7 +27,7 @@ fun solve_subst_ode_cmd ctx term =
       val frame = foldl1 (fn (x, y) => const @{const_name lens_plus} $ x $ y) (map (Expr_Util.const_or_free ctx) (Symtab.keys odes))
       val lflow = @{term "local_flow_on"} $ sode $ frame $ const @{const_abbrev UNIV} $ const @{const_abbrev UNIV} $ tm
     in
-    "Found ODE solution: " ^ Active.sendback_markup_command ("lemma \"" ^ Syntax.string_of_term ctx lflow ^ "\" by local_flow_auto") |> writeln
+    "Found ODE solution: " ^ Active.sendback_markup_command ("lemma [local_flow]: \"" ^ Syntax.string_of_term ctx lflow ^ "\" by local_flow_on_auto") |> writeln
     end;
 
 fun find_local_flow_cmd state =
