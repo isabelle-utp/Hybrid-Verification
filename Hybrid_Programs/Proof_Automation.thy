@@ -429,7 +429,7 @@ subsection \<open> Application of solutions to ODEs \<close>
 named_theorems local_flow
 
 method ode_invariant = 
-  ((rule local_flow[THEN hl_ode_frame], simp, simp add: usubst usubst_eval, expr_taut, expr_simp))
+  ((rule local_flow[THEN hl_ode_frame], simp, simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps))
 
 subsection \<open> Program Normalisation \<close>
 
