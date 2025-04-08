@@ -408,6 +408,16 @@ lemma hoare_diff_inv_on':
   using fbox_diff_inv_on[of I a f G U S]
   by (simp add: SEXP_def)
 
+lemma hoare_diff_inv_onI:
+  assumes "diff_inv_on a f G U S t\<^sub>0 (I)\<^sub>e"
+  shows "H{I} g_orbital_on a f G U S t\<^sub>0 {I}"
+  by (simp add: assms fbox_diff_inv_on)
+
+lemma hoare_diff_inv_on_postI:
+  assumes "diff_inv_on a f G U S t\<^sub>0 (I)\<^sub>e" "`P \<longrightarrow> I`"
+  shows "H{P} g_orbital_on a f G U S t\<^sub>0 {I}"
+  by (metis SEXP_def assms fbox_diff_inv_on impl_eq_leq order_trans_rules(23))
+
 lemma diff_inv_guard_ignore:
   assumes "I \<le> |g_orbital f (True)\<^sub>e U S t\<^sub>0] I"
   shows "I \<le> |g_orbital f G U S t\<^sub>0] I"

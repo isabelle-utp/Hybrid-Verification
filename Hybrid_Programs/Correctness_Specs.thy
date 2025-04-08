@@ -149,8 +149,13 @@ lemma hoare_disj_preI:
   by (auto simp: le_fun_def fbox_def)
 
 lemma hoare_disj_posI: 
-  "H{@P}X{@a} \<Longrightarrow> Q = (@a \<or> @b)\<^sub>e \<Longrightarrow> H{@P}X{@Q}"
+  "H{P}X{a} \<Longrightarrow> Q = (a \<or> b)\<^sub>e \<Longrightarrow> H{P}X{Q}"
   by (auto simp: le_fun_def fbox_def)
+
+lemma hoare_post_invariant:
+  assumes "`P \<longrightarrow> I`" "H{I} C {I}" 
+  shows "H{P} C {I}"
+  by (metis SEXP_def assms(1,2) order.trans refine_iff_implies)
 
 lemma fbox_conseq:
   assumes "P\<^sub>2 \<le> |X] Q\<^sub>2" "`P\<^sub>1 \<longrightarrow> P\<^sub>2`" "`Q\<^sub>2 \<longrightarrow> Q\<^sub>1`"

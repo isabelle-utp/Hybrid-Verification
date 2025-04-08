@@ -81,6 +81,11 @@ lemma fbox_assign: "|x ::= e] Q = (Q\<lbrakk>e/x\<rbrakk>)\<^sub>e"
 lemma hoare_assign: "H{Q\<lbrakk>e/x\<rbrakk>} (x ::= e) {Q}"
   by (auto simp: fbox_assign)
 
+lemma hoare_assign_impl: 
+  assumes "`P \<longrightarrow> Q\<lbrakk>e/x\<rbrakk>`"
+  shows "H{P} x ::= e {Q}"
+  using assms by (auto simp: fbox_assign, expr_simp)
+
 lemma fbox_assigns [wlp]: "|\<langle>\<sigma>\<rangle>] Q = \<sigma> \<dagger> (Q)\<^sub>e"
   by (simp add: assigns_def expr_defs fbox_def)
 
@@ -225,6 +230,11 @@ lemma hoare_fwd_assign:
   shows "H{P} x ::= e ; S {Q}"
   apply (rule hoare_kcomp_assign[THEN iffD2, OF assms(1)])
   using assms by expr_auto
+
+lemma hoare_bwd_assign:
+  assumes "H{P} S {Q\<lbrakk>e/x\<rbrakk>}"
+  shows "H{P} S ; x ::= e {Q}"
+  using assms by (simp add: hoare_kcomp hoare_assign)
 
 lemma fbox_invI_break: 
   "P \<le> |Y] I \<Longrightarrow> I \<le> |X] I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I] Q"

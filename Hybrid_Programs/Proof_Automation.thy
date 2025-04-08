@@ -241,7 +241,7 @@ text \<open> A first attempt at a high-level automated proof strategy using diff
 method dDiscr = (rule_tac nmods_invariant; auto intro!: closure)
 
 (* hoare_diff_inv_on' *)
-method dInduct = ((intro hoare_invs)?; subst fbox_diff_inv_on; 
+method dInduct = ((intro hoare_invs)?; (rule_tac hoare_diff_inv_onI); 
     rule_tac lderiv_rules; 
     simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
 
@@ -441,9 +441,15 @@ subsection \<open> Symbolic Execution \<close>
 method forward_assign =
   (rule hoare_fwd_assign, simp, subst_eval)
 
+method backward_assign =
+  (rule hoare_bwd_assign hoare_assign_impl, subst_eval, (expr_auto add: field_simps)[1])
+
 method symbolic_exec =
   (normalise_prog?
-  ,(forward_assign | (rule hoare_if_then_else))+)
+  ,(forward_assign | backward_assign | (rule hoare_if_then_else))+)
+
+method postcondition_invariant =
+  (rule hoare_post_invariant, (expr_auto add: field_simps)[1])
 
 subsection \<open> Hoare Logic \<close>
 
