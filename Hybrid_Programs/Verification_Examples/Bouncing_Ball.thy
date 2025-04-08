@@ -26,6 +26,8 @@ definition "BBall = (h ::= H ; v ::= 0) ; LOOP ((IF h = 0 \<and> v < 0 THEN v ::
 lemma [local_flow]: "local_flow_on [h \<leadsto> v, v \<leadsto> - g] (h +\<^sub>L v) UNIV UNIV (\<lambda>t. [h \<leadsto> - 1 div 2 * g * t ^ 2 + h + t * v, v \<leadsto> - 1 * g * t + v])" 
   by local_flow_on_auto
 
+text \<open> Proof with differential induction \<close>
+
 lemma bouncing_ball_correct: "H{True} BBall {h \<le> H}"
   unfolding BBall_def 
   apply intro_loops \<comment> \<open> Introduce loop with invariant \<close>
@@ -41,6 +43,24 @@ lemma bouncing_ball_correct: "H{True} BBall {h \<le> H}"
   apply expr_auto
   apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)
   done
+
+text \<open> Proof with ODE solution \<close>
+
+lemma bouncing_ball_correct': "H{True} BBall {h \<le> H}"
+  unfolding BBall_def 
+  apply intro_loops \<comment> \<open> Introduce loop with invariant \<close>
+    apply symbolic_exec \<comment> \<open> Execute imperative program operators \<close>
+  apply ode_invariant
+  apply (smt (z3) Groups.mult_ac(2) bouncing_ball.e_range(1,2)
+      bouncing_ball_axioms more_arith_simps(11,7) mult_left_le_one_le
+      not_real_square_gt_zero)
+  apply ode_invariant
+   apply symbolic_exec
+  using H_pos apply linarith
+  apply expr_auto
+  apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)
+  done
+
 
 end
 
