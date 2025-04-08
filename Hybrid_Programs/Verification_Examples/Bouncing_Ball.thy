@@ -50,11 +50,28 @@ lemma bouncing_ball_correct': "H{True} BBall {h \<le> H}"
   unfolding BBall_def 
   apply intro_loops \<comment> \<open> Introduce loop with invariant \<close>
     apply symbolic_exec \<comment> \<open> Execute imperative program operators \<close>
-  apply ode_solve
-  apply (smt (z3) Groups.mult_ac(2) bouncing_ball.e_range(1,2)
+     apply ode_solve
+     apply (smt (z3) Groups.mult_ac(2) bouncing_ball.e_range(1,2)
       bouncing_ball_axioms more_arith_simps(11,7) mult_left_le_one_le
       not_real_square_gt_zero)
-  apply ode_solve
+    apply (ode_solve_with "(\<lambda>t. [h \<leadsto> - 1 div 2 * g * t ^ 2 + h + t * v, v \<leadsto> - 1 * g * t + v])")
+   apply symbolic_exec
+  using H_pos apply linarith
+  apply expr_auto
+  apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)
+  done
+
+text \<open> Alternative proof with ODE solution; could interface with CAS \<close>
+
+lemma bouncing_ball_correct'': "H{True} BBall {h \<le> H}"
+  unfolding BBall_def 
+  apply intro_loops \<comment> \<open> Introduce loop with invariant \<close>
+    apply symbolic_exec \<comment> \<open> Execute imperative program operators \<close>
+     apply (ode_solve_with "(\<lambda>t. [h \<leadsto> - 1 div 2 * g * t ^ 2 + h + t * v, v \<leadsto> - 1 * g * t + v])")
+     apply (smt (z3) Groups.mult_ac(2) bouncing_ball.e_range(1,2)
+      bouncing_ball_axioms more_arith_simps(11,7) mult_left_le_one_le
+      not_real_square_gt_zero)
+    apply (ode_solve_with "(\<lambda>t. [h \<leadsto> - 1 div 2 * g * t ^ 2 + h + t * v, v \<leadsto> - 1 * g * t + v])")
    apply symbolic_exec
   using H_pos apply linarith
   apply expr_auto

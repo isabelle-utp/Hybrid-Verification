@@ -431,6 +431,11 @@ named_theorems local_flow
 method ode_solve = 
   ((rule local_flow[THEN hl_ode_frame], simp, simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps))
 
+method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
+  (rule_tac hl_ode_frame[where f="sol"],
+   (local_flow_on_auto)[1], simp,
+   simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps)
+
 subsection \<open> Program Normalisation \<close>
 
 method normalise_prog =
