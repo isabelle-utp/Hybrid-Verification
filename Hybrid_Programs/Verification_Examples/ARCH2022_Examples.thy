@@ -115,6 +115,7 @@ begin
 (* x>=0 -> [x:=x+1;][?x>=2; x:=x-1; ++ ?\forall x (x>=1 -> y>=1); x:=y;]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::=x+1] |(\<questiondown>x>=2?; x::=x-1) \<sqinter> (\<questiondown>\<forall>x::real. x \<ge> 1 \<longrightarrow> y \<ge> 1?; x::=y)] (x\<ge>1)"
   by wlp_full
+    expr_auto
 
 end
 
@@ -806,7 +807,8 @@ lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(0)\<^sup>e"; expr_simp)
   apply (intro vderiv_intros; (assumption)?, (rule vderiv_intros)?)
-  by force+ ferrack
+                      apply force+
+  by (clarsimp simp: field_simps)
 
 end
 
@@ -1573,6 +1575,7 @@ lemma "(v \<le> V \<and> A > 0)\<^sub>e \<le>
    INV (v \<le> V)
   ] (v \<le> V)"
   by (wlp_full local_flow: local_flow_STTT)
+    expr_auto
 
 end
 
@@ -1886,8 +1889,8 @@ lemma "Kd \<noteq> 0 \<Longrightarrow> Kp \<noteq> 0 \<Longrightarrow> Kd\<^sup>
     by expr_simp (auto simp: fun_eq_iff field_simps exp_minus_inverse)
   subgoal by c1_lipschitz
   apply (intro vderiv_intros; (force intro!: vderiv_intros)?)
-  apply (auto simp: fun_eq_iff field_split_simps exp_minus_inverse closed_segment_eq_real_ivl split: if_splits)
-  oops
+(*   apply (auto simp: fun_eq_iff field_split_simps exp_minus_inverse closed_segment_eq_real_ivl split: if_splits)
+ *)  oops
 
 (* x' = v, v' = -Kp*(x-xr) - Kd*v with Kp = 2 & Kd = 3*)
 lemma local_flow_STTT_9b: "local_flow_on [v \<leadsto> 2 * xr - 2 * x - 3 * v, x \<leadsto> v] (x +\<^sub>L v) UNIV UNIV 
@@ -2452,8 +2455,9 @@ lemma "(v\<^sup>2 \<le> 2*b*(m-x) \<and> v\<ge>0 \<and> A \<ge> 0 \<and> b>0)\<^
   apply (rule hoare_loopI)
     apply (clarsimp simp add: wlp fbox_g_dL_easiest[OF local_flow_LICS2] 
       unrest_ssubst var_alpha_combine  usubst usubst_eval refine_iff_implies)
+    apply expr_simp
   using LICSexample4a_arith[of A b "get\<^bsub>v\<^esub> _" m "get\<^bsub>x\<^esub> _" _ \<epsilon>]
-     apply (force simp: field_simps)
+    apply (clarsimp simp: field_simps)
     apply (bin_unfold, distribute, mon_simp_vars b m)
    apply (expr_simp)
   by clarsimp
@@ -2888,10 +2892,13 @@ lemma local_flow_LICS1: "local_flow_on [t \<leadsto> 1, v \<leadsto> $a, z \<lea
 lemma "initial \<le> |LOOP ctrl;drive INV @loopInv] (z \<le> m)"
   apply (subst change_loopI[where I="(@loopInv \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0)\<^sup>e"])
   apply (rule hoare_loopI)
+    apply (wlp_full local_flow: local_flow_LICS1)
   using ETCS_arith1[of b A "get\<^bsub>v\<^esub> _" _ \<epsilon> m "get\<^bsub>z\<^esub> _"]
-  by (auto simp: unrest_ssubst var_alpha_combine wlp usubst usubst_eval 
-      fbox_g_dL_easiest[OF local_flow_LICS1] field_simps taut_def)
-    (smt (verit, best) mult_left_le_imp_le zero_le_square)
+    apply (clarsimp simp: field_simps)
+   apply expr_auto
+  apply (expr_auto add: field_simps)
+  apply (smt (verit, best) mult_left_le_imp_le zero_le_square)
+  done
 
 
 subsubsection \<open> ETCS: Proposition 1 (Controllability) \<close> (*N 62 *)

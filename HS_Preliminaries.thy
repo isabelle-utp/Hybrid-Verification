@@ -36,13 +36,13 @@ no_notation has_derivative ("(1(D _ \<mapsto> (_))/ _)" [65,65] 61)
 end
 
 text \<open>Special syntax for cubes, power to the 4th and 5th. \<close>
-abbreviation power3 :: "'a::power \<Rightarrow> 'a"  ("(_\<^sup>3)" [1000] 999)
+abbreviation power3 :: "'a::power \<Rightarrow> 'a"  (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>3)\<close> [1000] 999)
   where "x\<^sup>3 \<equiv> x ^ 3"
 
-abbreviation power4 :: "'a::power \<Rightarrow> 'a"  ("(_\<^sup>4)" [1000] 999)
+abbreviation power4 :: "'a::power \<Rightarrow> 'a"  (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>4)\<close> [1000] 999)
   where "x\<^sup>4 \<equiv> x ^ 4"
 
-abbreviation power5 :: "'a::power \<Rightarrow> 'a"  ("(_\<^sup>5)" [1000] 999)
+abbreviation power5 :: "'a::power \<Rightarrow> 'a"  (\<open>(\<open>notation=\<open>postfix 2\<close>\<close>_\<^sup>5)\<close> [1000] 999)
   where "x\<^sup>5 \<equiv> x ^ 5"
 
 bundle power_notation

@@ -53,13 +53,13 @@ lemma "`|\<questiondown>x > 1? ; x ::= x + 1 ; x ::= x\<^sup>2] (x > 3)`"
 lemma "(r\<^sup>2 = x\<^sup>2 + y\<^sup>2)\<^sub>e \<le> |x ::= 4; y ::= 3] (5\<^sup>2 = x\<^sup>2 + y\<^sup>2)"
   by (auto simp: wlp usubst_eval)
 
-lemma pendulum: "H{r\<^sup>2 = x\<^sup>2 + y\<^sup>2} {(x, y)` = (y, -x)} {r\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
+lemma pendulum: "H{r\<^sup>2 = x\<^sup>2 + y\<^sup>2} {x` = y, y` = - x} {r\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   by dInduct
 
 \<comment> \<open> Partial derivatives? \<close>
 
-lemma "\<D>\<^bsub>x\<^esub>\<langle>subst\<rangle> [expr]\<^sub>e = lframe_frechetD x subst (expr::'a ss_scheme \<Rightarrow> real)"
- by (simp add: lframe_frechetD_alt)
+lemma "\<D>\<^bsub>x\<^esub>\<langle>subst\<rangle> @expr = lframe_frechetD x subst (expr::'a ss_scheme \<Rightarrow> real)"
+  by (simp add: lframe_frechetD_alt)
 
 lemma "lframe_frechetD x subst expr s = 
   (SOME f'. D (expr \<circ> put\<^bsub>x\<^esub> s) \<mapsto> f' (at (get\<^bsub>x\<^esub> s))) (get\<^bsub>x\<^esub> (subst s))"
