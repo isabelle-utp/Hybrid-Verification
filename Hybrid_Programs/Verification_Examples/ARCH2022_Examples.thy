@@ -62,8 +62,8 @@ begin
 
 (* x>=0 -> [x:=x+1;][{x:=x+1;}*@invariant(x>=1)]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |LOOP x ::= x + 1 INV (x \<ge> 1)] (x \<ge> 1)"
-  by (subst fbox_kcomp[symmetric])
-    wlp_full
+  unfolding fbox_kcomp[symmetric]
+  by wlp_full
 
 end
 
@@ -76,16 +76,19 @@ begin
 
 (* using differential induction. Can this be better automated? *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
-lemma "H{x \<ge> 0} x ::= x + 1 ; {x` = 2} {x \<ge> 1}"
-  apply (rule_tac R="(x \<ge> 1)\<^sup>e" in hoare_kcomp)
-  by wlp_full dInduct
+lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
+  unfolding fbox_kcomp[symmetric]
+  apply symbolic_exec
+  apply postcondition_invariant
+  by dInduct
 
 (* usind differential invariants (alternative version) *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
   unfolding fbox_kcomp[symmetric]
-  apply (rule_tac R="($x \<ge> 1)\<^sup>e" in hoare_kcomp)
-  by wlp_full (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2")
+  apply symbolic_exec
+  apply postcondition_invariant
+  by (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2")
 
 (* Proof using the solution *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)

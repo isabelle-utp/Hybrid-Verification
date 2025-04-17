@@ -295,6 +295,7 @@ lemma fbox_g_ode_frame_flow:
   apply (subst local_flow.fbox_g_ode_subset[OF assms(1)[unfolded local_flow_on_def, rule_format]])
   using assms by expr_auto+
 
+thm fbox_g_ode_frame_flow[where T=UNIV] fbox_g_ode_frame_flow[where T=UNIV, simplified]
 lemmas fbox_solve = fbox_g_ode_frame_flow[where T=UNIV, simplified]
 
 lemma fdia_g_ode_frame_flow:

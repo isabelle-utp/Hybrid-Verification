@@ -477,8 +477,11 @@ lemma
   "H{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u} 
     LOOP ctrl ; dyn INV (H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
    {H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
+  apply intro_loops
   using tank_arith[OF _ co ci]
-  by (hoare_wp_auto local_flow: lflow_tank)
+  by (wlp_full local_flow: lflow_tank)
+    expr_auto+
+
 
 lemma "H{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}
          dyn'
