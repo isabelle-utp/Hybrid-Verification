@@ -1,7 +1,7 @@
 session "Framed_ODEs" = Ordinary_Differential_Equations +
   options [quick_and_dirty, document = pdf, document_output = "output"]
   sessions
-    "Shallow-Expressions"
+    "Shallow_Expressions"
     "Hybrid-Library"
     Optics
     CAS_Integration

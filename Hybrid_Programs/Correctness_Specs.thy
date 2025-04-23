@@ -6,7 +6,7 @@ text \<open> We use shallow expressions to rephrase hybrid systems properties. E
 includes lemmas for verification condition generation. \<close>
 
 theory Correctness_Specs
-  imports "Shallow-Expressions.Shallow_Expressions"
+  imports "Shallow_Expressions.Shallow_Expressions"
 
 begin
 

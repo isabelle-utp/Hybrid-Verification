@@ -31,9 +31,8 @@ unbundle Hybrid_Program_Syntax
 (* People will mainly be using this theory for doing verification, so we turn on literal variables,
    and enable pretty printing of expressions  *)
 
-lit_vars
-pretty_exprs
-expr_no_mark_vars
+declare [[literal_variables, pretty_print_exprs, mark_state_variables=false]]
+
 no_notation (ASCII) disj (infixr "|" 30)
 
 (* Should lens gets appear in VCs, it's better they are concise and pretty *)

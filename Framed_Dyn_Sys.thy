@@ -9,7 +9,7 @@ theory Framed_Dyn_Sys
   imports 
     Dynamical_Systems 
     "Hybrid-Library.Cont_Lens"
-    "Shallow-Expressions.Shallow_Expressions"
+    "Shallow_Expressions.Shallow_Expressions"
 begin
 
 text \<open> In this section we use type @{typ 's} for the state space, 

@@ -501,7 +501,7 @@ dataspace testing_wp_tactic =
   constants A::real B::real S::real V::real \<epsilon>::real
   variables x::real v::real a::real c::real d::real
 
-lit_vars
+declare [[literal_variables]]
 no_notation (ASCII) disj (infixr "|" 30)
 
 context testing_wp_tactic
