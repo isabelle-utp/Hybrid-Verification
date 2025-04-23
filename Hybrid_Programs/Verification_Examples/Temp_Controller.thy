@@ -139,11 +139,11 @@ lemma thermostat1:
     apply (rule_tac R="pos_inv1" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
-  apply (wlp_full local_flow: local_flow1[where c=0, simplified])
-      apply (wlp_full local_flow: local_flow1)
-  using temp_dyn_down_real_arith[OF K_ge0 Tmin_ge0] apply auto[1]
-  using temp_dyn_down_real_arith[OF K_ge0 Tmin_ge0] apply auto[1]
-  apply (wlp_full local_flow: local_flow1[where c=h, simplified])
+     apply (wlp_flow local_flow: local_flow1[where c=0, simplified])
+  apply (clarsimp simp: le_fun_def)
+  using temp_dyn_down_real_arith[OF K_ge0 Tmin_ge0] apply expr_auto
+    apply (wlp_flow local_flow: local_flow1[where c=h, simplified])
+  apply (clarsimp simp: le_fun_def)
   using temp_dyn_up_real_arith[OF K_ge0 _ _ Tmax_le_Tlim] apply auto[1]
   using temp_dyn_up_real_arith[OF K_ge0 _ _ Tmax_le_Tlim] 
   by expr_auto+
@@ -183,16 +183,15 @@ lemma thermostat2:
     apply (rule_tac R="pos_inv2" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
-     apply (wlp_full local_flow: local_flow2[where c=0, simplified])
+     apply (wlp_full local_flow: local_flow2[where c=0, simplified] simp: field_simps)
      apply (smt (verit, best) K_ge0 Tmin_ge0 assms div_by_1 exp_ge_zero exp_le_one_iff 
       max_zero_mult_nonneg_le minus_mult_minus mult.commute mult_eq_0_iff mult_le_0_iff 
       mult_nonneg_nonneg mult_right_mono_neg nonzero_mult_div_cancel_left one_le_exp_iff 
       times_divide_eq_left)
     apply (wlp_full local_flow: local_flow2[where c=h, simplified])
   using K_ge0 Tmin_ge0 assms
-    apply (smt (verit, best) Groups.mult_ac(2) Tmax_le_Tlim div_by_1 divide_self_if exp_zero 
-      landau_omega.R_mult_left_mono mult_eq_0_iff mult_sign_intros(1) nonzero_mult_div_cancel_left 
-      nonzero_mult_div_cancel_right one_le_exp_iff times_divide_eq_right) 
+  apply (clarsimp simp: field_simps)
+  apply (smt (verit, best) Tmax_le_Tlim affine_ineq exp_le_one_iff factorL(4) mult_nonneg_nonneg)
   by expr_auto+
 
 lemma "Tmin \<le> Tmax \<Longrightarrow> Tmin \<le> T' \<or> T' \<le> Tmax" for T'::real
@@ -349,29 +348,14 @@ lemma
      apply (wlp_full local_flow: local_flow[where c=0, simplified])
   subgoal 
     using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
-    by blast
-  subgoal 
-    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
-        mult_left_le_one_le zero_le_mult_iff)
-  subgoal 
-    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
-    by blast
-  subgoal 
-    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
-        mult_left_le_one_le zero_le_mult_iff)
+    apply clarsimp
+    by (smt (verit) K_ge0 affine_ineq eps_ge0 eps_le_Tmin exp_le_one_iff more_arith_simps(8) zero_le_mult_iff)
     apply (wlp_full local_flow: local_flow[where c=h, simplified])
   subgoal
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    apply clarsimp
     by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
         h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
-  subgoal
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
-    by blast
-  subgoal
-    by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
-        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
-  subgoal
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
-    by blast
   by expr_auto+
 
 
@@ -392,31 +376,16 @@ lemma
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow[where c=0, simplified])
-  subgoal for s t
+  subgoal 
     using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
-    by blast
-  subgoal for s t
-    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
-        mult_left_le_one_le zero_le_mult_iff)
-  subgoal for s t
-    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
-    by blast
-  subgoal for s t
-    by (smt (verit, best) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
-        mult_left_le_one_le zero_le_mult_iff)
+    apply clarsimp
+    by (smt (verit) K_ge0 affine_ineq eps_ge0 eps_le_Tmin exp_le_one_iff more_arith_simps(8) zero_le_mult_iff)
     apply (wlp_full local_flow: local_flow[where c=h, simplified])
-  subgoal for s t
+  subgoal
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    apply clarsimp
     by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
         h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
-  subgoal for s t
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
-    by blast
-  subgoal for s t
-    by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
-        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
-  subgoal for s t
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
-    by blast
   by expr_auto+
 
 lemma thermostat:
@@ -424,8 +393,7 @@ lemma thermostat:
     (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (wlp_flow local_flow: local_flow[where c=0, simplified])
-  apply (wlp_flow local_flow: local_flow[where c=h, simplified])
-  apply (expr_simp add: le_fun_def)
+  apply (wlp_full local_flow: local_flow[where c=h, simplified])
   apply (safe; clarsimp?)
   subgoal
     by (smt (verit) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff mult_left_le_one_le split_mult_pos_le)

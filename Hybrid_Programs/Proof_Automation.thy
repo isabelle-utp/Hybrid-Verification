@@ -487,7 +487,10 @@ method wlp_simp uses simp = (intro_loops?; (simp add: wlp simp)?)
 
 method wlp_flow uses simp local_flow = (wlp_simp simp: simp fbox_solve[OF local_flow]) 
 
-method wlp_full uses simp local_flow = ((wlp_flow simp: simp local_flow: local_flow)?; expr_auto)
+method wlp_full uses simp local_flow = (
+  (wlp_flow simp: simp local_flow: local_flow)?; 
+  ((expr_simp add: le_fun_def), clarsimp?)
+  )
 
 method wlp_solve_one for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" = (subst fbox_solve[where \<phi>=\<phi>], local_flow_on_auto?)
 
@@ -536,8 +539,9 @@ lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S
     )
    INV (v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)
   ] (x \<le> S)"
-  by (wlp_full local_flow: local_flow_test)
-    (smt (verit) divide_nonneg_nonneg zero_le_power)
+  apply (wlp_full local_flow: local_flow_test)
+  by (smt (verit) divide_nonneg_nonneg zero_le_power)
+
 
 end
 

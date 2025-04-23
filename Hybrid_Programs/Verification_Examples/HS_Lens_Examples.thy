@@ -72,7 +72,7 @@ lemma pendulum_dyn:
 
 \<comment> \<open>Verified with Framed derivatives \<close>
 
-lemma pendulum_lie: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} {(x, y)` = (y, -x)} {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
+lemma pendulum_lie: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} {x` = y, y` = - x} {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   by dInduct
 
 \<comment> \<open>Verified with differential invariants as cartesian product \<close>
@@ -80,7 +80,11 @@ lemma pendulum_lie: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + 
 lemma pendulum_inv: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} {(x, y)` = (y, -x)} {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
   apply(simp add: hoare_diff_inv_on')
   apply(rule diff_inv_on_eqI)
-  by clarsimp+ (expr_auto, auto intro!: vderiv_intros simp: case_prod_beta)
+  apply (simp add: var_pair_def)
+  apply clarsimp+
+  apply expr_simp
+  apply (auto intro!: vderiv_intros )
+  done
 
 end
 
@@ -209,7 +213,7 @@ proof-
 qed
 
 lemma "H{v = 0 \<and> y = \<guillemotleft>H\<guillemotright>} BBall_dyn {0 \<le> y \<and> y \<le> \<guillemotleft>H\<guillemotright>}"
-  apply(rule hoare_loopI, simp only: wlp fbox_if_then_else fbox_g_evol)
+  apply(rule hoare_loopI, simp only: wlp fbox_g_evol)
     apply(expr_auto, auto simp: field_simps)
   using c_pos c_le_one H_pos apply expr_auto
     using BBall_dyn_arith by expr_auto
@@ -473,8 +477,11 @@ lemma
   "H{H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u} 
     LOOP ctrl ; dyn INV (H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u)
    {H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}"
+  apply intro_loops
   using tank_arith[OF _ co ci]
-  by (hoare_wp_auto local_flow: lflow_tank)
+  by (wlp_full local_flow: lflow_tank)
+    expr_auto+
+
 
 lemma "H{flw \<and> 0 \<le> t \<and> h = ((flw*c\<^sub>i) - c\<^sub>o)*t + h\<^sub>m \<and> H\<^sub>l \<le> h \<and> h \<le> H\<^sub>u}
          dyn'
@@ -611,7 +618,7 @@ subsubsection \<open> Rocket \<close>
 
 lemma rocket_arith:
   assumes "(k::real) > 1" and "m\<^sub>0 > k" and "x \<in> {0..}"
-  shows "- k*x\<^sup>3/6 + m\<^sub>0*x\<^sup>2/2 \<le> 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2)" (is "?lhs \<le> _")
+  shows "- k*(x\<^sup>3)/6 + m\<^sub>0*(x\<^sup>2)/2 \<le> 2*(m\<^sub>0\<^sup>3)/(3*(k\<^sup>2))" (is "?lhs \<le> _")
 proof-
   let ?f = "\<lambda>t. -k*t\<^sup>3/6 + m\<^sub>0*t\<^sup>2/2" 
     and ?f' = "\<lambda>t. -k*t\<^sup>2/2 + m\<^sub>0*t"
