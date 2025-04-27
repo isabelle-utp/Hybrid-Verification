@@ -35,6 +35,11 @@ dataspace original_reactor =
 context original_reactor
 begin
 
+text \<open> The original reactor model adds the guards @{term "$T \<ge> T\<^sub>M"} 
+and @{term "$T \<ge> T\<^sub>m"} to the ODEs. This forces the reactor's temperature
+to remain in a "safe" range. Thus, we provide the control below to produce 
+the intended dynamics of the original model. \<close>
+
 definition "reactor_ctrl \<equiv>
   temp ::= T; 
   time1 ::= time1 + t; 
@@ -61,7 +66,10 @@ lemma [local_flow]: "local_flow_on [T \<leadsto> K, t \<leadsto> 1] (T +\<^sub>L
   (\<lambda>\<tau>. [T \<leadsto> K * \<tau>  + T, t \<leadsto> \<tau> + t])"
   by local_flow_on_auto
 
-lemma safe1: "H{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M} reactor {T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M}"
+lemma safe1: 
+" H{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M} 
+  reactor 
+  {T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M}"
   unfolding reactor_def reactor_ctrl_def reactor_ode_def
   unfolding loopi_def[symmetric, where I="(T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M)\<^sub>e"]
   apply intro_loops
@@ -69,20 +77,36 @@ lemma safe1: "H{T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M} reactor {T\<^sub>m \
   by (safe; clarsimp simp: add_increasing add_increasing2 diff_le_eq)
     expr_auto+
 
-lemma safe2: "H{(rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1)} reactor {(rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1)}"
+lemma safe2: 
+" H{(rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1)} 
+  reactor 
+  {(rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1)}"
   unfolding reactor_def reactor_ctrl_def reactor_ode_def
   unfolding loopi_def[symmetric, where I="((rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1))\<^sub>e"]
   by (wlp_full local_flow: local_flow)
 
-abbreviation "time_up \<equiv> (T\<^sub>M - T\<^sub>m) / K\<^sub>u\<^sub>p"
+abbreviation "time_up \<equiv> (T\<^sub>M - T\<^sub>m) / K\<^sub>u\<^sub>p"  (* t\<^sub>u\<^sub>p *)
 
-abbreviation "time_up_down1 \<equiv> time_up + (T\<^sub>M - T\<^sub>m) / K\<^sub>1"
+abbreviation "time_up_down1 \<equiv> time_up + (T\<^sub>M - T\<^sub>m) / K\<^sub>1"  (* t\<^sub>\<up>\<^sub>\<down>\<^sub>1 *)
 
-abbreviation "time_up_down2 \<equiv> time_up + (T\<^sub>M - T\<^sub>m) / K\<^sub>2"
+abbreviation "time_up_down2 \<equiv> time_up + (T\<^sub>M - T\<^sub>m) / K\<^sub>2"  (* t\<^sub>\<up>\<^sub>\<down>\<^sub>2 *)
 
-abbreviation "cycle1 \<equiv> time_up + time_up_down1"
+abbreviation "cycle1 \<equiv> time_up + time_up_down1" (* t\<^sub>c\<^sub>1 *)
 
-abbreviation "cycle2 \<equiv> time_up + time_up_down2"
+abbreviation "cycle2 \<equiv> time_up + time_up_down2" (* t\<^sub>c\<^sub>2 *)
+
+(* 
+      |
+T\<^sub>M _ _|_ _ _ _ _ _ __ _ _ _ _ _ __ _ _ _ _ _ __ _ _ _ _ _ 
+      |     /|\<^bsub>               /|\<setminus>          /\<^bsub>
+      |    / |  \<^bsub>            / | \<setminus>        /   \<^bsub>
+\<dots>    |   /  |    \<^bsub>         /  |  \<setminus>      /          \<dots>
+      |  /   |      \<^bsub>      /   |   \<setminus>    /
+    \<setminus> | /    |        \<^bsub>   /    |    \<setminus>  /
+T\<^sub>m_ _\<setminus>|/_____|__________\<^bsub>/_____|_____\<setminus>/____________________
+      |      |          |      |
+             t\<^sub>u\<^sub>p        t\<^sub>\<up>\<^sub>\<down>\<^sub>2    t\<^sub>c\<^sub>2
+*)
 
 expression inv is "
   (rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1) \<and> (T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M)
@@ -364,11 +388,138 @@ thm original_reactor_def
 
 
 
+dataspace time_triggered_reactor =
+  constants 
+    T\<^sub>M :: real \<comment> \<open> Max temperature reaction threshold\<close>
+    T\<^sub>m :: real \<comment> \<open> Min temperature reaction threshold\<close>
+    t\<^sub>R :: real \<comment> \<open> rod resting time \<close>
+    K\<^sub>u\<^sub>p :: real \<comment> \<open> reactor's temperature-increase rate \<close>
+    K\<^sub>1 :: real \<comment> \<open> reactor's temperature-decrease rate by rod 1 \<close>
+    K\<^sub>2 :: real \<comment> \<open> reactor's temperature-decrease rate by rod 2 \<close>
+    \<theta> :: real \<comment> \<open> time-range that triggers a control intervention \<close>
+  assumes Tm_ge0: "0 < T\<^sub>m" 
+    and Tm_le: "T\<^sub>m < T\<^sub>M" 
+    and tR_ge0: "0 < t\<^sub>R" 
+    and Ks_ge0: 
+      "0 < K\<^sub>u\<^sub>p"
+      "0 < K\<^sub>1"
+      "0 < K\<^sub>2"
+    and rest_constraints: 
+      "t\<^sub>R < 2 * (T\<^sub>M - T\<^sub>m) / K\<^sub>u\<^sub>p + (T\<^sub>M - T\<^sub>m) / K\<^sub>1"
+      "t\<^sub>R < 2 * (T\<^sub>M - T\<^sub>m) / K\<^sub>u\<^sub>p + (T\<^sub>M - T\<^sub>m) / K\<^sub>2"
+      "(T\<^sub>M - T\<^sub>m) / K\<^sub>u\<^sub>p < t\<^sub>R"
+    and theta_hyp: "\<exists>n > 3. n * \<theta> > T\<^sub>M - T\<^sub>m"
+  variables
+    rod1 :: bool
+    rod2 :: bool
+    temp :: real
+    time1 :: real
+    time2 :: real
+    T :: real
+    t :: real
 
+context time_triggered_reactor
+begin
 
+text \<open>
+To modify the original model and make it time-triggered, 
+let's assume that the temperature sensor is triggered
+every @{term "\<theta>"} seconds. We model this with the modified
+system of ODEs below.
+\<close>
 
+definition "reactor_ode \<equiv>
+  IF rod1 THEN {T` = - K\<^sub>1, t` = 1 | t \<le> \<theta> }
+  ELSE IF rod2 THEN {T` = - K\<^sub>2, t` = 1 | t \<le> \<theta>}
+  ELSE {T` = K\<^sub>u\<^sub>p, t` = 1 | t \<le> \<theta>}"
 
+lemma [local_flow]: "local_flow_on [T \<leadsto> K, t \<leadsto> 1] (T +\<^sub>L t) UNIV UNIV
+  (\<lambda>\<tau>. [T \<leadsto> K * \<tau>  + T, t \<leadsto> \<tau> + t])"
+  by local_flow_on_auto
 
+text \<open>
+This means that after every @{term \<theta>} units of time,
+@{term "$rod1 \<and> \<not> $rod2 \<Longrightarrow> $T = - K\<^sub>1 * \<theta> + $temp"},
+@{term "\<not> $rod1 \<and> $rod2 \<Longrightarrow> $T = - K\<^sub>2 * \<theta> + $temp"}, and
+@{term "\<not> $rod1 \<and> \<not> $rod2 \<Longrightarrow> $T = K\<^sub>u\<^sub>p * \<theta> + $temp"}.
+
+In particular, this means that the control must react when 
+@{term "$temp + K\<^sub>u\<^sub>p * \<theta> \<ge> T\<^sub>M"},
+@{term "$temp - K\<^sub>1 * \<theta> \<le> T\<^sub>m"}, and
+@{term "$temp - K\<^sub>2 * \<theta> \<le> T\<^sub>m"}.
+\<close>
+
+definition "reactor_ctrl \<equiv>
+  temp ::= T; 
+  time1 ::= time1 + t; 
+  time2 ::= time2 + t;
+  t ::= 0;
+  IF temp - K\<^sub>1 * \<theta> \<le> T\<^sub>m \<and> rod1 THEN rod1 ::= False; time1 ::= 0
+  ELSE IF temp - K\<^sub>2 * \<theta> \<le> T\<^sub>m \<and> rod2 THEN rod2 ::= False; time2 ::= 0
+  ELSE IF temp + K\<^sub>u\<^sub>p * \<theta> \<ge> T\<^sub>M \<and> \<not> rod1 \<and> \<not> rod2 THEN 
+    IF time1 > t\<^sub>R THEN rod1 ::= True
+    ELSE IF time2 > t\<^sub>R THEN rod2 ::= True
+    ELSE skip
+  ELSE skip
+"
+
+definition "reactor = (reactor_ctrl; reactor_ode)\<^sup>*"
+
+abbreviation "time_up \<equiv> (T\<^sub>M - T\<^sub>m) / K\<^sub>u\<^sub>p"
+
+abbreviation "time_up_down1 \<equiv> time_up + (T\<^sub>M - T\<^sub>m) / K\<^sub>1"
+
+abbreviation "time_up_down2 \<equiv> time_up + (T\<^sub>M - T\<^sub>m) / K\<^sub>2"
+
+abbreviation "cycle1 \<equiv> time_up + time_up_down1"
+
+abbreviation "cycle2 \<equiv> time_up + time_up_down2"
+
+expression inv is "
+  (rod1 \<longrightarrow> \<not> rod2) \<and> (rod2 \<longrightarrow> \<not> rod1) \<and> (T\<^sub>m \<le> T \<and> T \<le> T\<^sub>M)
+  \<and> (rod1 \<and> \<not> rod2 \<longrightarrow> (
+      T = T\<^sub>M - K\<^sub>1 * (time2 + t - time_up)
+      \<and> T = T\<^sub>M - K\<^sub>1 * (time1 + t - cycle2)))
+  \<and> (\<not> rod1 \<and> rod2 \<longrightarrow> (
+      T = T\<^sub>M - K\<^sub>2 * (time2 + t - cycle1)
+      \<and> T = T\<^sub>M - K\<^sub>2 * (time1 + t - time_up)))
+  \<and> (\<not> rod1 \<and> \<not> rod2 \<longrightarrow> 
+      (T = T\<^sub>m + K\<^sub>u\<^sub>p * (time1 + t)
+      \<and> T = T\<^sub>m + K\<^sub>u\<^sub>p * (time2 + t - time_up_down1))
+    \<or> (T = T\<^sub>m + K\<^sub>u\<^sub>p * (time2 + t)
+      \<and> T = T\<^sub>m + K\<^sub>u\<^sub>p * (time1 + t - time_up_down2)))"
+
+lemma safe_inv: "H{inv} reactor {inv}"
+  unfolding reactor_def reactor_ctrl_def reactor_ode_def
+  unfolding loopi_def[symmetric, where I="inv", unfolded inv_def]
+  apply intro_loops
+    apply (symbolic_exec; symbolic_exec?; symbolic_exec?; symbolic_exec?; symbolic_exec?; symbolic_exec?)
+  subgoal 
+    (* case 1:
+        \<bullet> IF temp = T\<^sub>m \<and> rod1 THEN rod1 ::= False; time1 ::= 0
+        \<bullet> rod1  *)
+    by wlp_full
+  subgoal for time1\<^sub>0 time2\<^sub>0 \<tau> rod1\<^sub>0 old_time1
+    (* case 2:
+        \<bullet> IF temp = T\<^sub>m \<and> rod1 THEN rod1 ::= False; time1 ::= 0
+        \<bullet> \<not> rod1 \<and> rod2 *)
+    using Ks_ge0 Tm_le
+    by wlp_full
+  subgoal for time1\<^sub>0 time2\<^sub>0 \<tau> rod1\<^sub>0 old_time1
+    (* case 3:
+        \<bullet> IF temp = T\<^sub>m \<and> rod1 THEN rod1 ::= False; time1 ::= 0
+        \<bullet> \<not> rod1 \<and> \<not> rod2 *)
+    apply (wlp_full local_flow: local_flow)
+    apply (rename_tac s tmax)
+    using Ks_ge0 Tm_le Tm_ge0
+    apply (intro conjI iffI)
+     apply (erule_tac x=tmax in allE, clarsimp)
+    apply (meson add_increasing less_eq_real_def mult_sign_intros(1))
+     apply (erule_tac x=tmax in allE, clarsimp)
+
+    sorry
+
+end
 
 
 
