@@ -313,6 +313,22 @@ lemma fdia_if_then_else:
 lemma "IF T THEN skip ELSE abort = \<questiondown>T?"
   by (auto simp: fun_eq_iff skip_def abort_def test_def ifthenelse_def)
 
+subsection \<open> Case statement \<close>
+
+definition match_prog :: "('a, 's) expr \<Rightarrow> ('a \<Rightarrow> 's \<Rightarrow> 's set) \<Rightarrow> ('s \<Rightarrow> 's set)" where
+"match_prog e P = (\<lambda> s. P (e s) s)"
+
+syntax
+  "_match_syntax" :: "['a, cases_syn] \<Rightarrow> 'b"  ("(match _ of/ _)" 10)
+
+translations
+  "_match_syntax e P" => "CONST match_prog (e)\<^sub>e (\<lambda> _sexp_state. (_case_syntax _sexp_state P))"
+  "_match_syntax e P" <= "CONST match_prog (e)\<^sub>e (\<lambda> s. (_case_syntax s2 P))"
+
+lemma hoare_match:
+  assumes "\<And> x. H{P \<and> e = \<guillemotleft>x\<guillemotright>} C x {Q}" 
+  shows "H{P} match_prog e C {Q}"
+  using assms by (auto simp add: match_prog_def fbox_def expr_defs)
 
 subsection \<open> N iterations \<close>
 
