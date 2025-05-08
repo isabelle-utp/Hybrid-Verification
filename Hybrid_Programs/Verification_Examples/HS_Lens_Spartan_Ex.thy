@@ -19,8 +19,6 @@ lemma "A = to_mtx \<^bold>[[0, - 1], [1, 0]\<^bold>]"
   using exhaust_2 by (auto simp: nat_of_2_type_2_eq_0)
 
 
-lit_vars
-
 alphabet ss =
   x :: real
   y :: real

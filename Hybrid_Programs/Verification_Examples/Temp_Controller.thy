@@ -4,10 +4,6 @@ theory Temp_Controller
   imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
-
-
-pretty_exprs
-
 lemma fbox_comp_inv_iff: "((I)\<^sub>e \<le> |F] |G] I) \<longleftrightarrow> (((I)\<^sub>e \<le> |F] I) \<and> ((I)\<^sub>e \<le> |G] I))"
   by (auto simp: fbox_def)
 

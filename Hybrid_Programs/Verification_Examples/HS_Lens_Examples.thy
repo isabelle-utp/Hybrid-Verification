@@ -313,7 +313,7 @@ proof-
     using Thyps and obs by auto
 qed
 
-lit_vars
+declare [[literal_variables]]
 
 locale thermostat =
     \<comment> \<open> constants \<close>
@@ -739,7 +739,7 @@ end
 
 subsubsection \<open> Flight collision \<close>
 
-expr_vars
+declare [[literal_variables=false]]
 
 lemma diffInvariant:
   assumes "H{I} g_orbital_on a f (G)\<^sub>e (U)\<^sub>e S t\<^sub>0 {I}" "`P \<longrightarrow> I`"
@@ -758,7 +758,7 @@ lemma hoare_disj_split:
   "H{P} F {R} \<Longrightarrow> H{Q} F {R} \<Longrightarrow> H{P \<or> Q} F {R}"
   unfolding fbox_def by (simp add: le_fun_def)
 
-lit_vars
+declare [[literal_variables=true]]
 
 dataspace planar_flight =
   constants
