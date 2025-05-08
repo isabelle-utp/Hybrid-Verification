@@ -169,6 +169,11 @@ lemma hoare_conseq:
   using assms 
   by (auto simp add: fbox_def expr_defs)
 
+lemma hoare_invariant:
+  assumes "H{I} S {I}" "`P \<longrightarrow> I`" "`I \<longrightarrow> Q`"
+  shows "H{P} S {Q}"
+  using assms by (fact hoare_conseq)
+
 lemma fdia_conseq:
   assumes "P\<^sub>2 \<le> |X\<rangle> Q\<^sub>2" "`P\<^sub>1 \<longrightarrow> P\<^sub>2`" "`Q\<^sub>2 \<longrightarrow> Q\<^sub>1`"
   shows "P\<^sub>1 \<le> |X\<rangle> Q\<^sub>1"
