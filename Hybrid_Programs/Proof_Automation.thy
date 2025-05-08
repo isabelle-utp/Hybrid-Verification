@@ -439,7 +439,7 @@ method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
 subsection \<open> Program Normalisation \<close>
 
 method normalise_prog =
-  (simp add: kcomp_skip kcomp_assoc seq_ifthenelse_distl)
+  (simp add: kcomp_skip kcomp_assoc seq_ifthenelse_distr choice_kcomp_distr)
 
 subsection \<open> Symbolic Execution \<close>
 
@@ -451,7 +451,7 @@ method backward_assign =
 
 method symbolic_exec =
   (normalise_prog?
-  ,(forward_assign | backward_assign | (rule hoare_if_then_else))+)
+  ,(forward_assign | backward_assign | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test))+)
 
 method postcondition_invariant =
   (rule hoare_post_invariant, (expr_auto add: field_simps)[1])

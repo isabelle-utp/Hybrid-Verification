@@ -2,8 +2,6 @@ theory HS_Exponential_Ex
   imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
-lit_vars
-
 subsubsection \<open> Classical exponential example \<close>
 
 locale exponential_evol =

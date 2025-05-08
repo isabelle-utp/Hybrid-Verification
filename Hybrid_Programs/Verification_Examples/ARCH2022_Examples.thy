@@ -24,9 +24,6 @@ lemma lens_plus_sub_lens:
 
 subsection \<open> Basic \<close>
 
-lit_vars \<comment> \<open> disable constants \<close>
-no_notation (ASCII) disj (infixr "|" 30)
-no_notation Transitive_Closure.rtrancl ("(_\<^sup>*)" [1000] 999)
 
 subsubsection \<open> 1. Basic assignment \<close> 
 

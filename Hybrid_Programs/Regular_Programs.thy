@@ -59,7 +59,6 @@ lemma fdia_test: "|\<questiondown>P?\<rangle> Q = (P \<and> Q)\<^sub>e"
 lemma hoare_test: "H{P} \<questiondown>T? {P \<and> T}"
   by (auto simp: fbox_test)
 
-
 subsection \<open> Assignments \<close>
 
 thm subst_nil_def subst_bop
@@ -178,6 +177,9 @@ lemma kcomp_assoc: "(f ; g) ; h = f ; (g ; h)"
   unfolding kcomp_eq 
   by (auto simp: fun_eq_iff)
 
+lemma choice_kcomp_distr: "(P \<sqinter> Q) ; R = (P ; R) \<sqinter> (Q ; R)"
+  by (auto simp add: fun_eq_iff kcomp_eq nondet_choice_def)
+
 lemma Choice_kcomp_distr: "(\<Sqinter> i\<in>I. F(i)) ; P = (\<Sqinter> i\<in>I. F(i) ; P)"
   by (auto simp add: Nondet_choice_def kcomp_eq fun_eq_iff)
 
@@ -255,6 +257,11 @@ lemma hoare_nondet_fwd_assign:
   apply force
   done
 
+lemma hoare_fwd_test:
+  assumes "H{P \<and> B} C {Q}"
+  shows "H{P} \<questiondown>B? ; C {Q}"
+  by (metis (mono_tags, lifting) SEXP_def assms fbox_kcompI hoare_test)
+
 lemma fbox_invI_break: 
   "P \<le> |Y] I \<Longrightarrow> I \<le> |X] I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I] Q"
   apply(subst fbox_to_hoare, rule hoare_kcomp, force)
@@ -291,7 +298,7 @@ lemma fbox_if_then_else (* [simp] *)[wlp]:
   "|IF T THEN X ELSE Y] Q = ((T \<longrightarrow> |X] Q) \<and> (\<not> T \<longrightarrow> |Y] Q))\<^sub>e"
   unfolding fbox_def ifthenelse_def by auto
 
-lemma seq_ifthenelse_distl: "(IF B THEN P ELSE Q) ; R = IF B THEN (P ; R) ELSE (Q ; R)"
+lemma seq_ifthenelse_distr: "(IF B THEN P ELSE Q) ; R = IF B THEN (P ; R) ELSE (Q ; R)"
   by (simp add: ifthenelse_def fun_eq_iff kcomp_def)
 
 lemma hoare_if_then_else:
@@ -313,6 +320,22 @@ lemma fdia_if_then_else:
 lemma "IF T THEN skip ELSE abort = \<questiondown>T?"
   by (auto simp: fun_eq_iff skip_def abort_def test_def ifthenelse_def)
 
+subsection \<open> Case statement \<close>
+
+definition match_prog :: "('a, 's) expr \<Rightarrow> ('a \<Rightarrow> 's \<Rightarrow> 's set) \<Rightarrow> ('s \<Rightarrow> 's set)" where
+"match_prog e P = (\<lambda> s. P (e s) s)"
+
+syntax
+  "_match_syntax" :: "['a, cases_syn] \<Rightarrow> 'b"  ("(match _ of/ _)" 10)
+
+translations
+  "_match_syntax e P" => "CONST match_prog (e)\<^sub>e (\<lambda> _sexp_state. (_case_syntax _sexp_state P))"
+  "_match_syntax e P" <= "CONST match_prog (e)\<^sub>e (\<lambda> s. (_case_syntax s2 P))"
+
+lemma hoare_match:
+  assumes "\<And> x. H{P \<and> e = \<guillemotleft>x\<guillemotright>} C x {Q}" 
+  shows "H{P} match_prog e C {Q}"
+  using assms by (auto simp add: match_prog_def fbox_def expr_defs)
 
 subsection \<open> N iterations \<close>
 
