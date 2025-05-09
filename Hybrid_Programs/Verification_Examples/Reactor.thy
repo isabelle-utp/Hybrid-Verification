@@ -518,6 +518,7 @@ lemma safe_inv: "H{inv} reactor {inv}"
      apply (erule_tac x=tmax in allE, clarsimp)
 
     sorry
+  oops
 
 end
 
