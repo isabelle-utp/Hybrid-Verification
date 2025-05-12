@@ -97,6 +97,20 @@ lemma H_assign_floyd_hoare:
 lemma fdia_assign: "|x ::= e\<rangle> P = (P\<lbrakk>e/x\<rbrakk>)\<^sub>e"
   by (simp add: assigns_def expr_defs fdia_def)
 
+subsection \<open> Discrete ghost variables \<close>
+
+lemma hoare_intro_ghost:
+  assumes "\<And> y. H{P \<and> \<guillemotleft>y\<guillemotright> = e} C {Q}" 
+  shows "H{P} C {Q}"
+  using assms
+  by (simp add: assigns_def subst_app_def fbox_def fun_eq_iff, expr_auto)
+
+lemma hoare_intro_ghost_var:
+  assumes "vwb_lens x" "\<And> y. H{P\<lbrakk>\<guillemotleft>y\<guillemotright>/x\<rbrakk> \<and> \<guillemotleft>y\<guillemotright> = $x} C {Q}" 
+  shows "H{P} C {Q}"
+  using assms
+  by (simp add: assigns_def subst_app_def fbox_def fun_eq_iff le_fun_def, expr_simp, fastforce)
+
 subsection \<open> Nondeterministic assignments \<close>
 
 definition nondet_assign :: "('a \<Longrightarrow> 's) \<Rightarrow> 's prog" ("(2_ ::= ?)" [64] 65)

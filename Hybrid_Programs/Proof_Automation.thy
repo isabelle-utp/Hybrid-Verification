@@ -266,13 +266,11 @@ method dInduct_mega' uses facts =
   | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
   )+
 
-
 subsection \<open> Differential ghosts \<close>
 
 method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
   = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"],
     simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
-
 
 subsection \<open> Continuity \<close>
 
@@ -480,6 +478,8 @@ subsection \<open> Weakest liberal preconditions \<close>
   * fbox_solve (which is essentially the one above)
   * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
 *)
+
+method intro_star for I :: "'s \<Rightarrow> bool" = (rule_tac hoare_kstarI[where I="I"])
 
 method intro_loops = (rule hoare_loopI hoare_whileI hoare_loopI_break hoare_whileI_break)
 
