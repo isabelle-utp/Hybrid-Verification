@@ -6,8 +6,6 @@ begin
 
 subsection \<open> Preliminaries \<close>
 
-lit_vars
-
 no_notation (ASCII)
   comp  (infixl "o" 55)
 
