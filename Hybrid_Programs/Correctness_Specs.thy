@@ -130,6 +130,8 @@ translations
 lemma fbox_to_hoare: "P \<le> |F] Q \<longleftrightarrow> H{P} F {Q}"
   by auto
 
+ML_file \<open>Spec_Utils.ML\<close>
+
 text \<open> Need to generalise these laws \<close>
 
 lemma hoare_conj_preI: 

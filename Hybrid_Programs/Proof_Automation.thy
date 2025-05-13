@@ -434,6 +434,31 @@ method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
    (local_flow_on_auto)[1], simp,
    simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps)
 
+subsection \<open> Invariant introduction \<close>
+
+ML \<open> 
+  
+\<close>
+
+method_setup invariant =
+\<open>
+let 
+  fun invariant_tac ctx rt goal =
+    if Spec_Utils.is_hoare_triple goal 
+    then let val (P, _, _) = Spec_Utils.dest_hoare_triple goal; 
+             val stT = fst (dest_funT (fastype_of P)) 
+             val t = Syntax.check_term ctx (Lift_Expr.mk_lift_expr ctx stT rt)
+             val ct = Thm.cterm_of ctx t
+             val cstT = Thm.ctyp_of ctx stT
+             val ithm = Thm.instantiate (TVars.make1 ((("'a", 0), @{sort type}), cstT)
+                                        ,Vars.make1 ((("I", 0), stT --> @{typ bool}), ct)) @{thm hoare_invariant}
+         in resolve_tac ctx [ithm] 1 end 
+    else error "Goal is not a Hoare triple"
+  in Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
+     (fn rt => fn ctx => 
+       SIMPLE_METHOD (SUBGOAL (fn (goal, i) => invariant_tac ctx rt goal) 1))
+  end\<close> "introduce an invariant"
+
 subsection \<open> Program Normalisation \<close>
 
 method normalise_prog =
