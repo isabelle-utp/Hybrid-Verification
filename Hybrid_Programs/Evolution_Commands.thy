@@ -245,6 +245,7 @@ translations
   "_ode (_deriv (_salphamk a) F) G" <= "CONST g_dl_ode_on a (F)\<^sub>e (G)\<^sub>e"
   "_ode_ng \<sigma>" == "_ode \<sigma> (CONST True)"
 
+term "{x` = 1, y` = $x | $y \<le> @K on G U @ t\<^sub>0}"
 term "{x` = 1}"
 term "{x` = $y, y` =$z + ($y)\<^sup>2 - $y | $y \<ge> 0}"
 term "{(x, y)` = (1, 2*$x)}"

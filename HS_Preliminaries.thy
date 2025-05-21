@@ -149,7 +149,7 @@ qed
 lemma triangle_norm_vec_le_sum: "\<parallel>x\<parallel> \<le> (\<Sum>i\<in>UNIV. \<parallel>x $ i\<parallel>)"
   by (simp add: L2_set_le_sum norm_vec_def)
 
-
+(* TODO: Do the same automation for bounded_linearness *)
 subsection \<open> Single variable derivatives \<close>
 
 lemma has_derivative_at_within_iff: "(D f \<mapsto> f' (at x within S)) 
@@ -1213,10 +1213,29 @@ lemma is_compact_intervalD:
   "is_interval T \<Longrightarrow> compact T \<Longrightarrow> \<exists>a b. T = {a..b}" for T::"real set"
   by (meson connected_compact_interval_1 is_interval_connected)
 
+
+lemma expanded_bdd_continuous_img_compact:
+  fixes f :: "'a::topological_space \<Rightarrow> real"
+  assumes "compact X"
+    and "continuous_on X f"
+  shows "\<exists>C. \<forall>x\<in>X. f x \<le> C"
+proof-
+  have "compact (f ` X)"
+    using compact_continuous_image[OF \<open>continuous_on X f\<close> \<open>compact X\<close>] .
+  hence "bounded (f ` X)"
+    using compact_eq_bounded_closed by blast
+  then obtain C where "\<forall>x\<in>X. \<bar>f x\<bar> \<le> C"
+    unfolding bounded_iff
+    by auto
+  thus ?thesis
+    using abs_le_iff
+    by blast
+qed
+
 lemma c1_local_lipschitz: 
   fixes f::"real \<Rightarrow> ('a::{banach,perfect_space}) \<Rightarrow> 'a"
   assumes "open S" and "open T"
-    and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> \<DD> (at s within S)" "continuous_on S \<DD>"
+    and c1hyp: "\<forall>\<tau> \<in> T. \<forall>s \<in> S. D (f \<tau>) \<mapsto> \<DD> (at s within S)"
   shows "local_lipschitz T S f"
 proof(unfold local_lipschitz_def lipschitz_on_def, clarsimp simp: dist_norm)
   fix s and t assume "s \<in> S" and "t \<in> T"
