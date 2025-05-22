@@ -422,6 +422,7 @@ lemma "vwb_lens (x::real \<Longrightarrow> 's) \<Longrightarrow> vwb_lens y \<Lo
   (\<lambda>t. [x \<leadsto> $x * cos \<guillemotleft>t\<guillemotright> + - 1 * $y * sin \<guillemotleft>t\<guillemotright>, y \<leadsto> $y * cos \<guillemotleft>t\<guillemotright> + $x * sin \<guillemotleft>t\<guillemotright>])"
   by local_flow_on_auto
 
+
 subsection \<open> Application of solutions to ODEs \<close>
 
 named_theorems local_flow
