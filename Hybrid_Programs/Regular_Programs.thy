@@ -347,9 +347,13 @@ translations
   "_match_syntax e P" <= "CONST match_prog (e)\<^sub>e (\<lambda> s. (_case_syntax s2 P))"
 
 lemma hoare_match:
-  assumes "\<And> x. H{P \<and> e = \<guillemotleft>x\<guillemotright>} C x {Q}" 
+  assumes "\<And> match_var. H{P \<and> e = \<guillemotleft>match_var\<guillemotright>} C match_var {Q}" 
   shows "H{P} match_prog e C {Q}"
   using assms by (auto simp add: match_prog_def fbox_def expr_defs)
+
+(* WARNING: The following proof method depends on the name for the match variable given above. *)
+
+method match = (rule_tac hoare_match, (case_tac match_var; simp))
 
 subsection \<open> N iterations \<close>
 
