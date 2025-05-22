@@ -948,7 +948,8 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
     subgoal for s
       apply (expr_simp)
       apply (rule c1_local_lipschitz; clarsimp)
-       apply (intro derivative_eq_intros)
+      apply (intro derivative_eq_intros)
+                        (* apply auto *)
       sorry
     sorry
   apply (auto simp: field_simps le_fun_def)

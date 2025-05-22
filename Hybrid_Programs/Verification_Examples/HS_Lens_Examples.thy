@@ -120,8 +120,7 @@ lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
 
 lemma "local_flow f UNIV UNIV \<phi>"
   apply (unfold_locales; expr_auto)
-  apply ((rule_tac \<DD>=f in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros, 
-   fastforce intro: num2I continuous_intros)
+  apply ((rule_tac \<DD>=f in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros)
    apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by (auto simp: vec_eq_iff)
 
@@ -238,8 +237,7 @@ abbreviation dfball :: "real ^ 2 \<Rightarrow> real ^ 2" ("df")
 
 lemma "local_flow f UNIV UNIV \<phi>"
   apply (unfold_locales; expr_auto)
-  apply ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros, 
-   fastforce intro: num2I continuous_intros)
+  apply ((rule_tac \<DD>=df in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros)
    apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
   using exhaust_2 by (auto simp: vec_eq_iff)
 
@@ -839,12 +837,6 @@ abbreviation f9 :: "real ^ 3 \<Rightarrow> real ^ 3"
 
 lemma local_lipschitz_f9: "local_lipschitz UNIV UNIV (\<lambda>t::real. f9)"
   apply(rule_tac \<DD>=f9 in c1_local_lipschitz; clarsimp)
-  apply (expr_auto add: has_derivative_coordinate)
-  subgoal for s i
-    using exhaust_3[of i]
-    by (auto intro!: derivative_eq_intros)
-  apply expr_auto
-  apply(rule_tac f'="\<lambda>t. f9" in has_derivative_continuous_on)
   apply (expr_auto add: has_derivative_coordinate)
   subgoal for s i
     using exhaust_3[of i]

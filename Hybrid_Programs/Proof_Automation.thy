@@ -307,7 +307,7 @@ method lipschitz_const for L :: real =
     rule exI[where x="L"], expr_auto, (rule exI[where x="L"], auto)?)
 
 method c1_lipschitz =
-  (expr_simp; (auto intro!: c1_local_lipschitz derivative_eq_intros continuity_intros)?)
+  (expr_simp; (auto intro!: c1_local_lipschitz derivative_eq_intros)?)
 
 method c1_lipschitzI for df uses derivsI =
   (expr_simp, (rule_tac \<DD>=df in c1_local_lipschitz; expr_auto)?; 
