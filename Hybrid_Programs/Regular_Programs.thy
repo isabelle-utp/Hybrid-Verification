@@ -347,7 +347,7 @@ definition match_prog :: "('a, 's) expr \<Rightarrow> ('a \<Rightarrow> 's \<Rig
 "match_prog e P = (\<lambda> s. P (e s) s)"
 
 syntax
-  "_match_syntax" :: "['a, cases_syn] \<Rightarrow> 'b"  ("(match _ of/ _)" 10)
+  "_match_syntax" :: "['a, cases_syn] \<Rightarrow> 'b"  ("(CASE _ OF/ _)" 10)
 
 translations
   "_match_syntax e P" => "CONST match_prog (e)\<^sub>e (\<lambda> _sexp_state. (_case_syntax _sexp_state P))"
