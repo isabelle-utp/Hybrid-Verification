@@ -80,7 +80,7 @@ lemma fbox_assign: "|x ::= e] Q = (Q\<lbrakk>e/x\<rbrakk>)\<^sub>e"
 lemma hoare_assign: "H{Q\<lbrakk>e/x\<rbrakk>} (x ::= e) {Q}"
   by (auto simp: fbox_assign)
 
-lemma hoare_assign_impl: 
+lemma hoare_assignI: 
   assumes "`P \<longrightarrow> Q\<lbrakk>e/x\<rbrakk>`"
   shows "H{P} x ::= e {Q}"
   using assms by (auto simp: fbox_assign, expr_simp)
@@ -99,13 +99,13 @@ lemma fdia_assign: "|x ::= e\<rangle> P = (P\<lbrakk>e/x\<rbrakk>)\<^sub>e"
 
 subsection \<open> Discrete ghost variables \<close>
 
-lemma hoare_intro_ghost:
+lemma hoare_ghost_var:
   assumes "\<And> y. H{P \<and> \<guillemotleft>y\<guillemotright> = e} C {Q}" 
   shows "H{P} C {Q}"
   using assms
   by (simp add: assigns_def subst_app_def fbox_def fun_eq_iff, expr_auto)
 
-lemma hoare_intro_ghost_var:
+lemma hoare_ghost_varI:
   assumes "vwb_lens x" "\<And> y. H{P\<lbrakk>\<guillemotleft>y\<guillemotright>/x\<rbrakk> \<and> \<guillemotleft>y\<guillemotright> = $x} C {Q}" 
   shows "H{P} C {Q}"
   using assms
