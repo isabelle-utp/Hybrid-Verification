@@ -437,7 +437,7 @@ method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
 
 subsection \<open> Assignment and Conditional Laws \<close>
 
-method assign = (rule hoare_assign_impl)
+method assign = (rule hoare_assignI)
 
 method if_then_else = (rule hoare_if_then_else)
 
