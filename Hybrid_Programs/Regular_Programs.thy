@@ -213,6 +213,13 @@ lemma hoare_kcomp:
   apply (rule_tac R=R in fbox_kcompI)
   using assms by expr_simp+ 
 
+lemma hoare_kcomp_monotype:
+  fixes G H :: "'a prog"
+  assumes "H{P} G {R}" and "H{R} F {Q}"
+  shows "H{P} G ; F {Q}"
+  using assms
+  by (fact hoare_kcomp)
+
 lemma hoare_kcomp_inv:
   assumes "H{I} G {I}" and "H{I} F {I}"
   shows "H{I} G ; F {I}"
