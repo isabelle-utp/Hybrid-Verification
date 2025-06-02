@@ -435,6 +435,12 @@ method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
    (local_flow_on_auto)[1], simp,
    simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps)
 
+subsection \<open> Assignment and Conditional Laws \<close>
+
+method assign = (rule hoare_assign_impl)
+
+method if_then_else = (rule hoare_if_then_else)
+
 subsection \<open> Sequence Law \<close>
 
 method_setup sequence =
