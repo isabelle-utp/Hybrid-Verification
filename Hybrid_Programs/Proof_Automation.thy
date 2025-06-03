@@ -445,56 +445,28 @@ subsection \<open> Sequence Law \<close>
 
 method_setup sequence =
 \<open>
-let 
-  fun 
-  strip_alls (Const ("Pure.all", _) $ (u as Abs _)) = strip_alls (snd (Term.dest_abs_global u)) |
-  strip_alls t = t;
-  fun sequence_tac ctx rt goal =
-  let val concl = Logic.strip_imp_concl (strip_alls goal) 
-  in
-    if Spec_Utils.is_hoare_triple concl
-    then let val (P, _, _) = Spec_Utils.dest_hoare_triple concl; 
-             val stT = fst (dest_funT (fastype_of P)) 
-             val t = Syntax.check_term ctx (Lift_Expr.mk_lift_expr ctx stT rt)
-             val ct = Thm.cterm_of ctx t
-             val cstT = Thm.ctyp_of ctx stT
-             val ithm = Thm.instantiate (TVars.make1 ((("'a", 0), @{sort type}), cstT)
-                                        ,Vars.make1 ((("R", 0), stT --> @{typ bool}), ct)) @{thm hoare_kcomp_monotype}
-         in resolve_tac ctx [ithm] 1 end 
-    else error "Goal is not a Hoare triple"
-  end
-  in Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
-     (fn rt => fn ctx => 
-       SIMPLE_METHOD (SUBGOAL (fn (goal, i) => sequence_tac ctx rt goal) 1))
-  end\<close> "apply the sequential law with an intermediate condition"
+Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
+   (fn rt => fn ctx => 
+     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_kcomp_monotype} "R" ctx rt goal) 1))
+\<close> "apply the sequential law with an intermediate condition"
 
 subsection \<open> Invariant introduction \<close>
 
 method_setup invariant =
 \<open>
-let 
-  fun 
-  strip_alls (Const ("Pure.all", _) $ (u as Abs _)) = strip_alls (snd (Term.dest_abs_global u)) |
-  strip_alls t = t;
-  fun invariant_tac ctx rt goal =
-  let val concl = Logic.strip_imp_concl (strip_alls goal) 
-  in
-    if Spec_Utils.is_hoare_triple concl
-    then let val (P, _, _) = Spec_Utils.dest_hoare_triple concl; 
-             val stT = fst (dest_funT (fastype_of P)) 
-             val t = Syntax.check_term ctx (Lift_Expr.mk_lift_expr ctx stT rt)
-             val ct = Thm.cterm_of ctx t
-             val cstT = Thm.ctyp_of ctx stT
-             val ithm = Thm.instantiate (TVars.make1 ((("'a", 0), @{sort type}), cstT)
-                                        ,Vars.make1 ((("I", 0), stT --> @{typ bool}), ct)) @{thm hoare_invariant}
-         in resolve_tac ctx [ithm] 1 end 
-    else error "Goal is not a Hoare triple"
-  end
-  in Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
-     (fn rt => fn ctx => 
-       SIMPLE_METHOD (SUBGOAL (fn (goal, i) => invariant_tac ctx rt goal) 1))
-  end\<close> "introduce an invariant"
+Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
+   (fn rt => fn ctx => 
+     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_invariant} "I" ctx rt goal) 1))
+\<close> "introduce an invariant"
 
+subsection \<open> While loop with invariant \<close>
+
+method_setup while =
+\<open>
+Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
+   (fn rt => fn ctx => 
+     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_while_nannotI} "I" ctx rt goal) 1))
+\<close> "while loop with invariant"
 
 subsection \<open> Program Normalisation \<close>
 

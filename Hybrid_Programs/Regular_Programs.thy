@@ -910,6 +910,10 @@ lemma hoare_whileI: "H{I \<and> T} X {I} \<Longrightarrow> `P \<longrightarrow> 
   by (rule hoare_conseq, subst invar_def)
     (rule hoare_while, assumption, auto simp: taut_def)
 
+lemma hoare_while_nannotI: "H{I \<and> T} X {I} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q`
+  \<Longrightarrow> H{P} WHILE T DO X {Q}"
+  using hoare_whileI[of I T X P Q] invar_def[of "WHILE T DO X" "(I)\<^sub>e"] by auto
+
 lemma fbox_whileI: "P \<le> I \<Longrightarrow> (I \<and> T)\<^sub>e \<le> |X] I \<Longrightarrow> (I \<and> \<not> T)\<^sub>e \<le> Q 
   \<Longrightarrow> P \<le> |WHILE T DO X INV I] Q"
   using hoare_whileI[unfolded fbox_to_hoare[symmetric], of I T X P Q] 
