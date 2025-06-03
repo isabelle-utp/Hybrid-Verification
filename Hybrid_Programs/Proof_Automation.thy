@@ -272,6 +272,10 @@ method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bo
   = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"],
     simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
 
+method dGhost_var_inv_const for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
+  = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"]; (dInduct_auto | expr_simp))
+
+
 subsection \<open> Continuity \<close>
 
 named_theorems continuity_intros "optimised compilation of continuity rules."

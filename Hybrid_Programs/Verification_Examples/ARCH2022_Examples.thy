@@ -735,6 +735,12 @@ lemma Collect_ge_ivl: "Collect ((\<le>) 0) = {(0::real)..}"
 context two_vars
 begin
 
+lemma "0 \<le> N \<Longrightarrow> H{N < x} {x` = x} {N < x}"
+  apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq)
+  apply (expr_simp add: Collect_ge_ivl ivp_sols_def)
+  using current_vderiv_ge_always_ge[of N _ 0 _ id]
+  by auto
+
 (* x^3>5 & y>2 -> [{x'=x^3+x^4, y'=5*y+y^2}](x^3>5 & y>2) *)
 lemma "(x\<^sup>3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x\<^sup>3 + x\<^sup>4, y` = 5*y + y\<^sup>2}] (x\<^sup>3 > 5 \<and> y > 2)"
   apply (intro fbox_invs)
