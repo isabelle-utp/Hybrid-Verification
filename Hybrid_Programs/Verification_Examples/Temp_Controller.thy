@@ -59,16 +59,16 @@ proof-
 qed
 
 
-dataspace thermostat = 
+dataspace original_thermostat = 
   constants 
     Tmax :: real (* maximum comfortable temp. *)
     Tmin :: real (* minimum comfortable temp. *)
-    h :: real (* highest temp. when thermostat is on *)
-    K :: real (* heating rate *)    
+    L :: real (* highest temp. when thermostat is on *)
+    K :: real (* freezing rate *)    
   assumes 
     Tmin_ge0: "0 < Tmin" 
     and Tmin_le_Tmax: "Tmin + 1 < Tmax" 
-    and Tmax_le_Tlim: "Tmax < h"
+    and Tmax_le_Tlim: "Tmax < L"
     and K_ge0: "K > 0"
   variables 
     (* physical *)
@@ -77,7 +77,8 @@ dataspace thermostat =
     (* program *)
     temp :: real   (* for temperature measurements *)
     active :: bool (* whether thermostat is on or off *)
-context thermostat
+
+context original_thermostat
 begin
 
 (*
@@ -99,10 +100,10 @@ Active
   where c = if active then h else 0
 *)
 
-subsection \<open> Improved thermostat \<close>
+subsection \<open> Refined thermostat \<close>
 
 text \<open>
-This thermostat hybrid model improves on the literature versions by adding 
+This thermostat hybrid model refines the literature versions by adding 
 a guard and modifying the control so that it reacts before surpassing the
 comfortable temperatures @{term Tmin} and @{term Tmax}. The consequence
 is that we can prove that the room's temperature @{term T} always remains 
@@ -115,7 +116,7 @@ lemma local_flow1: "local_flow_on [T \<leadsto> - K * (T - c), t \<leadsto> 1] (
 
 abbreviation "dyn1 \<equiv> IF \<not> active 
   THEN {T` = - K * T, t` = 1 | t \<le> - (ln (Tmin/temp))/K} 
-  ELSE {T` = - K * (T - h), t` = 1 | t \<le> - (ln ((h - Tmax)/(h - temp)))/K}"
+  ELSE {T` = - K * (T - L), t` = 1 | t \<le> - (ln ((L - Tmax)/(L - temp)))/K}"
 
 abbreviation "pre_ctrl1 \<equiv> 
   IF \<not> active \<and> temp \<le> Tmin + 1 THEN active ::= True
@@ -138,7 +139,7 @@ lemma thermostat1:
      apply (wlp_flow local_flow: local_flow1[where c=0, simplified])
   apply (clarsimp simp: le_fun_def)
   using temp_dyn_down_real_arith[OF K_ge0 Tmin_ge0] apply expr_auto
-    apply (wlp_flow local_flow: local_flow1[where c=h, simplified])
+    apply (wlp_flow local_flow: local_flow1[where c=L, simplified])
   apply (clarsimp simp: le_fun_def)
   using temp_dyn_up_real_arith[OF K_ge0 _ _ Tmax_le_Tlim] apply auto[1]
   using temp_dyn_up_real_arith[OF K_ge0 _ _ Tmax_le_Tlim] 
@@ -156,7 +157,7 @@ to the invariant to guarantee the preservation of @{term "Tmin \<le> $T \<and> $
 
 abbreviation "dyn2 \<equiv> IF \<not> active 
   THEN {T` = - K * T | Tmin \<le> T} 
-  ELSE {T` = - K * (T - h) | T \<le> Tmax}"
+  ELSE {T` = - K * (T - L) | T \<le> Tmax}"
 
 abbreviation "pre_ctrl2 \<equiv> 
   IF \<not> active \<and> temp \<le> Tmin THEN active ::= True
@@ -184,7 +185,7 @@ lemma thermostat2:
       max_zero_mult_nonneg_le minus_mult_minus mult.commute mult_eq_0_iff mult_le_0_iff 
       mult_nonneg_nonneg mult_right_mono_neg nonzero_mult_div_cancel_left one_le_exp_iff 
       times_divide_eq_left)
-    apply (wlp_full local_flow: local_flow2[where c=h, simplified])
+    apply (wlp_full local_flow: local_flow2[where c=L, simplified])
   using K_ge0 Tmin_ge0 assms
   apply (clarsimp simp: field_simps)
   apply (smt (verit, best) Tmax_le_Tlim affine_ineq exp_le_one_iff factorL(4) mult_nonneg_nonneg)
@@ -260,15 +261,15 @@ dataspace time_triggered_thermostat =
   constants 
     Tmax :: real (* maximum comfortable temp. *)
     Tmin :: real (* minimum comfortable temp. *)
-    h :: real (* highest temp. when thermostat is on *)
-    K :: real (* heating rate *)    
+    L :: real (* highest temp. when thermostat is on *)
+    K :: real (* freezing rate *)    
     \<epsilon> :: real (* max increment/decrement of temp per sensing interval *)
   assumes 
     K_ge0: "K > 0"
     and eps_ge0: "\<epsilon> > 0"
     and eps_le_Tmin: "\<epsilon> < Tmin"
     and delta_ge_3eps: "Tmax - Tmin > 3 * \<epsilon>" 
-    and h_ge_Tmax_eps: "h > Tmax + \<epsilon>"
+    and L_ge_Tmax_eps: "L > Tmax + \<epsilon>"
   variables 
     (* physical *)
     T :: real      (* temperature *)
@@ -276,13 +277,14 @@ dataspace time_triggered_thermostat =
     (* program *)
     temp :: real   (* for temperature measurements *)
     active :: bool (* whether thermostat is on or off *)
+
 context time_triggered_thermostat
 begin
 
 lemma 
   shows Tmin_le_Tmax: "Tmin < Tmax"
-    and Tmax_le_h: "Tmax < h"
-  using delta_ge_3eps eps_ge0 h_ge_Tmax_eps
+    and Tmax_le_L: "Tmax < L"
+  using delta_ge_3eps eps_ge0 L_ge_Tmax_eps
   by linarith+
 
 lemma local_flow: "local_flow_on [T \<leadsto> - K * (T - c), t \<leadsto> 1] (T +\<^sub>L t) UNIV UNIV
@@ -293,7 +295,7 @@ lemma local_flow: "local_flow_on [T \<leadsto> - K * (T - c), t \<leadsto> 1] (T
 before our sensor makes a measurement. *)
 abbreviation "dyn \<equiv> IF \<not> active 
   THEN {T` = - K * T, t` = 1 | t \<le> - ln (1 - \<epsilon> / temp) / K} 
-  ELSE {T` = - K * (T - h), t` = 1 | t \<le> - ln (\<epsilon> / (temp - h) + 1) / K}"
+  ELSE {T` = - K * (T - L), t` = 1 | t \<le> - ln (\<epsilon> / (temp - L) + 1) / K}"
 
 (* Drawing:
 |--------h
@@ -343,15 +345,15 @@ lemma
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow[where c=0, simplified])
   subgoal 
-    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
+    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps] 
     apply clarsimp
     by (smt (verit) K_ge0 affine_ineq eps_ge0 eps_le_Tmin exp_le_one_iff more_arith_simps(8) zero_le_mult_iff)
-    apply (wlp_full local_flow: local_flow[where c=h, simplified])
+    apply (wlp_full local_flow: local_flow[where c=L, simplified])
   subgoal
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps]
     apply clarsimp
     by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
-        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
+        L_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
   by expr_auto+
 
 
@@ -373,15 +375,15 @@ lemma
     apply (rule hoare_if_then_else)
      apply (wlp_full local_flow: local_flow[where c=0, simplified])
   subgoal 
-    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps] 
+    using decr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps] 
     apply clarsimp
     by (smt (verit) K_ge0 affine_ineq eps_ge0 eps_le_Tmin exp_le_one_iff more_arith_simps(8) zero_le_mult_iff)
-    apply (wlp_full local_flow: local_flow[where c=h, simplified])
+    apply (wlp_full local_flow: local_flow[where c=L, simplified])
   subgoal
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps]
     apply clarsimp
     by (smt (verit, best) K_ge0 eps_ge0 exp_ge_zero exp_le_one_iff 
-        h_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
+        L_ge_Tmax_eps mult_left_le_one_le mult_sign_intros(1))
   by expr_auto+
 
 lemma thermostat:
@@ -389,12 +391,12 @@ lemma thermostat:
     (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (wlp_flow local_flow: local_flow[where c=0, simplified])
-  apply (wlp_full local_flow: local_flow[where c=h, simplified])
+  apply (wlp_full local_flow: local_flow[where c=L, simplified])
   apply (safe; clarsimp?)
   subgoal
-    by (smt (verit) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff mult_left_le_one_le split_mult_pos_le)
+    by (smt (verit) K_ge0 Tmax_le_L exp_ge_zero exp_le_one_iff mult_left_le_one_le split_mult_pos_le)
   subgoal for s t
-    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps]
+    using incr_in_ivl[OF K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps]
       close_Tmin_not_close_Tmax[of "T<s>"] by auto
   subgoal for s t
     by (metis K_ge0 add_mono_thms_linordered_field(5) close_Tmin_not_close_Tmax 
@@ -403,29 +405,29 @@ lemma thermostat:
     by (smt (verit, ccfv_SIG) K_ge0 eps_le_Tmin exp_ge_zero exp_le_one_iff 
         mult_left_le_one_le mult_sign_intros(1) zero_le_divide_iff)
   subgoal for s t
-    by (smt (verit, ccfv_SIG) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff 
+    by (smt (verit, ccfv_SIG) K_ge0 Tmax_le_L exp_ge_zero exp_le_one_iff 
         mult_left_le_one_le split_mult_pos_le)
   subgoal for s t
-    using K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps incr_in_ivl by blast
+    using K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps incr_in_ivl by blast
   subgoal for s t
-    using K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin h_ge_Tmax_eps by blast
+    using K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin L_ge_Tmax_eps by blast
   subgoal for s t
     by (smt (verit, ccfv_SIG) K_ge0 eps_le_Tmin exp_ge_zero exp_le_one_iff 
         mult_left_le_one_le mult_sign_intros(1) zero_le_divide_iff)
   subgoal for s t
-    using K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin h_ge_Tmax_eps by blast
+    using K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin L_ge_Tmax_eps by blast
   subgoal for s t
     by (smt (verit, del_insts) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff 
         mult_left_le_one_le zero_le_mult_iff)
   subgoal for s t
-    by (meson K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin h_ge_Tmax_eps less_eq_real_def)
+    by (meson K_ge0 decr_in_ivl eps_ge0 eps_le_Tmin L_ge_Tmax_eps less_eq_real_def)
   subgoal for s t
     by (smt (verit, del_insts) K_ge0 eps_ge0 eps_le_Tmin exp_le_one_iff mult_left_le_one_le zero_le_mult_iff)
   subgoal for s t
-    by (smt (verit, ccfv_SIG) K_ge0 Tmax_le_h exp_ge_zero exp_le_one_iff 
+    by (smt (verit, ccfv_SIG) K_ge0 Tmax_le_L exp_ge_zero exp_le_one_iff 
         mult_left_le_one_le split_mult_pos_le)
   subgoal for s t
-    using K_ge0 eps_ge0 eps_le_Tmin h_ge_Tmax_eps incr_in_ivl by blast
+    using K_ge0 eps_ge0 eps_le_Tmin L_ge_Tmax_eps incr_in_ivl by blast
   done
 
 end
@@ -486,6 +488,124 @@ pre_ctrl \<equiv>
   ELSE IF active \<and> temp \<ge> Tmax - 1.1 * \<epsilon> THEN active ::= False ELSE skip
 
 *)
+
+lemma 
+  assumes "Tmin \<le> (T::real)" and "T \<le> Tmax" and "0 \<le> t"
+    and "\<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> \<tau> \<le> \<epsilon>"
+    and "T \<le> Tmin + exp (- (K * \<epsilon>))"
+    and key: "Tmax - Tmin < L - exp (- (K * \<epsilon>)) * (L - Tmin)"
+    and "exp (-K * \<epsilon>) < (Tmax - Tmin)/Tmax"
+  shows "Tmin \<le> L - exp (- (K * t)) * (L - T)"
+    and "L - exp (- (K * t)) * (L - T) \<le> Tmax"
+proof-
+  have hyps: "Tmin < Tmax" "Tmax < L"
+    sorry
+
+  oops
+
+dataspace thermostat = 
+  constants 
+    Tmax :: real (* maximum comfortable temp. *)
+    Tmin :: real (* minimum comfortable temp. *)
+    L :: real (* highest temp. when thermostat is on *)
+    K :: real (* freezing rate *)    
+    \<epsilon> :: real (* max length of sensing interval *)
+  assumes 
+    K_ge0: "K > 0"
+    and eps_ge0: "\<epsilon> > 0"
+    and Tmax_le_L: "Tmax < L"
+    and Tmin_le: "Tmin < exp (- (K * \<epsilon>)) * Tmax"
+    and Tmax_ge: "Tmax > L - exp (- (K * \<epsilon>)) * (L - Tmin)"
+  variables 
+    (* physical *)
+    T :: real      (* temperature *)
+    t :: real      (* time *)
+    (* program *)
+    temp :: real   (* for temperature measurements *)
+    active :: bool (* whether thermostat is on or off *)
+
+context thermostat
+begin
+
+
+lemma local_flow: "local_flow_on [T \<leadsto> - K * (T - c), t \<leadsto> 1] (T +\<^sub>L t) UNIV UNIV
+  (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c, t \<leadsto> \<tau> + t])"
+  by local_flow_on_auto
+
+abbreviation "dyn \<equiv> IF \<not> active 
+  THEN {T` = - K * T, t` = 1 | t \<le> \<epsilon>} 
+  ELSE {T` = - K * (T - L), t` = 1 | t \<le> \<epsilon>}"
+
+abbreviation "close_to_Tmin \<T> \<equiv> exp (- (K * \<epsilon>)) * \<T> \<le> Tmin \<and> Tmin \<le> \<T> \<and> L - exp (- (K * \<epsilon>)) * (L - \<T>) < Tmax"
+abbreviation "close_to_Tmax \<T> \<equiv> Tmax < L - exp (- (K * \<epsilon>)) * (L - \<T>) \<and> \<T> \<le> Tmax \<and> Tmin < exp (- (K * \<epsilon>)) * \<T>"
+
+lemma 
+  assumes "close_to_Tmin \<T>"
+    and "close_to_Tmax \<T>"
+    and "Tmin \<le> \<T>" and "\<T> \<le> Tmax"
+  shows "False"
+proof-
+  have "\<And>N. N > 1 \<Longrightarrow> exp (- (N * K * \<epsilon>)) * Tmin \<le> exp (- (N * K * \<epsilon>)) * \<T>"
+    using \<open>Tmin \<le> \<T>\<close> exp_gt_zero mult_le_cancel_left_pos 
+    by blast
+  hence "\<And>N. N > 1 \<Longrightarrow> L + exp (- (N * K * \<epsilon>)) * Tmin - L * exp (- (N * K * \<epsilon>))
+    \<le> L + exp (- (N * K * \<epsilon>)) * \<T> - L * exp (- (N * K * \<epsilon>))"
+    by auto
+  have "False"
+    oops
+
+
+(*
+T\<^sub>1 = c + exp (-K * \<epsilon>) * (T\<^sub>0 - c) 
+   = c + T\<^sub>0 * exp (-K * \<epsilon>) - c * exp (-K * \<epsilon>)
+T\<^sub>2 = c + exp (-K * \<epsilon>) * (c + T\<^sub>0 * exp (-K * \<epsilon>) - c * exp (-K * \<epsilon>) - c)
+   = c + T\<^sub>0 * exp (- 2 * K * \<epsilon>) - c * exp (- 2 * K * \<epsilon>)
+T\<^sub>3 = c + T\<^sub>0 * exp (- 3 * K * \<epsilon>) - c * exp (- 3 * K * \<epsilon>)
+*)
+
+abbreviation "pre_ctrl \<equiv> 
+  IF \<not> active \<and> close_to_Tmin temp THEN active ::= True
+  ELSE IF active \<and> close_to_Tmax temp THEN active ::= False ELSE skip"
+
+abbreviation "ctrl \<equiv> t ::= 0; temp ::= T; pre_ctrl"
+
+abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0
+ \<and> (close_to_Tmin temp \<longrightarrow> active) \<and> (close_to_Tmax temp \<longrightarrow> \<not> active))\<^sub>e"
+
+lemma 
+  "H{Tmin \<le> T \<and> T \<le> Tmax} 
+    (LOOP (ctrl; dyn) INV (Tmin \<le> T \<and> T \<le> Tmax))
+   {Tmin \<le> T \<and> T \<le> Tmax}"
+  apply intro_loops
+    apply symbolic_exec
+      apply expr_auto[1]
+  subgoal for prev_active
+    apply (wlp_full local_flow: local_flow[where c=L, simplified])
+    apply (hol_intros; clarsimp?)
+    using Tmin_le Tmax_ge
+    apply (smt (verit, del_insts) K_ge0 Tmax_le_L affine_ineq exp_le_one_iff mult_eq_0_iff zero_le_mult_iff)
+    by (smt (verit, del_insts) K_ge0 Tmax_le_L exp_less_cancel_iff mult.commute mult_left_mono)
+    apply symbolic_exec
+  subgoal for prev_active
+    apply (wlp_full local_flow: local_flow[where c=0, simplified])
+    apply (hol_intros; clarsimp?)
+    apply (smt (verit) K_ge0 affine_ineq exp_le_cancel_iff exp_le_one_iff mult.commute mult_eq_0_iff mult_le_cancel_left_pos)
+    using Tmin_le Tmax_ge
+    sorry
+     apply expr_auto[1]
+    apply symbolic_exec
+  subgoal
+    apply (wlp_full local_flow: local_flow[where c=0, simplified])
+    apply (hol_intros; clarsimp?)
+    sorry
+  subgoal
+    sorry
+   apply expr_auto+
+  oops
+
+end
+
+
 
 (* Other proof attempts
 
