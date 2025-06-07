@@ -43,6 +43,13 @@ syntax
 translations
   "_lens_get_pretty x s" == "CONST lens_get x s"
 
+(* Print translation tweaks for syntax *)
+
+translations
+  (* Display sequents using the semantic bracket notation *)
+  "_bigimpl (_asm P) Q" <= "CONST Pure.imp P Q"
+  "_bigimpl (_asms (_asm P) Q) R" <= "_bigimpl (_asm P) (_bigimpl Q R)"
+
 (* Optional: Pretty printing of Hoare triples *)
 
 (* 
