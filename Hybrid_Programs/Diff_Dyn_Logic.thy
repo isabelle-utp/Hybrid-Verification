@@ -633,8 +633,6 @@ lemma darboux_eq:
     and deriv: "differentiable\<^sub>e e on (a +\<^sub>L y)"
   shows "(e = 0)\<^sub>e \<le> |g_dl_ode_frame a f G] (e = 0)"
   apply (rule diff_ghost_rule_very_simple[where k="-g", OF _ vwbs(2) indeps(1) yGhost])
-  apply (rule strengthen[of "(y \<noteq> 0 \<and> e * y = 0)\<^sup>e"])
-  using indeps apply (expr_auto add: zero_less_mult_iff)
   apply (subst SEXP_def[symmetric, of G])
   apply (rule_tac C="(y \<noteq> 0)\<^sup>e" in diff_cut_on_rule)
    apply (rule_tac weaken[of _ "(y \<noteq> 0)\<^sub>e"])

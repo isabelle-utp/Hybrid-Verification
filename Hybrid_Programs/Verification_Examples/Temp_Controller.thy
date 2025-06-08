@@ -124,16 +124,14 @@ abbreviation "pre_ctrl1 \<equiv>
 
 abbreviation "ctrl1 \<equiv> t ::= 0; temp ::= T; pre_ctrl1"
 
-abbreviation "inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax)\<^sub>e"
-
-abbreviation "pos_inv1 \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0)\<^sub>e"
+abbreviation "pos_inv \<equiv> (Tmin \<le> $T \<and> $T \<le> Tmax \<and> temp = T \<and> t = 0)\<^sub>e"
 
 lemma thermostat1:
   "H{Tmin \<le> T \<and> T \<le> Tmax} 
     (LOOP (ctrl1; dyn1) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
-    apply (rule_tac R="pos_inv1" in hoare_kcomp)
+    apply (rule_tac R="pos_inv" in hoare_kcomp)
      apply (wlp_full)
     apply (rule hoare_if_then_else)
      apply (wlp_flow local_flow: local_flow1[where c=0, simplified])
@@ -159,13 +157,9 @@ abbreviation "dyn2 \<equiv> IF \<not> active
   THEN {T` = - K * T | Tmin \<le> T} 
   ELSE {T` = - K * (T - L) | T \<le> Tmax}"
 
-abbreviation "pre_ctrl2 \<equiv> 
-  IF \<not> active \<and> temp \<le> Tmin THEN active ::= True
-  ELSE IF active \<and> temp \<ge> Tmax THEN active ::= False ELSE skip"
-
-abbreviation "ctrl2 \<equiv> temp ::= T; pre_ctrl2"
-
-abbreviation "pos_inv2 \<equiv> ((Tmin \<le> $T \<and> $T \<le> Tmax) \<and> temp = T)\<^sub>e"
+abbreviation "ctrl2 \<equiv> 
+  IF \<not> active \<and> T \<le> Tmin THEN active ::= True
+  ELSE IF active \<and> T \<ge> Tmax THEN active ::= False ELSE skip"
 
 lemma local_flow2: "local_flow_on [T \<leadsto> - K * (T - c)] T UNIV UNIV
   (\<lambda>\<tau>. [T \<leadsto> - exp (-K * \<tau>) * (c - T) + c])"
@@ -177,10 +171,10 @@ lemma thermostat2:
     (LOOP (ctrl2; dyn2) INV (Tmin \<le> T \<and> T \<le> Tmax))
    {Tmin \<le> T \<and> T \<le> Tmax}"
   apply (intro_loops)
-    apply (rule_tac R="pos_inv2" in hoare_kcomp)
+    apply (rule_tac R="(Tmin \<le> T \<and> T \<le> Tmax)\<^sup>e" in hoare_kcomp)
      apply (wlp_full)
-    apply (rule hoare_if_then_else)
-     apply (wlp_full local_flow: local_flow2[where c=0, simplified] simp: field_simps)
+  apply symbolic_exec
+    apply (wlp_full local_flow: local_flow2[where c=0, simplified] simp: field_simps)
      apply (smt (verit, best) K_ge0 Tmin_ge0 assms div_by_1 exp_ge_zero exp_le_one_iff 
       max_zero_mult_nonneg_le minus_mult_minus mult.commute mult_eq_0_iff mult_le_0_iff 
       mult_nonneg_nonneg mult_right_mono_neg nonzero_mult_div_cancel_left one_le_exp_iff 
