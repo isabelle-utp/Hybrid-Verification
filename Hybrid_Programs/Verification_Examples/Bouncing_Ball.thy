@@ -33,9 +33,11 @@ lemma bouncing_ball_correct: "H{True} BBall {h \<le> H}"
   apply intro_loops \<comment> \<open> Introduce loop with invariant \<close>
     apply symbolic_exec \<comment> \<open> Execute imperative program operators \<close>
      apply postcondition_invariant \<comment> \<open> Use the postcondition as an invariant \<close>
-      apply (smt (verit, ccfv_SIG) Groups.mult_ac(2) bouncing_ball.e_range(1,2) bouncing_ball_axioms more_arith_simps(7) mult_le_cancel_left_pos
-      mult_left_le_one_le)
-     apply dInduct_mega
+      apply dInduct_mega
+     apply expr_simp
+     apply clarsimp
+  apply (smt (verit, ccfv_SIG) affine_ineq bouncing_ball.e_range(1,2) bouncing_ball_axioms power2_le_imp_le
+      power2_minus zero_compare_simps(4))
     apply postcondition_invariant
     apply dInduct_mega
    apply symbolic_exec
