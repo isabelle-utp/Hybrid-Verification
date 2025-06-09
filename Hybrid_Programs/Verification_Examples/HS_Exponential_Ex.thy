@@ -58,7 +58,7 @@ lemma exp_arith: "0 < (a::real) \<longleftrightarrow> (\<exists>b. a * b\<^sup>2
 
 (* x>0 -> [{x'=-x}](x>0) *)
 lemma dG_example: "H{x > 0}dyn{x > 0}"
-  apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
+  apply (dGhost "y" "x*y\<^sup>2 = 1" "1/2")
   apply (dInduct_auto)
   apply (expr_auto add: exp_arith)
   done

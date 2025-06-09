@@ -33,7 +33,7 @@ dataspace two_vars =
 context two_vars
 begin
 
-(* x>=0 -> [x:=x+1;]x>=1 *)
+
 lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] (x \<ge> 1)"
   by wlp_full
 
@@ -77,7 +77,7 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
   unfolding fbox_kcomp[symmetric]
   apply symbolic_exec
   apply postcondition_invariant
-  by dInduct
+  by dInduct expr_simp
 
 (* usind differential invariants (alternative version) *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
@@ -85,7 +85,8 @@ lemma "(x \<ge> 0)\<^sub>e \<le> |x ::= x + 1] |{x` = 2}] (x \<ge> 1)"
   unfolding fbox_kcomp[symmetric]
   apply symbolic_exec
   apply postcondition_invariant
-  by (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2")
+  by (diff_inv_on_ineq "\<lambda>s. 0" "\<lambda>s. 2") 
+    expr_simp
 
 (* Proof using the solution *)
 (* x>=0 -> [x:=x+1;][{x'=2}]x>=1 *)
@@ -167,7 +168,6 @@ context two_vars
 begin
 
 (* x>0 & y>0 -> [{x'=5}][{x:=x+3;}*@invariant(x>0) ++ y:=x;](x>0&y>0) *)
-
 lemma "H{x > 0 \<and> y > 0} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) {x \<ge> 0 \<and> y \<ge> 0}"
 proof -
   have "H{x > 0 \<and> y > 0} {x` = 5} ; (LOOP x::=x+3 INV (x > 0) \<sqinter> y::=x) {x > 0 \<and> y > 0}"
@@ -239,7 +239,7 @@ lemma "(x > 0 \<and> y > 0)\<^sub>e \<le> |{x` = -x}]|LOOP x ::= x+3 INV (x > 0)
   apply (subst change_loopI[where I="(0 < $x \<and> 0 < $y)\<^sup>e"])
   apply (subst fbox_kcomp[symmetric])
   apply (rule_tac R="(0 < x \<and> 0 < y)\<^sup>e" in hoare_kcomp)
-   apply (dGhost "z" "(x*z\<^sup>2 = 1 \<and> y > 0)\<^sub>e" "1/2")
+   apply (dGhost "z" "x*z\<^sup>2 = 1 \<and> y > 0" "1/2")
     apply dInduct_auto
    apply (expr_auto add: exp_ghost_arith)
   by (rule hoare_choice)
@@ -365,7 +365,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
 (* proof with ghosts *)
 (* x>0 -> [{x'=-x}]x>0 *)
 lemma "(x > 0)\<^sub>e \<le> |{x` = -x}] (x > 0)"
-  apply (dGhost "y" "(x*y\<^sup>2 = 1)\<^sub>e" "1/2")
+  apply (dGhost "y" "x*y\<^sup>2 = 1" "1/2")
   by (diff_inv_on_eq)
     (expr_auto add: exp_ghost_arith)
 
@@ -434,8 +434,8 @@ begin
 (* proof with ghosts *)
 (* x>=0 -> [{x'=x}]x>=0 *)
 lemma "(x \<ge> 0)\<^sub>e \<le> |{x` = x}] (x \<ge> 0)"
-  apply (dGhost "y" "(y > 0 \<and> x * y \<ge> 0)\<^sub>e" "-1")
-   apply (dGhost "z" "(y * z\<^sup>2 = 1 \<and> x * y \<ge> 0)\<^sub>e" "1/2")
+  apply (dGhost "y" "y > 0 \<and> x * y \<ge> 0" "-1")
+   apply (dGhost "z" "y * z\<^sup>2 = 1 \<and> x * y \<ge> 0" "1/2")
     apply (rule fbox_invs)
      apply (diff_inv_on_eq)
     apply (diff_inv_on_ineq "(0)\<^sup>e" "(x * y - x * y)\<^sup>e")
@@ -923,13 +923,10 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
       (smt (verit, ccfv_threshold) indeps(17) indeps(19) indeps(8) lens_indep.lens_put_comm)
     apply expr_simp
   prefer 2 subgoal
-      apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-      using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp by expr_auto+
+    by (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
     apply (subst framed_derivs)
       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
     apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
     apply (subst framed_derivs)
        apply expr_simp
       apply (simp add: lens_plus_sub_lens(1))
@@ -1020,13 +1017,10 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
   subgoal by expr_auto (smt (verit, best) indeps(18) indeps(19) indeps(7) lens_indep.lens_put_comm)
   apply expr_auto
   prefer 2 subgoal
-      apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-      using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp by expr_auto+
+    by (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
   apply (subst framed_derivs)
       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
     apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
     apply (subst framed_derivs)
        apply expr_simp
       apply (simp add: lens_plus_sub_lens(1))
@@ -3232,7 +3226,7 @@ lemma "H{0.5 \<le> x & x \<le> 0.7 & 0 \<le> y & y \<le> 0.3}
     using bounded_linear_fst bounded_linear_snd_comp by expr_auto+
   done *)
   subgoal (*  {0 < $z} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} {0 < $z} *)
-    apply (dGhost "w" "(z*w\<^sup>2 = 1)\<^sub>e" "-1/2")
+    apply (dGhost "w" "z*w\<^sup>2 = 1" "-1/2")
     apply (diff_inv_on_eq)
     using exp_ghost_arith by auto
 (*
