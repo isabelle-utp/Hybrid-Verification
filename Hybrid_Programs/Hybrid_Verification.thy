@@ -7,16 +7,18 @@ begin
 
 (* Extra lens laws -- move to Optics *)
 
-lemma lens_plus_left_sublens [simp]: 
+lemma lens_plus_left_sublens [simp, lens]: 
   assumes "vwb_lens Y" "Y \<bowtie> Z" "X \<subseteq>\<^sub>L Z" 
   shows "X \<subseteq>\<^sub>L Z +\<^sub>L Y"
   using lens_plus_ub sublens_trans vwb_lens_def assms by blast
 
-lemma lens_quotient_plus_den3 [simp]: 
+lemma lens_quotient_plus_den3 [simp, lens]: 
   assumes "weak_lens x" "weak_lens z" "x \<bowtie> z" "y \<subseteq>\<^sub>L z"
   shows "y /\<^sub>L (z +\<^sub>L x) = (y /\<^sub>L z) ;\<^sub>L fst\<^sub>L "
   using assms
   by (auto simp add: lens_defs prod.case_eq_if fun_eq_iff lens_indep.lens_put_irr1 lens_indep.lens_put_irr2)
+
+declare lens_indep_impl_scene_indep_var [lens]
 
 (* Turn off notation from HOL that clashes with ours *)
 
