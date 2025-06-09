@@ -269,9 +269,11 @@ subsection \<open> Differential cut \<close>
 
 method_setup dCut =
 \<open>
-Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
+Scan.option (Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of)) >>
    (fn rt => fn ctx => 
-     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm diff_cut_on_rule} "C" ctx rt goal) 1))
+      case rt of 
+        SOME rt' => SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm diff_cut_on_rule} "C" ctx rt' goal) 1) |
+        NONE => SIMPLE_METHOD (SUBGOAL (fn (goal, i) => resolve_tac ctx [@{thm diff_cut_on_split}] i) 1))
 \<close> "introduce an invariant"
 
 subsection \<open> Differential ghosts \<close>
@@ -505,6 +507,8 @@ Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
    (fn rt => fn ctx => 
      SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_invariant} "I" ctx rt goal) 1))
 \<close> "introduce an invariant"
+
+method split_invariant = (rule hoare_invs)
 
 subsection \<open> While loop with invariant \<close>
 
