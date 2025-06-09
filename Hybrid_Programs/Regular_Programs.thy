@@ -24,6 +24,8 @@ lemma fdia_skip: "|skip\<rangle> P = P"
 lemma hoare_skip: "H{P} skip {P}"
   by (auto simp: fbox_skip)
 
+lemma hoare_skip_impl: "`P \<longrightarrow> Q` \<Longrightarrow> H{P} skip {Q}"
+  by (auto simp: fbox_skip, expr_simp)
 
 subsection \<open> Abort \<close>
 

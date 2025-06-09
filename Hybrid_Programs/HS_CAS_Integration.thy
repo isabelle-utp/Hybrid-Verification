@@ -52,4 +52,5 @@ val _ =
         case n of NONE => Toplevel.keep_proof (find_local_flow_cmd o Toplevel.proof_of) |
                   SOME t => Toplevel.keep ((fn ctx => solve_subst_ode_cmd ctx (Syntax.read_term ctx t)) o Toplevel.context_of)))
 \<close>
+
 end

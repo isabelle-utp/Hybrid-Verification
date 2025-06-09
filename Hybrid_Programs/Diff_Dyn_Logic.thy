@@ -370,6 +370,14 @@ lemma diff_ghost_rule_very_simple:
   using assms
   by (metis SEXP_def diff_ghost_inv_very_simple fbox_diff_inv_on) 
 
+lemma diff_ghost_rule_very_simple_real:
+  fixes y :: "real \<Longrightarrow> 'a" and J :: "'a \<Rightarrow> bool"
+  assumes inv_hyp:"H{J} g_dl_ode_frame (a +\<^sub>L y) (f(y \<leadsto> \<guillemotleft>k\<guillemotright> *\<^sub>R $y)) G {J}"
+    and y_hyps: "vwb_lens y" "y \<bowtie> a" "$y \<sharp>\<^sub>s f" "$y \<sharp> G"
+    and I_eq:  "(I)\<^sub>e = J \\ $y" 
+  shows "H{I} g_dl_ode_frame a f G {I}"
+  using assms diff_ghost_rule_very_simple by blast
+
 no_notation Union ("\<mu>")
 
 

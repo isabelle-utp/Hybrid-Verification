@@ -155,7 +155,7 @@ lemma hoare_disj_posI:
   by (auto simp: le_fun_def fbox_def)
 
 lemma hoare_post_invariant:
-  assumes "`P \<longrightarrow> I`" "H{I} C {I}" 
+  assumes "H{I} C {I}" "`P \<longrightarrow> I`"
   shows "H{P} C {I}"
   by (metis SEXP_def assms(1,2) order.trans refine_iff_implies)
 

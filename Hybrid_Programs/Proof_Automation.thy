@@ -195,7 +195,6 @@ method vderiv uses simp intro
   = ((expr_simp)?; 
     force intro!: vderiv_intros intro simp: vec_eq_iff field_simps simp)
 
-
 subsection \<open> Differential invariance \<close>
 
 method diff_inv_on_single_eq_intro = 
@@ -266,15 +265,57 @@ method dInduct_mega' uses facts =
   | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
   )+
 
-subsection \<open> Differential ghosts \<close>
+subsection \<open> Differential cut \<close>
 
-method dGhost for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
-  = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"],
-    simp_all add: unrest usubst usubst_eval unrest_ssubst liberate_as_subst)
+method_setup dCut =
+\<open>
+Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
+   (fn rt => fn ctx => 
+     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm diff_cut_on_rule} "C" ctx rt goal) 1))
+\<close> "introduce an invariant"
+
+subsection \<open> Differential ghosts \<close>
+                                                         
+ML \<open>
+(* Proof method that applies differential ghost law with a lifted invariant, and uses simplifier on side conditions *)
+fun dGhost_tac ctx y J k goal =
+  let fun strip_alls (Const ("Pure.all", _) $ (u as Abs _)) = strip_alls (snd (Term.dest_abs_global u)) |
+          strip_alls t = t;
+      val concl = Logic.strip_imp_concl (strip_alls goal) 
+      open Spec_Utils
+  in
+    if is_hoare_triple concl
+    then let val (P, _, _) = dest_hoare_triple concl; 
+             val stT = fst (dest_funT (fastype_of P)) 
+             val t = Syntax.check_term ctx (Lift_Expr.mk_lift_expr ctx stT J)
+             val y' = Syntax.check_term ctx (Type.constraint (Lens_Lib.lensT @{typ real} stT) y)
+             val k' = Syntax.check_term ctx (Type.constraint @{typ real} k)
+             val ct = Thm.cterm_of ctx t
+             val cy = Thm.cterm_of ctx y'
+             val ck = Thm.cterm_of ctx k'
+             val cstT = Thm.ctyp_of ctx stT
+             val ithm = Thm.instantiate (TVars.make1 ((("'a", 0), @{sort type}), cstT)
+                                        ,Vars.make3 ((("y", 0), (Lens_Lib.lensT @{typ real} stT)), cy) 
+                                                    ((("J", 0), (stT --> @{typ bool})), ct)
+                                                    ((("k", 0), @{typ real}), ck)
+                                        ) @{thm diff_ghost_rule_very_simple_real}
+             val simp_thms = @{thms unrest} @ @{thms usubst_eval} @ [@{thm unrest_ssubst}, @{thm liberate_as_subst}]
+             val ctx' = fold Simplifier.add_simp simp_thms ctx
+         in HEADGOAL (fn i => resolve_tac ctx [ithm] i THEN (ALLGOALS (full_simp_tac ctx'))) end 
+    else error "Goal is not a Hoare triple"
+  end
+\<close>
+
+method_setup dGhost =
+\<open>
+  let open Args; open Syntax in
+   Scan.peek (Args.named_term o parse_term o Context.proof_of) -- Scan.peek (Args.named_term o parse_term o Context.proof_of) -- Scan.peek (Args.named_term o parse_term o Context.proof_of) >>
+   (fn ((y, J), k) => fn ctx => 
+     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => dGhost_tac ctx y J k goal) 1)) end
+\<close> "introduce an invariant"
 
 method dGhost_var_inv_const for y :: "real \<Longrightarrow> 's" and J :: "'s \<Rightarrow> bool" and k :: real 
   = (rule diff_ghost_rule_very_simple[where y="y" and J="J" and k="k"]; (dInduct_auto | expr_simp))
-
 
 subsection \<open> Continuity \<close>
 
@@ -487,10 +528,10 @@ method backward_assign =
 
 method symbolic_exec =
   (normalise_prog?
-  ,(forward_assign | backward_assign | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test))+)
+  ,(forward_assign | backward_assign | (rule hoare_skip_impl) | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test))+)
 
 method postcondition_invariant =
-  (rule hoare_post_invariant, (expr_auto add: field_simps)[1])
+  (rule hoare_post_invariant)
 
 subsection \<open> Hoare Logic \<close>
 
