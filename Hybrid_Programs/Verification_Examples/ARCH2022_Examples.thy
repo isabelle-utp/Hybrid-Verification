@@ -3299,23 +3299,16 @@ lemma "(x=1 & y=1/8)\<^sub>e
        apply expr_simp
       apply (subst framed_derivs)
         apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
        apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
        apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
       apply (subst framed_derivs)
         apply expr_simp
        apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
       apply (subst framed_derivs; (simp add: lens_plus_sub_lens(1))?)
-  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
       apply (subst framed_derivs; (simp add: lens_plus_sub_lens(1))?)
-  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
-      apply expr_simp
+      apply (expr_simp add: le_fun_def)
   subgoal sorry
-  apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
-  using bounded_linear_fst bounded_linear_fst_comp bounded_linear_snd_comp apply expr_auto
+     apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
   using less_one_multI apply (expr_auto add: field_simps)
    apply expr_simp
   apply (rule diff_weak_on_rule)
