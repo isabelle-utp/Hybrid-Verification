@@ -275,7 +275,7 @@ Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
 \<close> "introduce an invariant"
 
 subsection \<open> Differential ghosts \<close>
-                                                         
+                               
 ML \<open>
 (* Proof method that applies differential ghost law with a lifted invariant, and uses simplifier on side conditions *)
 fun dGhost_tac ctx y J k goal =
@@ -283,6 +283,7 @@ fun dGhost_tac ctx y J k goal =
           strip_alls t = t;
       val concl = Logic.strip_imp_concl (strip_alls goal) 
       open Spec_Utils
+      open Proof_Context
   in
     if is_hoare_triple concl
     then let val (P, _, _) = dest_hoare_triple concl; 
@@ -299,8 +300,9 @@ fun dGhost_tac ctx y J k goal =
                                                     ((("J", 0), (stT --> @{typ bool})), ct)
                                                     ((("k", 0), @{typ real}), ck)
                                         ) @{thm diff_ghost_rule_very_simple_real}
-             val simp_thms = @{thms unrest} @ @{thms usubst_eval} @ [@{thm unrest_ssubst}, @{thm liberate_as_subst}]
-             val ctx' = fold Simplifier.add_simp simp_thms ctx
+             val simp_thms = get_thms ctx "lens" @ get_thms ctx "unrest" @ get_thms ctx "usubst_eval" 
+                             @ [@{thm unrest_ssubst}, @{thm liberate_as_subst}, @{thm SEXP_idem}, @{thm SEXP_apply}, @{thm taut_True}, @{thm plus_pres_lens_indep}, @{thm plus_pres_lens_indep'}] @ @{thms HOL.simp_thms}
+             val ctx' = fold Simplifier.add_simp simp_thms (Raw_Simplifier.clear_simpset ctx)
          in HEADGOAL (fn i => resolve_tac ctx [ithm] i THEN (ALLGOALS (full_simp_tac ctx'))) end 
     else error "Goal is not a Hoare triple"
   end
