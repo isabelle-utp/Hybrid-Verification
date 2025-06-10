@@ -240,7 +240,7 @@ text \<open> A first attempt at a high-level automated proof strategy using diff
 method dDiscr = (rule_tac nmods_invariant; auto intro!: closure)
 
 (* hoare_diff_inv_on' *)
-method dInduct = ((intro hoare_invs)?; (rule_tac hoare_diff_inv_onI); 
+method dInduct = ((simp only: SEXP_apply named_expr_defs)?; (intro hoare_invs)?; (rule_tac hoare_diff_inv_onI); 
     rule_tac lderiv_rules; 
     simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)
 
@@ -508,7 +508,7 @@ Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
      SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_invariant} "I" ctx rt goal) 1))
 \<close> "introduce an invariant"
 
-method split_invariant = (rule hoare_invs)
+method split_invariant = (rule hoare_invs hoare_disj_split)
 
 subsection \<open> While loop with invariant \<close>
 
@@ -534,7 +534,7 @@ method backward_assign =
 
 method symbolic_exec =
   (normalise_prog?
-  ,(forward_assign | backward_assign | (rule hoare_skip_impl) | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test))+)
+  ,(forward_assign | backward_assign | (rule hoare_skip_impl) | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test) | (rule hoare_testI))+)
 
 method postcondition_invariant =
   (rule hoare_post_invariant)
@@ -563,6 +563,15 @@ subsection \<open> Weakest liberal preconditions \<close>
   * fbox_solve (which is essentially the one above)
   * fbox_g_dL_easiest (which transforms g_dl_ode_frames into g_evol_ons)
 *)
+
+method_setup kstar =
+\<open>
+Scan.option (Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of)) >>
+   (fn rt => fn ctx => 
+      case rt of 
+        SOME rt' => SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_kstarI_alt} "I" ctx rt' goal) 1) |
+        NONE => SIMPLE_METHOD (SUBGOAL (fn (goal, i) => resolve_tac ctx [@{thm hoare_kstar_inv}] i) 1))
+\<close> "introduce an invariant"
 
 method intro_star for I :: "'s \<Rightarrow> bool" = (rule_tac hoare_kstarI[where I="I"])
 

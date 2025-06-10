@@ -209,8 +209,12 @@ lemmas fbox_invs_raw = fbox_invs[unfolded expr_defs]
 lemma hoare_invs:
   assumes "H{I\<^sub>1}F{I\<^sub>1}" and "H{I\<^sub>2}F{I\<^sub>2}"
   shows hoare_conj_inv: "H{I\<^sub>1 \<and> I\<^sub>2}F{I\<^sub>1 \<and> I\<^sub>2}"
-    and hoare_disj_inv: "H{I\<^sub>1 \<or> I\<^sub>2}F{I\<^sub>1 \<or> I\<^sub>2}"
+    and hoare_disj_inv: "H{I\<^sub>1 \<or> I\<^sub>2}F{I\<^sub>1 \<or> I\<^sub>2}" 
   using fbox_invs[OF assms] by auto
+
+lemma hoare_disj_split:
+  "H{P} F {R} \<Longrightarrow> H{Q} F {R} \<Longrightarrow> H{P \<or> Q} F {R}"
+  unfolding fbox_def by (auto simp add: le_fun_def)
 
 definition invar :: "('a \<Rightarrow> 'a set) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a set)"
   where "invar F I \<equiv> F"

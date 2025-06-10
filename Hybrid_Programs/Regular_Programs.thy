@@ -61,6 +61,11 @@ lemma fdia_test: "|\<questiondown>P?\<rangle> Q = (P \<and> Q)\<^sub>e"
 lemma hoare_test: "H{P} \<questiondown>T? {P \<and> T}"
   by (auto simp: fbox_test)
 
+lemma hoare_testI: 
+  assumes "`P \<and> T \<longrightarrow> Q`"
+  shows "H{P} \<questiondown>T? {Q}"
+  by (meson assms fbox_iso hoare_test impl_eq_leq order_trans_rules(23))
+
 subsection \<open> Assignments \<close>
 
 thm subst_nil_def subst_bop
@@ -559,6 +564,9 @@ proof-
 qed
 
 lemma hoare_kstarI: "`P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> H{I} F {I} \<Longrightarrow> H{P} F\<^sup>* {Q}"
+  by (rule le_fbox_kstarI) (auto simp: SEXP_def taut_def)
+
+lemma hoare_kstarI_alt: "H{I} F {I} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<longrightarrow> Q` \<Longrightarrow> H{P} F\<^sup>* {Q}"
   by (rule le_fbox_kstarI) (auto simp: SEXP_def taut_def)
 
 lemma le_fdia_kstarI:
