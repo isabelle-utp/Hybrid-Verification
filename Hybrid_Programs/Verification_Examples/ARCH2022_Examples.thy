@@ -266,7 +266,7 @@ lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
 lemma "(x > 0)\<^sub>e \<le> |{x` = 5}; {x` = 2};{x` = x}] (x > 0)"
   apply (rule_tac R="(x > 0)\<^sup>e" in hoare_kcomp)+
     apply dInduct
-   apply dInduct[1]
+   apply dInduct
   apply (rule darboux_ge[of x y z _ _ _ 1]; expr_simp add: framed_derivs 
       ldifferentiable closure usubst unrest_ssubst unrest usubst_eval; clarsimp?)
   subgoal for s
@@ -802,7 +802,7 @@ begin
 lemma "(x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)\<^sub>e \<le>
   |{x1` = 2*x1\<^sup>4*x2 + 4*x1\<^sup>2*x2\<^sup>3 - 6*x1\<^sup>2*x2, x2` = -4*x1\<^sup>3*x2\<^sup>2 - 2*x1*x2\<^sup>4 + 6*x1*x2\<^sup>2}]
   (x1\<^sup>4*x2\<^sup>2 + x1\<^sup>2*x2\<^sup>4 - 3*x1\<^sup>2*x2\<^sup>2 + 1 \<le> c)"
-  by dInduct_mega
+  by dInduct_auto
 
 (* x1^4*x2^2+x1^2*x2^4-3*x1^2*x2^2+1 <= c ->
     [{x1'=2*x1^4*x2+4*x1^2*x2^3-6*x1^2*x2, x2'=-4*x1^3*x2^2-2*x1*x2^4+6*x1*x2^2}] 

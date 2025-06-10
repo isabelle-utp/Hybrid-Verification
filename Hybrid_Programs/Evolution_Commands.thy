@@ -296,6 +296,13 @@ lemma fbox_g_ode_frame_flow:
   apply (subst local_flow.fbox_g_ode_subset[OF assms(1)[unfolded local_flow_on_def, rule_format]])
   using assms by expr_auto+
 
+lemma
+  assumes "vwb_lens x"
+  shows "($x \<in> \<guillemotleft>S\<guillemotright> \<longrightarrow> (\<forall>t\<in>\<guillemotleft>U\<guillemotright> ($x). (\<forall>\<tau>\<in>down (\<guillemotleft>U\<guillemotright> ($x)) t. \<phi> \<tau> \<restriction>\<^sub>s $x \<dagger> G) \<longrightarrow> \<phi> t \<restriction>\<^sub>s $x \<dagger> Q))\<^sub>e = (\<lambda>s. get\<^bsub>x\<^esub> s \<in> S 
+    \<longrightarrow> (\<forall>t\<in>U (get\<^bsub>x\<^esub> s). (\<forall>\<tau>\<in>down (U (get\<^bsub>x\<^esub> s)) t. G (s \<triangleleft>\<^bsub>x\<^esub> \<phi> \<tau> s)) \<longrightarrow> Q (s \<triangleleft>\<^bsub>x\<^esub> \<phi> t s)))"
+  using assms
+  by expr_simp
+
 thm fbox_g_ode_frame_flow[where T=UNIV] fbox_g_ode_frame_flow[where T=UNIV, simplified]
 lemmas fbox_solve = fbox_g_ode_frame_flow[where T=UNIV, simplified]
 
