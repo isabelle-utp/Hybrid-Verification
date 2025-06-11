@@ -476,13 +476,13 @@ subsection \<open> Application of solutions to ODEs \<close>
 
 named_theorems local_flow
 
-method ode_solve = 
-  ((rule local_flow[THEN hl_ode_frame], simp, simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps))
+method ode_solve uses simp = 
+  ((rule local_flow[THEN hl_ode_frame], simp, simp add: usubst usubst_eval, expr_taut?, (expr_simp add: simp)?))
 
-method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
+method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" uses simp =
   (rule_tac hl_ode_frame[where f="sol"],
    (local_flow_on_auto)[1], simp,
-   simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps)
+   simp add: usubst usubst_eval, expr_taut?, (expr_simp add: simp)?)
 
 subsection \<open> Assignment, Conditional, and Choice Laws \<close>
 
