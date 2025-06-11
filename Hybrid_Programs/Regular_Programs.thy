@@ -77,6 +77,7 @@ definition assigns :: "'s subst \<Rightarrow> 's \<Rightarrow> 's set" ("\<langl
 
 syntax
   "_assign" :: "svid \<Rightarrow> logic \<Rightarrow> logic" ("(2_ ::= _)" [65, 64] 64)
+  "_assign" :: "svid \<Rightarrow> logic \<Rightarrow> logic" ("(2_ := _)" [65, 64] 64)
 
 translations
   "_assign x e" == "\<langle>CONST subst_upd [\<leadsto>] x (e)\<^sub>e\<rangle>" (* "\<langle>[x \<leadsto>\<^sub>s e]\<rangle>" *)
