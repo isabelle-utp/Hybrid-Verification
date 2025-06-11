@@ -3196,75 +3196,20 @@ lemma "H{0.5 \<le> x & x \<le> 0.7 & 0 \<le> y & y \<le> 0.3}
     {x` = -x + x* y , y` = - y} INV (y \<ge> 0)
   { \<not> (-0.8 \<ge> x \<and> x \<ge> -1 & -0.7 \<ge> y \<and> y \<ge> -1)}"
   unfolding invar_def
-  apply (rule_tac C="(y \<ge> 0)\<^sup>e" in diff_cut_on_rule)
-   apply (rule_tac I="(y \<ge> 0)\<^sup>e" in fbox_diff_invI)
-     apply (rule_tac J="(z > 0 \<and> z * y \<ge> 0)\<^sup>e" and y=z and k="1" in diff_ghost_rule_very_simple)
-          apply (rule hoare_invs)
-           prefer 2
-  subgoal (* {0 \<le> $z * $y} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} {0 \<le> $z * $y} *)
-    by (diff_inv_on_ineq "(0)\<^sub>e" "(z * y - z * y)\<^sup>e") vderiv
-(* alternative proof 
-           apply ((intro hoare_invs)?; subst fbox_diff_inv_on; 
-    intro lderiv_rules; 
-    (simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)?)
-  subgoal
-    apply (rule ldifferentiable; rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    using bounded_linear_fst bounded_linear_snd_comp by expr_auto
-  subgoal
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_snd_comp by expr_auto+
-  done *)
-  subgoal (*  {0 < $z} x +\<^sub>L y, z:{x` = - $x + $x * $y, y` = - $y, z` = 1 *\<^sub>R $z} {0 < $z} *)
-    apply (dGhost "w" "z*w\<^sup>2 = 1" "-1/2")
-    apply (diff_inv_on_eq)
-    using exp_ghost_arith by auto
-(*
-    apply (subst fbox_diff_inv_on;
-      intro lderiv_rules; 
-    (simp add: framed_derivs ldifferentiable closure usubst unrest_ssubst unrest usubst_eval)?)
-    subgoal
-      apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-      using bounded_linear_fst bounded_linear_snd_comp by expr_auto
-    subgoal 
-      apply (subst framed_derivs)
-       apply expr_simp
-      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-      using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (subst framed_derivs)
-        apply expr_simp
-       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  apply (subst framed_derivs)
-         apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-    by (expr_simp add: power2_eq_square) 
-  using exp_ghost_arith by expr_auto *)
-       apply expr_simp
-      apply expr_simp
-  subgoal by expr_auto (metis indeps(4) indeps(7) lens_indep_comm)
-      apply expr_simp
-  subgoal using exp_ghost_arith2'[of z y] by expr_auto
-  apply expr_auto
-  apply expr_auto
+  apply (dCut "y \<ge> 0")
+   apply postcondition_invariant
+    apply (dGhost "z" "z > 0 \<and> z * y \<ge> 0" "1")
+     apply split_invariant
+      apply (dGhost "w" "z * w\<^sup>2 = 1" "-1/2")
+       apply dInduct
+       apply (expr_simp add: power2_eq_square)
+  using exp_ghost_arith apply metis
+     apply dInduct
+    apply expr_simp
+  apply (metis mult_less_0_iff not_less rel_simps(68))
+   apply expr_simp
   by (rule diff_weak_on_rule)
-    expr_auto
+    simp
 
 end
 
