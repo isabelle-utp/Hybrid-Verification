@@ -130,6 +130,12 @@ lemma fbox_nondet_assign [wlp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>\<guillemo
 lemma hoare_nondet_assign: "H{\<forall>k. Q\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>} (x ::= ?) {Q}"
   by (simp add: fbox_nondet_assign)
 
+lemma hoare_nondet_assignI: 
+  assumes "`\<forall>k. P \<longrightarrow> Q\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>`" 
+  shows "H{P} (x ::= ?) {Q}"
+  using assms
+  by (metis (mono_tags, lifting) SEXP_def fbox_nondet_assign predicate1I taut_def)
+
 lemma fdia_nondet_assign: "|x ::= ?\<rangle> P = (\<exists>k. P\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>)\<^sub>e"
   unfolding fdia_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)

@@ -484,11 +484,17 @@ method ode_solve_with for sol :: "real \<Rightarrow> 's \<Rightarrow> 's" =
    (local_flow_on_auto)[1], simp,
    simp add: usubst usubst_eval, expr_taut, expr_simp add: field_simps)
 
-subsection \<open> Assignment and Conditional Laws \<close>
+subsection \<open> Assignment, Conditional, and Choice Laws \<close>
 
 method assign = (rule hoare_assignI)
 
+method nondet_assign = (rule hoare_nondet_assignI)
+
 method if_then_else = (rule hoare_if_then_else)
+
+method choice = (rule hoare_choice)
+
+method test = (rule hoare_testI)
 
 subsection \<open> Sequence Law \<close>
 
@@ -532,9 +538,15 @@ method forward_assign =
 method backward_assign =
   (rule hoare_bwd_assign hoare_assignI, subst_eval; (expr_auto add: field_simps)[1])
 
+method nondet_fwd_assign =
+  (rule hoare_nondet_fwd_assign, simp)
+
+method forward_test =
+  (rule hoare_fwd_test)
+
 method symbolic_exec =
   (normalise_prog?
-  ,(forward_assign | backward_assign | (rule hoare_skip_impl) | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test) | (rule hoare_testI))+)
+  ,(forward_assign | backward_assign | nondet_fwd_assign | (rule hoare_skip_impl) | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test) | (rule hoare_testI))+)
 
 method postcondition_invariant =
   (rule hoare_post_invariant)
