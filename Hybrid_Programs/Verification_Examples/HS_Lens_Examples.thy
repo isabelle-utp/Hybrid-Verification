@@ -437,19 +437,8 @@ dataspace water_tank =
 context water_tank
 begin
 
-abbreviation tank_ode :: "real \<Rightarrow> real \<Rightarrow> 'a \<Rightarrow> 'st \<Rightarrow> 'st set"
-  where "tank_ode h\<^sub>x k s \<equiv> {h` = k, t` = 1 | t \<le> (h\<^sub>x - h\<^sub>m)/k}"
-
-abbreviation (input) tank_vec_field :: "real \<Rightarrow> 'st \<Rightarrow> 'st" ("f")
-  where "tank_vec_field k \<equiv> [h \<leadsto> k, t \<leadsto> 1]"
-
-abbreviation (input) tank_flow :: "real \<Rightarrow> real \<Rightarrow> 'st \<Rightarrow> 'st" ("\<phi>")
-  where "tank_flow k \<tau> \<equiv> [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t]"
-
-lemma lflow_tank [local_flow]: "local_flow_on (f k) (h+\<^sub>Lt) UNIV UNIV (\<phi> k)"
-  by local_flow_on_auto
-
-lemma lf: "local_flow_on [h \<leadsto> k, t \<leadsto> 1] (h+\<^sub>Lt) UNIV UNIV (\<lambda>\<tau>. [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t])"
+lemma lflow_tank [local_flow]: 
+  "local_flow_on [h \<leadsto> k, t \<leadsto> 1] (h+\<^sub>Lt) UNIV UNIV (\<lambda>\<tau>. [h \<leadsto> k * \<tau> + h, t \<leadsto> \<tau> + t])"
   by local_flow_on_auto
 
 abbreviation "ctrl \<equiv> (t, h\<^sub>m) ::= (0, h);
