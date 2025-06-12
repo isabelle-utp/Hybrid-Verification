@@ -124,6 +124,8 @@ subsection \<open> Nondeterministic assignments \<close>
 definition nondet_assign :: "('a \<Longrightarrow> 's) \<Rightarrow> 's prog" ("(2_ ::= ?)" [64] 65)
   where [prog_defs]: "(x ::= ?) = (\<lambda>s. {(put\<^bsub>x\<^esub> s k)|k. True})"
 
+notation nondet_assign ("(2_ := ?)" [64] 65)
+
 lemma fbox_nondet_assign [wlp]: "|x ::= ?] P = (\<forall>k. P\<lbrakk>\<guillemotleft>k\<guillemotright>/x\<rbrakk>)\<^sub>e"
   unfolding fbox_def nondet_assign_def 
   by (auto simp add: fun_eq_iff expr_defs)
@@ -281,7 +283,7 @@ lemma hoare_bwd_assign:
   using assms by (simp add: hoare_kcomp hoare_assign)
 
 lemma hoare_nondet_fwd_assign: 
-  assumes "vwb_lens x" "\<And> x\<^sub>0 v. H{P\<lbrakk>x\<^sub>0/x\<rbrakk> \<and> $x = \<guillemotleft>v\<guillemotright>} S {Q}" 
+  assumes "vwb_lens x" "\<And> x\<^sub>0 v. H{P\<lbrakk>\<guillemotleft>x\<^sub>0\<guillemotright>/x\<rbrakk> \<and> $x = \<guillemotleft>v\<guillemotright>} S {Q}" 
   shows "H{P} (x ::= ?) ; S {Q}"
   using assms unfolding nondet_assign_as_Nondet_assign
   apply (simp add: Choice_kcomp_distr)
