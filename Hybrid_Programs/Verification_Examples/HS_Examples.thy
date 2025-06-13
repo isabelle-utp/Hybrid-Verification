@@ -5,6 +5,7 @@ theory HS_Examples
     AMV
     Boat
     Bouncing_Ball
+    Exponential
     Pendulum_with_force
     Pendulum
     Planar_Flight

@@ -1,4 +1,4 @@
-theory HS_Exponential_Ex
+theory Exponential
   imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
