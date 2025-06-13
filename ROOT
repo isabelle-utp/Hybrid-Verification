@@ -36,8 +36,7 @@ session "Verification_Examples" in "Hybrid_Programs/Verification_Examples" = "Hy
     Hybrid_Programs/Verification_Examples
     Legacy*)
   theories
-    "Hybrid_Programs/Verification_Examples/HS_Lens_Examples"
-    "Hybrid_Programs/Verification_Examples/Pendulum_with_force"
+    "Hybrid_Programs/Verification_Examples/HS_Examples"
     "Hybrid_Programs/Verification_Examples/ARCH2022_Examples"
     (*"Legacy/MTX_Examples"*)
   document_files

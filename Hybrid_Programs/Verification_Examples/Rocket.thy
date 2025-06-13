@@ -91,3 +91,5 @@ lemma "(0 \<le> h \<and> h < 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) \<and> m = m\<^su
     (auto simp: field_simps power3_eq_cube intro!: exI[of _ "2*m\<^sub>0/k"])
 
 end
+
+end
