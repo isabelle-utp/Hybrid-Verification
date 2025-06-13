@@ -644,6 +644,46 @@ lemma "(0 \<le> h \<and> h < 2*m\<^sub>0\<^sup>3/(3*k\<^sup>2) \<and> m = m\<^su
 end
 
 
+locale exponential_evol =
+  fixes x :: "real \<Longrightarrow> real^1"
+  assumes x_def [simp]: "x \<equiv> vec_lens 1"
+begin
+
+\<comment> \<open>Verified with annotated dynamics \<close>
+
+abbreviation "exp_f \<equiv> [x \<leadsto> -x]" (* x>0 -> [{x'=-x}](x>0) *)
+abbreviation "exp_flow \<tau> \<equiv> [x \<leadsto> x * exp (- \<tau>)]"
+
+lemma "D (\<lambda>t. exp_flow t s) = (\<lambda>t. exp_f (exp_flow t s)) on {0--t}"
+  by (expr_auto, auto intro!: vderiv_intros)
+
+lemma "H{x > 0}(EVOL exp_flow G (\<lambda>s. {t. t \<ge> 0})) {x > 0}"
+  by (simp add: fbox_g_evol) expr_auto
+
+\<comment> \<open>Verified with the flow \<close>
+
+lemma local_lipschitz_exp_f: "local_lipschitz UNIV UNIV (\<lambda>t::real. exp_f)"
+  apply(simp_all add: local_lipschitz_def lipschitz_on_def, clarsimp)
+    apply(rule_tac x="1" in exI, clarsimp, rule_tac x=1 in exI)
+  by (clarsimp, expr_auto, simp add: dist_norm norm_vec_def)
+
+lemma local_flow_exp_flow: "local_flow exp_f UNIV UNIV exp_flow"
+  apply(unfold_locales)
+  apply (auto)
+  using local_lipschitz_exp_f apply force
+   apply (expr_auto, auto simp: vec_eq_iff intro!: vderiv_intros, expr_auto)
+  done
+
+(* x>0 -> [{x'=-x}](x>0) *)
+lemma "H{x > 0}(x\<acute>= exp_f & G){x > 0}"
+  apply (subst local_flow.fbox_g_ode_subset[OF local_flow_exp_flow])
+   apply (simp)
+  apply (expr_auto)
+  done
+
+end
+
+
 subsubsection \<open> Blood glucose \<close>
 
 dataspace glucose = 
