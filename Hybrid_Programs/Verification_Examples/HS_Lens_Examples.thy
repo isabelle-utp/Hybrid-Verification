@@ -19,9 +19,6 @@ lemma num3I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> 
 lemma num4I: "P 1 \<Longrightarrow> P 2 \<Longrightarrow> P 3 \<Longrightarrow> P 4 \<Longrightarrow> P j" for j::4
   by (meson forall_4)
 
-lemma hoare_cases: "H{p \<and> I}S{p \<and> I} \<Longrightarrow> H{\<not> p \<and> I}S{\<not> p \<and> I} \<Longrightarrow> H{I}S{I}"
-  by (auto simp add: fbox_def SEXP_def)
-
 abbreviation (input) real_of_bool :: "bool \<Rightarrow> real" where "real_of_bool \<equiv> of_bool"
 
 declare [[coercion real_of_bool]]
@@ -63,8 +60,8 @@ begin
 \<comment> \<open>Verified with annotated dynamics \<close>
 
 abbreviation "pend_flow \<tau> \<equiv> [
-  x \<leadsto> x * \<guillemotleft>cos \<tau>\<guillemotright> + y * \<guillemotleft>sin \<tau>\<guillemotright>, 
-  y \<leadsto> - x * \<guillemotleft>sin \<tau>\<guillemotright> + y * \<guillemotleft>cos \<tau>\<guillemotright>]"
+  x \<leadsto> x * cos \<tau> + y * sin \<tau>, 
+  y \<leadsto> - x * sin \<tau> + y * cos \<tau>]"
 
 lemma pendulum_dyn: 
   "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2} (EVOL pend_flow G U) {\<guillemotleft>r\<guillemotright>\<^sup>2 = ($x)\<^sup>2 + ($y)\<^sup>2}"
@@ -85,51 +82,6 @@ lemma pendulum_inv: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + 
   apply expr_simp
   apply (auto intro!: vderiv_intros )
   done
-
-end
-
-locale pendulum2 =
-  fixes x :: "real \<Longrightarrow> real^2"
-    and y :: "real \<Longrightarrow> real^2"
-  assumes x_def [simp]: "x \<equiv> vec_lens 1"
-    and   y_def [simp]: "y \<equiv> vec_lens 2"
-begin
-
-\<comment> \<open>Verified with differential invariants in @{text "\<real>\<^sup>2"} \<close>
-
-abbreviation fpend :: "real^2 \<Rightarrow> real^2" ("f") 
-  where "fpend \<equiv> [x \<leadsto> y, y \<leadsto> -x]"
-
-lemma pendulum_inv: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} (x\<acute>= f & G) {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
-  by (simp add: hoare_diff_inv, expr_auto) 
-    (auto intro!: diff_inv_rules vderiv_intros)
-
-\<comment> \<open>Verified with the flow in @{text "\<real>\<^sup>2"} \<close>
-
-abbreviation pend_flow2 :: "real \<Rightarrow> real ^ 2 \<Rightarrow> real ^ 2" ("\<phi>")
-  where "pend_flow2 \<tau> \<equiv> [
-  x \<leadsto> x * \<guillemotleft>cos \<tau>\<guillemotright> + y * \<guillemotleft>sin \<tau>\<guillemotright>, 
-  y \<leadsto> - x * \<guillemotleft>sin \<tau>\<guillemotright> + y * \<guillemotleft>cos \<tau>\<guillemotright>]"
-
-lemma local_flow_pend: "local_flow f UNIV UNIV \<phi>"
-  apply(unfold_locales, simp_all add: local_lipschitz_def lipschitz_on_def vec_eq_iff, clarsimp)
-    apply(rule_tac x="1" in exI, clarsimp, rule_tac x=1 in exI)
-    apply(clarsimp, expr_auto, simp add: dist_norm norm_vec_def L2_set_def power2_commute UNIV_2)
-   apply(expr_auto, case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
-  using exhaust_2 by force expr_auto+
-
-lemma "local_flow f UNIV UNIV \<phi>"
-  apply (unfold_locales; expr_auto)
-  apply ((rule_tac \<DD>=f in c1_local_lipschitz; expr_auto), fastforce intro: num2I intro!: derivative_intros)
-   apply(case_tac "i = 1 \<or> i = 2", auto simp: forall_2  intro!: vderiv_intros)
-  using exhaust_2 by (auto simp: vec_eq_iff)
-
-lemma pendulum_flow: "H{\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2} (x\<acute>= f & G) {\<guillemotleft>r\<guillemotright>\<^sup>2 = x\<^sup>2 + y\<^sup>2}"
-  apply(subst local_flow.fbox_g_ode_subset[OF local_flow_pend], simp)
-  by (auto, expr_auto)
-
-no_notation fpend ("f")
-        and pend_flow2 ("\<phi>")
 
 end
 

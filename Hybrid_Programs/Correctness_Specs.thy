@@ -154,6 +154,10 @@ lemma hoare_disj_posI:
   "H{P}X{a} \<Longrightarrow> Q = (a \<or> b)\<^sub>e \<Longrightarrow> H{P}X{Q}"
   by (auto simp: le_fun_def fbox_def)
 
+lemma hoare_neg_cases: 
+  "H{@p \<and> I}S{@p \<and> I} \<Longrightarrow> H{\<not> @p \<and> I}S{\<not> @p \<and> I} \<Longrightarrow> H{I}S{I}"
+  by (auto simp: fbox_def SEXP_def)
+
 lemma hoare_post_invariant:
   assumes "H{I} C {I}" "`P \<longrightarrow> I`"
   shows "H{P} C {I}"

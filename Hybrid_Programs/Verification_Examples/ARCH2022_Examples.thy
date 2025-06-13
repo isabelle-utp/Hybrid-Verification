@@ -1985,9 +1985,6 @@ dataspace STTT_10 =
   constants A::real B::real \<epsilon>::real
   variables a::real v::real x::real dx::real y::real dy::real w::real r::real c::real
 
-definition annot_inv :: "'a \<Rightarrow> 'b \<Rightarrow> 'a" (infixr "@inv" 65)
-  where "x @inv i = x"
-
 lemma subst_fbox: "\<sigma> \<dagger> ( |X] Q) = ( |\<sigma> \<dagger> X] (\<sigma> \<dagger> Q))"
   by (expr_simp add: fbox_def)
 
@@ -2219,64 +2216,58 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
         c ::= 0;
         (
         {x` = v * dx, y` = v * dy, v` = a, dx` = -dy*w, dy` = dx*w, w` = a/r, c` = 1 | v >= 0 \<and> c \<le> \<epsilon>}
-        @inv (c \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2=1 \<and>
+        INV (c \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2=1 \<and>
           (v'=a \<longrightarrow> v = old(v)+a*c) \<and>
           (v'=a \<longrightarrow> -c*(v-a/2*c) \<le> y - old(y) \<and> y - old(y) \<le> c*(v-a/2*c)) \<and>
           (v'=0 \<longrightarrow> v = old(v)) \<and>
           (v'=0 \<longrightarrow> -c * v \<le> y - old(y) \<and> y - old(y) \<le> c * v)
-        )\<^sub>e
+        )
         )
       ) INV (v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> r \<noteq> 0 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)
     ] (\<bar>y - ly\<bar> < lw))`"
-  apply (subst impl_eq_leq)
+  apply (subst impl_eq_leq, subst fbox_to_hoare)
   apply (subst change_loopI[where I="(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0 
   \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw)\<^sup>e"])
-  apply (rule fbox_loopI)
-    apply (clarsimp simp: le_fun_def)
-   apply (clarsimp simp: le_fun_def)
-   apply (smt (verit, best) divide_eq_0_iff divide_pos_pos zero_less_power zero_power2)
-  apply (rule_tac R="(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 
+  apply intro_loops
+    prefer 3 subgoal 
+    by expr_auto
+      (smt (verit, best) divide_eq_0_iff divide_pos_pos zero_less_power zero_power2)
+   prefer 2 subgoal by expr_auto
+    apply (rule_tac R="(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 
     \<and> \<bar>y - ly\<bar> + v\<^sup>2/(2*b) < lw \<and> c=0
     \<and> ((\<bar>y - ly\<bar> + v\<^sup>2/(2*b) + (A/b+1)*(A/2*\<epsilon>\<^sup>2+\<epsilon>* v) < lw \<and> -B \<le> a \<and> a \<le> A \<and> w*r = v)
       \<or> (v = 0 \<and> a = 0 \<and> w = 0)
-      \<or> (-B \<le> a \<and> a \<le> -b)))\<^sup>e" in fbox_kcompI)
-   apply (clarsimp simp: wlp, expr_simp, hol_clarsimp)
-  apply (rule_tac x=v in new_varI(2))
-  apply (rule_tac x=y in new_varI(2))
+      \<or> (-B \<le> a \<and> a \<le> -b)))\<^sup>e" in hoare_kcomp)
+   apply wlp_full
+  apply (rule_tac x="v" in hoare_ghost_varI, simp)
+  apply (rule_tac x="y" in hoare_ghost_varI, simp)
   apply (rename_tac v0 y0)
-  apply (simp only: annot_inv_def)
-  apply (rule_tac C="(v = a * c + v0)\<^sup>e" in diff_cut_on_rule)
+  apply (simp only: invar_def)
   subgoal for v0 y0
-    apply (rule_tac I="(v = a * c + v0)\<^sup>e" in fbox_diff_invI)
-    by (diff_inv_on_eq) (clarsimp simp: le_fun_def)+
-  apply (rule_tac C="(c \<ge> 0 \<and> v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0)\<^sup>e" in diff_cut_on_rule)
-  subgoal for v0 y0
-    apply (rule_tac I="(c \<ge> 0 \<and> v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0)\<^sup>e" in fbox_diff_invI)
-      apply (intro fbox_invs)
-              apply (simp only: fbox_diff_inv_on)
-              apply (diff_inv_on_single_ineq_intro "(0)\<^sup>e" "(1)\<^sup>e"; (force | vderiv))
-             apply (rule diff_weak_on_rule, expr_simp)
-    by (diff_inv_on_eq | (rule nmods_invariant; ((auto intro!: closure simp add: ), expr_simp)))+
-      (clarsimp simp: le_fun_def)+
-  apply (rule_tac C="(-c * v + a*c\<^sup>2/2 \<le> y - y0 \<and> y - y0 \<le> c * v - a*c\<^sup>2/2)\<^sup>e" in diff_cut_on_rule)
-  subgoal for v0 y0
-    apply (rule_tac I="(-c * v + a*c\<^sup>2/2 \<le> y - y0 \<and> y - y0 \<le> c * v - a*c\<^sup>2/2)\<^sup>e" in fbox_diff_invI)
-      apply (intro fbox_invs)
-       apply (simp only: fbox_diff_inv_on)
-       apply (diff_inv_on_single_ineq_intro "(- v)\<^sup>e" "(v * dy)\<^sup>e"; (force | vderiv)?)
-       apply (simp add: expr_simps, clarify)
-       apply (rule STTT_10_arith1[of "get\<^bsub>v\<^esub> (put\<^bsub>x +\<^sub>L y +\<^sub>L v +\<^sub>L dx +\<^sub>L dy +\<^sub>L w +\<^sub>L c\<^esub> _ _)"]; assumption)
-      apply (simp only: fbox_diff_inv_on)
-      apply (diff_inv_on_single_ineq_intro "(v * dy)\<^sup>e" "(v)\<^sup>e" ; (force | vderiv)?)
-    apply (simp add: expr_simps, clarify)
-      apply (rule STTT_10_arith1[of "get\<^bsub>v\<^esub> (put\<^bsub>x +\<^sub>L y +\<^sub>L v +\<^sub>L dx +\<^sub>L dy +\<^sub>L w +\<^sub>L c\<^esub> _ _)"]; assumption)
-    by (clarsimp simp: le_fun_def)+
-  apply (rule_tac b="(\<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) < lw)\<^sup>e" and
+    apply (dCut "v = a * c + v0")
+     apply postcondition_invariant
+      apply (dInduct, expr_simp)
+    apply (dCut "(c \<ge> 0 \<and> v \<ge> 0 \<and> dx\<^sup>2+dy\<^sup>2 = 1 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> > 0 \<and> lw > 0 \<and> r \<noteq> 0)")
+     apply postcondition_invariant
+      apply dInduct_mega'
+      apply (rule nmods_invariant)
+      apply (auto intro!: closure, expr_simp)[1]
+     apply expr_simp
+    apply (dCut "-c * v + a*c\<^sup>2/2 \<le> y - y0 \<and> y - y0 \<le> c * v - a*c\<^sup>2/2")
+     apply postcondition_invariant
+      apply dInduct_auto
+    subgoal for s
+      using STTT_10_arith1[where a="a<s>" and c="c<s>" and v="v<s>", of v0 "dx<s>" "dy<s>"]
+        power2_eq_square by (auto simp: field_simps)
+    subgoal for s
+      using STTT_10_arith1[where a="a<s>" and c="c<s>" and v="v<s>", of v0 "dx<s>" "dy<s>"]
+        power2_eq_square by (auto simp: field_simps)
+    subgoal by expr_simp
+    apply (rule_tac b="(\<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) < lw)\<^sup>e" and
       a="(0 \<le> $v \<and> 0 < A \<and> b \<le> B \<and> 0 < b \<and> 0 < \<epsilon> \<and> 0 < lw \<and> $r \<noteq> 0 \<and> ($dx)\<^sup>2 + ($dy)\<^sup>2 = 1)\<^sup>e" in hoare_conj_posI)
-    apply (rule diff_weak_on_rule, expr_simp)
+        apply (rule diff_weak_on_rule, expr_simp)
    prefer 2 apply expr_simp
-  apply (rule_tac a="(0 \<le> $v \<and> 0 < A \<and> b \<le> B \<and> 0 < b \<and> 0 < \<epsilon> \<and> 0 < lw \<and> $r \<noteq> 0 \<and> $c = 0
-    \<and> v = v0 \<and> y = y0
+  apply (rule_tac a="(0 \<le> $v \<and> 0 < A \<and> b \<le> B \<and> 0 < b \<and> 0 < \<epsilon> \<and> 0 < lw \<and> $r \<noteq> 0 \<and> $c = 0 \<and> v = v0 \<and> y = y0
     \<and> ($dx)\<^sup>2 + ($dy)\<^sup>2 = 1 \<and> \<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) < lw)\<^sup>e" 
       and b="(\<bar>$y - ly\<bar> + ($v)\<^sup>2 / (2 * b) + (A / b + 1) * (A / 2 * \<epsilon>\<^sup>2 + \<epsilon> * $v) < lw 
     \<and> - B \<le> $a \<and> $a \<le> A \<and> $w * $r = $v)\<^sup>e"
@@ -2287,7 +2278,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
       and b="($v = 0 \<and> $a = 0 \<and> $w = 0)\<^sup>e"
       and c="(- B \<le> $a \<and> $a \<le> - b)\<^sup>e" in hoare_disj_preI[rotated, rotated], expr_simp)
      prefer 3 subgoal by expr_auto
-  subgoal for v0 y0 (* SUBGOAL 1*)
+    subgoal (* SUBGOAL 1*)
     apply (rule_tac C="(a=0)\<^sup>e" in diff_cut_on_rule)
     subgoal
       apply (rule_tac I="(a=0)\<^sup>e" in fbox_diff_invI)
@@ -2301,7 +2292,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
       apply (rule_tac I="(\<bar>y0 - ly\<bar> < lw)\<^sup>e" in fbox_diff_invI)
       by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e") (clarsimp simp: le_fun_def)+
     by (rule diff_weak_on_rule) expr_auto
-   prefer 2 subgoal for v0 y0 (* SUBGOAL 2*)
+   prefer 2 subgoal (* SUBGOAL 2*)
     apply (rule_tac C="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) + (A / b + 1) * (A / 2 * \<epsilon>\<^sup>2 + \<epsilon> * v0) < lw)\<^sup>e" in diff_cut_on_rule)
     subgoal
       apply (rule_tac I="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) + (A / b + 1) * (A / 2 * \<epsilon>\<^sup>2 + \<epsilon> * v0) < lw)\<^sup>e" in fbox_diff_invI)
@@ -2313,7 +2304,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
       by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
     apply (rule diff_weak_on_rule)
     by expr_auto (rule STTT_10_arith2[of _ \<epsilon> "get\<^bsub>v\<^esub> _"]; assumption)
-  subgoal for v0 y0 (* SUBGOAL 3 *)
+  subgoal (* SUBGOAL 3 *)
     apply (rule_tac C="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in diff_cut_on_rule)
     subgoal
       apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in fbox_diff_invI)
@@ -2325,6 +2316,7 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
       by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
     apply (rule diff_weak_on_rule)
     by expr_auto (rule STTT_10_arith3[of "get\<^bsub>v\<^esub> _"]; assumption)
+  done
   done
 
 end 
@@ -3285,6 +3277,35 @@ end
 % 8. Benchmarks/Nonlinear/Arrowsmith Place Fig_3_11 page 83:
       Requires darboux rule
 *)
+
+
+context STTT
+begin
+
+(* { x' = v, v' = -Kp*(x-xr) - Kd*v & v >= 0 } *)
+abbreviation "f9 Kd Kp \<equiv> [x \<leadsto> v, v \<leadsto> -Kp * (x - c) - Kd * v, c \<leadsto> 0]"
+
+abbreviation "flow9 \<tau> \<equiv> [
+  x \<leadsto> exp ((-2)*\<tau>) * (c - 2 * (exp \<tau>) * c + (exp (2 * \<tau>)) * c - v + (exp \<tau>) * v - x + 2 * (exp \<tau>) * x), 
+  v \<leadsto> exp ((-2)*\<tau>) * (-2 * c + 2 * (exp \<tau>) * c + 2 * v - (exp \<tau>) * v + 2* x - 2 * (exp \<tau>) * x),
+  c \<leadsto> c]"
+
+lemma 
+  assumes "Kp = 2" "Kd = 3"
+  shows "local_flow_on (f9 Kd Kp) (x +\<^sub>L v +\<^sub>L c) UNIV UNIV flow9"
+  apply (unfold local_flow_on_def, clarsimp)
+  apply (unfold_locales; clarsimp?)
+    apply(expr_simp, rule_tac \<DD>="\<lambda>p. (fst (snd p), -Kp * (fst p - snd (snd p)) - Kd * fst (snd p), 0)" in c1_local_lipschitz; clarsimp?)
+    apply (force simp: fun_eq_iff intro!: derivative_eq_intros)
+  prefer 2 apply expr_simp
+  apply (expr_simp)
+  by (intro vderiv_intros; (rule vderiv_intros | force)?)
+    (auto simp: assms field_simps exp_minus_inverse)
+
+end
+
+
+
 
 
 end
