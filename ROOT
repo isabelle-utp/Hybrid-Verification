@@ -27,6 +27,7 @@ session "Hybrid-Verification" in "Hybrid_Programs" = "Matrix_ODE_Verify" +
     Diff_Dyn_Logic
     Proof_Automation
     HS_CAS_Integration
+    Hybrid_Verification
 (*  document_files
     "root.tex" *)
 
