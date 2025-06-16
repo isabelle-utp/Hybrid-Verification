@@ -544,9 +544,24 @@ method nondet_fwd_assign =
 method forward_test =
   ((simp only: kcomp_assoc)?, rule hoare_fwd_test)
 
+method do_a_discrete = (
+    forward_assign 
+    | backward_assign 
+    | nondet_fwd_assign 
+    | (rule hoare_skip_impl) 
+    | if_then_else
+    | choice
+    | (rule hoare_fwd_test) 
+    | (rule hoare_testI)
+)
+
+method do_discretes = (do_a_discrete; do_discretes?)
+
 method symbolic_exec =
-  (normalise_prog?
-  ,(forward_assign | backward_assign | nondet_fwd_assign | (rule hoare_skip_impl) | (rule hoare_if_then_else) | (rule hoare_choice) | (rule hoare_fwd_test) | (rule hoare_testI))+)
+  (normalise_prog?, do_discretes+)
+
+method symbolic_exec' =
+  (normalise_prog?, do_a_discrete+)
 
 method postcondition_invariant =
   (rule hoare_post_invariant)

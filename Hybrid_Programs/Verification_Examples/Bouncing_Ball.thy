@@ -33,7 +33,7 @@ lemma bouncing_ball_correct: "H{True} BBall {h \<le> H}"
   unfolding BBall_def 
   apply intro_loops \<comment> \<open> Introduce loop with invariant \<close>
     apply symbolic_exec \<comment> \<open> Execute imperative program operators \<close>
-     apply postcondition_invariant \<comment> \<open> Use the postcondition as an invariant \<close>
+    apply postcondition_invariant \<comment> \<open> Use the postcondition as an invariant \<close>
       apply dInduct_mega
      apply expr_simp
      apply clarsimp
@@ -41,7 +41,7 @@ lemma bouncing_ball_correct: "H{True} BBall {h \<le> H}"
       power2_minus zero_compare_simps(4))
     apply postcondition_invariant
     apply dInduct_mega
-   apply symbolic_exec
+    apply symbolic_exec
   using H_pos apply linarith
   apply expr_auto
   apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)

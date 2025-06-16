@@ -18,6 +18,23 @@ dataspace planar_flight =
 context planar_flight
 begin
 
+(*
+
+Invariants obtained from:
+
+Khalil Ghorbal, Jean-Baptiste Jeannin, Erik Zawadzki, André Platzer, Geoffrey J. Gordon,
+and Peter Capell. Hybrid Theorem Proving of Aerospace Systems: Applications and Challenges. 
+J. Aerospace Inf. Sys., 2014, 11 (10), pp.702--713. https://doi.org/10.2514/1.I010178
+
+Which used the methods described in:
+
+Ghorbal, K., Platzer, A. (2014). Characterizing Algebraic Invariants by Differential 
+Radical Invariants. In: Ábrahám, E., Havelund, K. (eds) Tools and Algorithms for the 
+Construction and Analysis of Systems. TACAS 2014. Lecture Notes in Computer Science, 
+vol 8413. Springer, Berlin, Heidelberg. https://doi.org/10.1007/978-3-642-54862-8_19
+
+*)
+
 expression I is "v\<^sub>i * sin \<theta> * x - (v\<^sub>i * cos \<theta> - v\<^sub>o) * y > v\<^sub>o + v\<^sub>i"
 
 expression J is "v\<^sub>i * \<omega> * sin \<theta> * x - v\<^sub>i * \<omega> * cos \<theta> * y 

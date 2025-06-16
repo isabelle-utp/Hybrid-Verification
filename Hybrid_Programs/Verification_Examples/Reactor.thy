@@ -46,12 +46,10 @@ definition "reactor_ctrl \<equiv>
   time2 ::= time2 + t;
   t ::= 0;
   IF temp = T\<^sub>m \<and> rod1 THEN rod1 ::= False; time1 ::= 0
-  ELSE IF temp = T\<^sub>m \<and> rod2 THEN rod2 ::= False; time2 ::= 0
-  ELSE IF temp = T\<^sub>M \<and> \<not> rod1 \<and> \<not> rod2 THEN 
-    IF time1 > t\<^sub>R THEN rod1 ::= True
-    ELSE IF time2 > t\<^sub>R THEN rod2 ::= True
-    ELSE skip
-  ELSE skip
+  ELSE (IF temp = T\<^sub>m \<and> rod2 THEN rod2 ::= False; time2 ::= 0
+  ELSE (IF temp = T\<^sub>M \<and> \<not> rod1 \<and> \<not> rod2 THEN 
+    (IF time1 > t\<^sub>R THEN rod1 ::= True
+    ELSE (IF time2 > t\<^sub>R THEN rod2 ::= True))))
 "
 
 definition "reactor_ode \<equiv>
