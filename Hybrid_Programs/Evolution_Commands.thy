@@ -464,7 +464,7 @@ lemma fbox_g_odei: "P \<le> I \<Longrightarrow> I \<le> |g_orbital f G U S t\<^s
   P \<le> |x\<acute>= f & G on U S @ t\<^sub>0 DINV I] Q"
   unfolding g_ode_inv_def 
   apply(rule_tac b="|g_orbital f G U S t\<^sub>0] I" in order.trans)
-   apply(rule_tac I="I" in fbox_inv, simp_all)
+   apply(rule_tac I="I" in fbox_invI', simp_all)
   apply(subst fbox_g_orbital_guard, simp)
   by (rule fbox_iso, force)
 
@@ -475,7 +475,7 @@ lemma hoare_g_odei: "H{I} (g_orbital f G U S t\<^sub>0) {I}  \<Longrightarrow> `
 lemma fbox_diff_invI: "(I)\<^sub>e \<le> |g_orbital_on a f G U S t\<^sub>0] I \<Longrightarrow> P \<le> (I)\<^sub>e \<Longrightarrow> (I \<and> G)\<^sub>e \<le> Q
   \<Longrightarrow> P \<le> |g_orbital_on a f G U S t\<^sub>0] Q"
   apply(rule_tac b="|g_orbital_on a f G U S t\<^sub>0] I" in order.trans)
-   apply (rule_tac I=I in fbox_inv; expr_simp)
+   apply (rule_tac I=I in fbox_invI'; expr_simp)
   by (subst fbox_g_orbital_on_guard, force)
     (rule fbox_iso, force)
 

@@ -17,28 +17,13 @@ method hol_clarsimp uses simp = (hol_intros; (clarsimp simp: simp)?)
 
 subsection \<open> Monomial simplification \<close>
 
-method move_left for x::"'a::{ab_semigroup_mult,power}" = (
-    (simp only: mult.assoc[symmetric])?, (* prepare for main loop *)
-    (
-      (simp only: mult.commute[where b="x^_"] mult.commute[where b="x"])?,
-      (simp only: mult.assoc)
-      )+
-    ), (simp only: mult.assoc[symmetric])? (* clean after main loop *)
-
-method move_right for x::"'a::{ab_semigroup_mult,power}" = (
-    (simp only: mult.assoc)?,
-    (
-      (simp only: mult.commute[where a="x^_"] mult.commute[where a="x"])?,
-      (simp only: mult.assoc[symmetric])+
-      )+
-    ), (simp only: mult.assoc[symmetric])?
-
-
 named_theorems mon_pow_simps "simplification rules for powers in monomials "
 
 declare semiring_normalization_rules(27) [mon_pow_simps] (* x * x ^ q = x ^ Suc q *)
     and semiring_normalization_rules(28) [mon_pow_simps] (* x ^ q * x = x ^ Suc q *)
     and semiring_normalization_rules(29) [mon_pow_simps] (* x * x = ?x\<^sup>2 *)
+
+method bin_unfold = (simp add: power2_diff power2_sum power_mult_distrib)
 
 method mon_pow_simp = (
     (simp add: mon_pow_simps del: power_Suc)?,
@@ -46,40 +31,39 @@ method mon_pow_simp = (
     (simp add: mon_pow_simps del: power_Suc)?
     ) \<comment> \<open> simplifies powers in monomials \<close>
 
+lemma power2_left[mon_pow_simps] : "x * (x * y) = x\<^sup>2 * y" for x :: "'a :: comm_semiring_1"
+  by (simp only: mult.assoc[symmetric])
+    mon_pow_simp
+
+lemma power_numeral_left[mon_pow_simps] : "x * (x^n * y) = x^(n + 1) * y" for x :: "'a :: comm_semiring_1"
+  by (simp only: mult.assoc[symmetric])
+    mon_pow_simp
+
+method powers_simp = (
+  (simp add: field_simps power_numeral_reduce),
+  (simp only: mult.assoc[symmetric])?,
+  mon_pow_simp
+  )
+
 lemma "x * x * x * (y ^ Suc n * x * z * (y * x * z) * z * z) * z * z 
   = x ^ 5 * y ^ Suc (Suc n) * z ^ 6" for x::real
-  apply (move_left z)
-  apply (move_left y)
-  apply (move_left x)
-  apply mon_pow_simp
-  done
+  by powers_simp
 
 lemma "x * x * x * (y\<^sup>2 * x * z * (y * x * z) * z * z) * z * z 
   = x ^ 5 * y ^ 3 * z ^ 6" for x::real
-  apply (move_right x)
-  apply (move_right y)
-  apply (move_right z)
-  apply mon_pow_simp
-  done
-
-method mon_simp_vars for x y::"'a::{ab_semigroup_mult,power}" = (
-    (move_right x)?, (move_right y)?, mon_pow_simp?
-    (* second argument should not be the right-most argument in a monomial *)
-    )
+  by powers_simp
 
 lemma "x * x * (x:: real) * (y^2 * x * z * (y * x * z) * z * z) * z * z 
   = x^5 * y^3 * z^6"
-  by (mon_simp_vars x y)
+  by powers_simp
 
-lemma "y  * x * x * (x:: real) * (w * y^2 * x * z * (y * x * z) * z * w^4 * z) * z * z 
+lemma "y * x * x * (x:: real) * (w * y^2 * x * z * (y * x * z) * z * w^4 * z) * z * z 
   = x^5 * y^4 * z^6 * w^5"
-  by (mon_simp_vars x y) (mon_simp_vars z w) 
+  by powers_simp
 
 lemma "x * x * (x:: real) * (y^(Suc n) * x * z * (y * x * z) * z * z) * z * z 
   = x^5 * y^(Suc (Suc n)) * z^6"
-  by (mon_simp_vars x y)
-
-method bin_unfold = (simp add: power2_diff power2_sum power_mult_distrib)
+  by powers_simp
 
 
 subsection \<open> Distribution of multiplication over addition \<close>
@@ -140,22 +124,15 @@ lemma factor_fracR:
 lemma "(36::real) * (x1\<^sup>2 * (x1 * x2 ^ 3)) - (- (24 * (x1\<^sup>2 * x2) * x1 ^ 3 * x2\<^sup>2) 
   - 12 * (x1\<^sup>2 * x2) * x1 * x2 ^ 4) - 36 * (x1\<^sup>2 * (x2 * x1)) * x2\<^sup>2 - 12 * (x1\<^sup>2 * (x1 * x2 ^ 5)) 
   = 24 * (x1 ^ 5 * x2 ^ 3)" (is "?t1 - (- ?t2 - ?t3) - ?t4 - ?t5 = ?t6")
-  apply distribute
-  apply (move_right x1)
-  apply (move_right x2)
-  apply mon_pow_simp
-  done
+  by powers_simp
 
 lemma "0 \<le> A \<Longrightarrow> 0 < b \<Longrightarrow> x2\<^sup>2 \<le> 2 * b * (m - x1) \<Longrightarrow> 0 \<le> (t::real) 
   \<Longrightarrow> \<forall>\<tau>. 0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> b * \<tau> \<le> x2 \<and> \<tau> \<le> \<epsilon> 
   \<Longrightarrow> (x2 - b * t)\<^sup>2 \<le> 2 * b * (m - (x2 * t - b * t\<^sup>2 / 2 + x1))"
-  apply bin_unfold
-  apply distributes
-  apply (mon_simp_vars b t)
-  done
+  by powers_simp
 
 lemma "a * (b / c) = (a * b) / c" for a::real
-  oops
+  by powers_simp
 
 lemma STTexample6_arith:
   assumes "0 < A" "0 < B" "0 < \<epsilon>" "0 \<le> x2" "0 \<le> (t::real)" "- B \<le> k" "k \<le> A"
@@ -164,25 +141,7 @@ lemma STTexample6_arith:
   shows "k * t\<^sup>2 / 2 + x2 * t + x1 + (k * t + x2)\<^sup>2 / (2 * B) \<le> S" (is "?k0 \<le> S")
   using assms
   apply -
-  apply distribute
-  apply (subst factor_fracR[where c="2 * B"], simp?)
-  apply (subst (asm) factor_fracR[where c="2 * B"], simp?)
-  apply (mon_simp_vars A B)
-  apply (subst (asm) factor_fracR[where c="2"], simp?)
-  apply mon_pow_simp
-  apply (subst (asm) factor_fracR[where c="2"], simp?)
-  apply mon_pow_simp
-  apply (subst (asm) factor_fracR[where c="2 * B"], simp?)
-  apply mon_pow_simp
-  apply (subst (asm) factor_fracR[where c="2 * B"], simp?)
-  apply mon_pow_simp
-  apply (subst (asm) factor_fracR[where c="2"], simp?)
-  apply mon_pow_simp
-  apply (move_right A)
-  apply mon_pow_simp
-  apply distribute
-  apply bin_unfold
-  apply mon_pow_simp
+  apply powers_simp
   oops
 
 
@@ -221,10 +180,10 @@ method diff_inv_on_ineq for dnu dmu::"'a \<Rightarrow> real" = (
 
 method diff_inv_on_weaken_ineq for I::"'a \<Rightarrow> bool" 
   and dLeq dGeg::"'a \<Rightarrow> real" = (
-    (rule fbox_inv[where I=I]),
-    (expr_simp add: le_fun_def),
+    (rule fbox_invI'[where I=I]),
     (diff_inv_on_ineq dLeq dGeg),
     vderiv,
+    (expr_simp add: le_fun_def),
     (expr_simp add: le_fun_def)
     )
 
@@ -510,8 +469,8 @@ subsection \<open> Invariant introduction \<close>
 method_setup invariant =
 \<open>
 Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of) >>
-   (fn rt => fn ctx => 
-     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_invariant} "I" ctx rt goal) 1))
+   (fn rt => fn ctx =>                                                               
+     SIMPLE_METHOD (SUBGOAL (fn (goal, i) => Spec_Utils.inst_hoare_rule_tac @{thm hoare_invI} "I" ctx rt goal) 1))
 \<close> "introduce an invariant"
 
 method split_invariant = (rule hoare_invs hoare_disj_split)
@@ -546,7 +505,7 @@ method forward_test =
 
 method do_a_discrete = (
     forward_assign 
-    | backward_assign 
+    | (rule hoare_bwd_assign)
     | nondet_fwd_assign 
     | (rule hoare_skip_impl) 
     | if_then_else
@@ -562,6 +521,11 @@ method symbolic_exec =
 
 method symbolic_exec' =
   (normalise_prog?, do_a_discrete+)
+
+lemma hoare_post_invariant:
+  assumes "H{I} C {I}" "`P \<longrightarrow> I`"
+  shows "H{P} C {I}"
+  by (rule hoare_weaken[OF assms])
 
 method postcondition_invariant =
   (rule hoare_post_invariant)
@@ -602,69 +566,32 @@ Scan.option (Scan.peek (Args.named_term o Syntax.parse_term o Context.proof_of))
 
 method intro_star for I :: "'s \<Rightarrow> bool" = (rule_tac hoare_kstarI[where I="I"])
 
-method intro_loops = (rule hoare_loopI hoare_whileI hoare_loopI_break hoare_whileI_break)
+method intro_loops = 
+  (rule hoare_loopI hoare_whileI hoare_loopI_break hoare_whileI_break hoare_kstarI)
 
-method wlp_simp uses simp = (intro_loops?; (simp add: wlp simp)?)
+method wlp_base uses simp = 
+  (intro_loops?; (simp add: wlp simp)?)
 
-method wlp_flow uses simp local_flow = (wlp_simp simp: simp fbox_solve[OF local_flow]) 
+method wlp_flow uses simp local_flow = 
+  (wlp_base simp: simp fbox_solve[OF local_flow]) 
+
+method wlp_simp uses simp local_flow = (
+  (wlp_flow simp: usubst usubst_eval simp local_flow: local_flow);
+  clarsimp?
+  )
 
 method wlp_full uses simp local_flow = (
-  (wlp_flow simp: simp local_flow: local_flow)?; 
-  ((expr_simp add: le_fun_def), clarsimp?)
+  (wlp_flow simp: usubst usubst_eval local_flow: local_flow)?; 
+  ((expr_simp add: le_fun_def simp), clarsimp?)
   )
 
 method wlp_solve_one for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" = (subst fbox_solve[where \<phi>=\<phi>], local_flow_on_auto?)
 
 method wlp_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
-  = ((wlp_simp simp: simp)?, (wlp_solve_one \<phi>)+)
+  = (((wlp_simp simp: usubst usubst_eval)?, (wlp_solve_one \<phi>)+); (clarsimp simp: simp)?)
 
 method wlp_expr_solve for \<phi>::"real \<Rightarrow> 'a \<Rightarrow> 'a" uses simp 
   = ((wlp_solve \<phi> simp: simp); expr_auto?)
-
-dataspace testing_wp_tactic =
-  constants A::real B::real S::real V::real \<epsilon>::real
-  variables x::real v::real a::real c::real d::real
-
-declare [[literal_variables]]
-no_notation (ASCII) disj (infixr "|" 30)
-
-context testing_wp_tactic
-begin
-
-lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S \<and> \<epsilon> > 0)\<^sub>e \<le>
-  |LOOP 
-    ((\<questiondown>x + v\<^sup>2/(2*B) + (A/B + 1)*(A/2*\<epsilon>\<^sup>2 + \<epsilon> * v) \<le> S?; a ::= A) 
-      \<sqinter> (\<questiondown>v=0?; a ::= 0) 
-      \<sqinter> (a ::= - B; d ::= ?)
-    );(
-      (c ::= 0); 
-      {x` = v, v` = a, c` = 1 | (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)}
-    )
-   INV (v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)
-  ] (x \<le> S)"
-  apply (wlp_expr_solve "(\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])")
-  by (smt (verit) divide_nonneg_nonneg zero_le_power)
-
-lemma local_flow_test: "local_flow_on [c \<leadsto> 1, v \<leadsto> $a, x \<leadsto> $v] (x +\<^sub>L v +\<^sub>L c) UNIV UNIV
-  (\<lambda>t. [c \<leadsto> t + c, x \<leadsto> $a * t\<^sup>2 / 2 + $v * t + $x, v \<leadsto> $a * t + $v])"
-  by local_flow_on_auto
-
-lemma "(v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2 * B) \<le> S \<and> \<epsilon> > 0)\<^sub>e \<le>
-  |LOOP 
-    ((\<questiondown>x + v\<^sup>2/(2*B) + (A/B + 1)*(A/2*\<epsilon>\<^sup>2 + \<epsilon> * v) \<le> S?; a ::= A) 
-      \<sqinter> (\<questiondown>v=0?; a ::= 0) 
-      \<sqinter> (a ::= - B; d ::= ?)
-    );(
-      (c ::= 0); 
-      {x` = v, v` = a, c` = 1 | (v \<ge> 0 \<and> x + v\<^sup>2/(2*B) \<le> S)}
-    )
-   INV (v \<ge> 0 \<and> A > 0 \<and> B > 0 \<and> x + v\<^sup>2/(2*B) \<le> S \<and> \<epsilon> > 0)
-  ] (x \<le> S)"
-  apply (wlp_full local_flow: local_flow_test)
-  by (smt (verit) divide_nonneg_nonneg zero_le_power)
-
-
-end
 
 end
 (**)

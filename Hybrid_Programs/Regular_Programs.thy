@@ -244,6 +244,15 @@ lemma hoare_kcomp_inv:
 lemma fdia_kcomp: "|G ; F\<rangle> P = |G\<rangle> |F\<rangle> P"
   unfolding fdia_def kcomp_def by auto
 
+lemma fdia_kcompI:
+  assumes "P \<le> |F\<rangle> R"
+    and "R \<le> |G\<rangle> Q"
+  shows "P \<le> |F ; G\<rangle> Q"
+  using assms
+  unfolding fdia_def kcomp_def 
+  by (auto simp: le_fun_def)
+    blast
+
 lemma hoare_kcomp_assign: 
   assumes "vwb_lens x" 
   shows "H{@(P)} x ::= @(f) ; X {@(Q)} = (\<forall>x\<^sub>0. H{$x = [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> @(f) \<and> [x \<leadsto> \<guillemotleft>x\<^sub>0\<guillemotright>] \<dagger> @(P)} X {@(Q)})"
@@ -301,8 +310,8 @@ lemma hoare_fwd_test:
 
 lemma fbox_invI_break: 
   "P \<le> |Y] I \<Longrightarrow> I \<le> |X] I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I] Q"
-  apply(subst fbox_to_hoare, rule hoare_kcomp, force)
-  by (rule fbox_invI) auto
+  by (rule fbox_kcompI, force, rule fbox_invI[where I=I])
+    (expr_auto add: invar_def)+
 
 lemma hoare_invI_break: 
   "H{P} Y {I} \<Longrightarrow> H{I} X {I} \<Longrightarrow> I \<le> Q \<Longrightarrow> H{P} Y ; X INV I{Q}"
@@ -310,10 +319,8 @@ lemma hoare_invI_break:
 
 lemma fdia_invI_break: 
   "P \<le> |Y\<rangle> I \<Longrightarrow> I \<le> |X\<rangle> I \<Longrightarrow> I \<le> Q \<Longrightarrow> P \<le> |Y ; X INV I\<rangle> Q"
-  apply(subst fdia_kcomp)
-  apply (rule_tac Q\<^sub>2=I in fdia_conseq, force, expr_auto)
-  by (unfold impl_eq_leq invar_def, rule_tac P\<^sub>2=I in fdia_conseq, force)
-    (auto simp: taut_def)
+  by (rule fdia_kcompI, force, rule fdia_invI[where I=I])
+    (expr_auto add: invar_def)+
 
 
 subsection \<open> Conditional statement \<close>
@@ -915,14 +922,9 @@ lemma hoare_while:
   "H{I \<and> T} X {I} \<Longrightarrow> H{I} (WHILE T DO X) {\<not> T \<and> I}"
   unfolding while_def 
   apply (simp add: fbox_test fbox_kcomp)
-  apply (rule_tac p\<^sub>2=I and q\<^sub>2=I in hoare_conseq)
-    prefer 3 apply expr_simp
-  prefer 2 apply expr_simp
-  apply (rule_tac I="I" in hoare_kstarI)
-      apply expr_simp
-   apply expr_simp
-  apply (rule_tac R="(I \<and> T)\<^sup>e" in hoare_kcomp)
-  by (auto simp: fbox_test fbox_kcomp)
+  apply (rule_tac I=I in hoare_invI)
+  by (rule_tac I="I" in hoare_kstarI[rotated -1])
+    (auto simp: fbox_test fbox_kcomp)
 
 lemma hoare_whileI: "H{I \<and> T} X {I} \<Longrightarrow> `P \<longrightarrow> I` \<Longrightarrow> `I \<and> \<not> T \<longrightarrow> Q`
   \<Longrightarrow> H{P} WHILE T DO X INV I {Q}"
@@ -953,7 +955,7 @@ lemma fdia_while_variantI:
   apply (cases "k \<le> 0", clarsimp simp: taut_def fdia_kstar)
   apply (erule_tac P="\<lambda>s. (\<exists>k\<le>0. V k s) \<longrightarrow> \<not> T s \<and> Q s" and x=x in allE)
   apply (erule impE, force, rule_tac x=0 in exI, simp add: fdia_kpower_0)
-  apply (rule_tac P\<^sub>2="V k" and Q\<^sub>2="V 0" in fdia_conseq)
+  apply (rule_tac P="V k" and Q="V 0" in fdia_conseq)
     prefer 3 apply (fastforce simp: taut_def)
    prefer 2 apply simp
   apply (clarsimp simp: impl_eq_leq[symmetric] taut_def)

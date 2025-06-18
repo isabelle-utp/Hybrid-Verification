@@ -47,7 +47,6 @@ lemma ode_correct: "H{invariant} ode {invariant}"
 
 lemma ctrl_correct: "H{invariant} ctrl {invariant}"
   apply wlp_simp
-  apply (simp_all add: usubst_eval)
   apply (expr_auto)
   using L_gr_0 apply (simp add: field_simps)
   by (smt (verit, del_insts) factorR(1) mult.commute mult.left_commute mult_less_cancel_left_pos)

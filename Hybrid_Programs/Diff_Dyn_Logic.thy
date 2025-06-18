@@ -189,7 +189,7 @@ qed
 lemma diff_inv_rule:
   assumes "P \<le> I" and "diff_inv U S G f t\<^sub>0 I" and "I \<le> Q"
   shows "P \<le> |x\<acute>= f & G on U S @ t\<^sub>0] Q"
-  apply(rule fbox_inv[OF assms(1) _ assms(3)])
+  apply(rule fbox_invI'[OF _ assms(1) assms(3)])
   unfolding fbox_diff_inv using assms(2) .
 
 lemma diff_inv_on_rule:

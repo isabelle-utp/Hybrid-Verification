@@ -40,8 +40,9 @@ lemma bouncing_ball_correct: "H{True} BBall {h \<le> H}"
   apply (smt (verit, ccfv_SIG) affine_ineq bouncing_ball.e_range(1,2) bouncing_ball_axioms power2_le_imp_le
       power2_minus zero_compare_simps(4))
     apply postcondition_invariant
-    apply dInduct_mega
-    apply symbolic_exec
+     apply dInduct_mega
+    apply expr_simp
+   apply wlp_simp
   using H_pos apply linarith
   apply expr_auto
   apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)
@@ -63,7 +64,7 @@ lemma bouncing_ball_correct': "H{True} BBall {h \<le> H}"
       bouncing_ball_axioms more_arith_simps(11,7) mult_left_le_one_le
       not_real_square_gt_zero)
     apply (ode_solve_with "(\<lambda>t. [h \<leadsto> - 1 div 2 * g * t ^ 2 + h + t * v, v \<leadsto> - 1 * g * t + v])" simp: field_simps)
-   apply symbolic_exec
+   apply wlp_simp
   using H_pos apply linarith
   apply expr_auto
   apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)
@@ -80,7 +81,7 @@ lemma bouncing_ball_correct'': "H{True} BBall {h \<le> H}"
       bouncing_ball_axioms more_arith_simps(11,7) mult_left_le_one_le
       not_real_square_gt_zero)
     apply (ode_solve_with "(\<lambda>t. [h \<leadsto> - 1 div 2 * g * t ^ 2 + h + t * v, v \<leadsto> - 1 * g * t + v])" simp: field_simps)
-   apply symbolic_exec
+   apply wlp_simp
   using H_pos apply linarith
   apply expr_auto
   apply (smt (verit, best) g_pos power2_less_eq_zero_iff zero_compare_simps(4) zero_eq_power2)

@@ -14,7 +14,4 @@ theory HS_Examples
     Temp_Controller
     Water_Tank
 
-begin
-
-
-end
+begin end

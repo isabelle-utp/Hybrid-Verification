@@ -7,20 +7,6 @@ theory ARCH2022_Examples
   imports "Hybrid-Verification.Hybrid_Verification"
 begin
 
-lemma lens_plus_ubR [simp]: "X \<bowtie> Y \<Longrightarrow> vwb_lens X \<Longrightarrow> Y \<subseteq>\<^sub>L X +\<^sub>L Y"
-  unfolding sublens_def 
-  apply (rule_tac x="snd\<^sub>L" in exI)
-  apply (rule conjI)
-   apply expr_simp
-  apply (expr_simp add: comp_def)
-  using lens_indep_comm by fastforce
-
-lemma lens_plus_sub_lens:
-  "X \<bowtie> Y \<Longrightarrow> vwb_lens Y \<Longrightarrow> vwb_lens Z \<Longrightarrow> Z \<subseteq>\<^sub>L X \<Longrightarrow> Z \<subseteq>\<^sub>L X +\<^sub>L Y"
-  "X \<bowtie> Y \<Longrightarrow> vwb_lens X \<Longrightarrow> vwb_lens Z \<Longrightarrow> Z \<subseteq>\<^sub>L Y \<Longrightarrow> Z \<subseteq>\<^sub>L X +\<^sub>L Y"
-  apply (rule sublens_trans[OF _ lens_plus_ub]; simp)
-  using lens_plus_right_sublens[of X Y Z] by blast
-
 
 subsection \<open> Basic \<close>
 
@@ -483,17 +469,17 @@ lemma "(x \<ge> 1)\<^sub>e \<le> |{x` = x\<^sup>2 + 2 * x\<^sup>4}] (x^3 \<ge> x
   apply (rule diff_cut_on_rule[where C="(1 \<le> x)\<^sup>e"])
    apply (diff_inv_on_ineq "(0)\<^sup>e" "(x\<^sup>2 + 2 * x\<^sup>4)\<^sup>e")
   apply (rule diff_cut_on_rule[where C="(x\<^sup>2 \<le> x\<^sup>3)\<^sup>e"])
-   apply (rule fbox_inv[where I="(x\<^sup>2 \<le> x\<^sup>3)\<^sup>e"])
-     apply (expr_simp add: le_fun_def numeral_Bit1 field_simps)
+   apply (rule hoare_invI[where I="(x\<^sup>2 \<le> x\<^sup>3)\<^sup>e"])
   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(2 * x * (x\<^sup>2 + 2 * x\<^sup>4))\<^sup>e" "(3 * x\<^sup>2 * (x\<^sup>2 + 2 * x\<^sup>4))\<^sup>e"; clarsimp)
      apply(auto intro!: vderiv_intros simp: field_simps semiring_normalization_rules(27,28))[1]
   subgoal for X \<tau>
-    apply (move_left "2::real", move_left "3::real", move_left "4::real", move_left "6::real")
-    by mon_pow_simp (smt (z3) mult_le_cancel_left numerals(1) pos2 
+    by powers_simp
+      (smt (z3) mult_le_cancel_left numerals(1) pos2 
         power_commutes power_numeral_even power_numeral_odd 
         power_one_right self_le_power)
      apply(auto intro!: vderiv_intros simp: field_simps semiring_normalization_rules(27,28))[1]
+    apply (expr_simp add: le_fun_def numeral_Bit1 field_simps)
   by expr_auto (rule diff_weak_on_rule, expr_auto)
 
 end
@@ -524,14 +510,14 @@ begin
 (* x\<^sup>2+y\<^sup>2=1 & e=x -> [{x'=-y, y'=e, e'=-y}](x\<^sup>2+y\<^sup>2=1 & e=x) *)
 lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z, z` = -y}] (x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)"  
   apply (rule diff_cut_on_rule[where C="(z = x)\<^sup>e"])
-   apply (rule fbox_inv[where I="(z = x)\<^sup>e"])
-     apply (expr_simp add: le_fun_def)
+   apply (rule hoare_invI[where I="(z = x)\<^sup>e"])
     apply (diff_inv_on_eq)
+    apply (expr_simp add: le_fun_def)
    apply (expr_simp add: le_fun_def)
   apply (rule diff_cut_on_rule[where C="(z\<^sup>2 + y\<^sup>2 = 1)\<^sup>e"])
-   apply (rule fbox_inv[where I="(z\<^sup>2 + y\<^sup>2 = 1)\<^sup>e"])
+   apply (rule hoare_invI[where I="(z\<^sup>2 + y\<^sup>2 = 1)\<^sup>e"])
+     apply (diff_inv_on_eq)
      apply (expr_simp add: le_fun_def)
-    apply (diff_inv_on_eq)
   by (expr_simp add: le_fun_def)
     (rule diff_weak_on_rule, expr_auto)
 
@@ -539,14 +525,10 @@ lemma "(x\<^sup>2 + y\<^sup>2 = 1 \<and> z = x)\<^sub>e \<le> |{x` = -y, y` = z,
   (* find_local_flow *)
   apply (wlp_solve "\<lambda>t. [x \<leadsto> $x + $z * (- 1 + cos t) + - 1 * $y * sin t, 
   y \<leadsto> $y * cos t + $z * sin t, 
-  z \<leadsto> $z * cos t + - 1 * $y * sin t]")
-  apply (expr_auto add: le_fun_def field_simps)
-  apply (clarsimp simp: power2_eq_square[symmetric])
-  subgoal for s t
-    apply (mon_simp_vars "cos t" "sin t")
-    by (smt (verit, del_insts) add.right_neutral distrib_left power_0 
+  z \<leadsto> $z * cos t + - 1 * $y * sin t]" simp: lens_defs expr_defs)
+  by powers_simp
+    (smt (verit, del_insts) add.right_neutral distrib_left power_0 
         power_add sin_cos_squared_add)
-  done
 
 end
 
@@ -571,46 +553,19 @@ begin
 lemma "(d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)\<^sub>e \<le>
   |{x1` = d1, x2` = d2, d1` = - w * d2, d2` = w * d1}] 
   (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)"
-  by (intro fbox_invs; diff_inv_on_eq)
-
-lemma rotational_dynamics3_arith: 
-  "w\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2 + w\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2 = p\<^sup>2 * w\<^sup>2 
-  \<Longrightarrow> w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) 
-    + (w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) 
-    + (w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2) 
-    + w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2))) = p\<^sup>2 * w\<^sup>2"
-proof -
-  assume a1: "w\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2 + w\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2 = p\<^sup>2 * w\<^sup>2"
-  have f2: "\<forall>r ra. (ra::real) * r = r * ra"
-    by simp
-  have f3: "\<forall>r ra rb. (r::real) * ra + rb * ra = ra * (r + rb)"
-    by (simp add: distrib_left)
-  then have f4: "\<forall>r ra rb rc. (r::real) * ra + (rc * ra + rb) = rb + ra * (r + rc)"
-    by simp
-  have "w\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 + (get\<^bsub>x2\<^esub> s)\<^sup>2) = w\<^sup>2 * p\<^sup>2"
-    using a1 by (simp add: distrib_left)
-  then have "w\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 * (cos (w * t))\<^sup>2 + ((get\<^bsub>x2\<^esub> s)\<^sup>2 * (cos (w * t))\<^sup>2 
-    + (sin (w * t))\<^sup>2 * ((get\<^bsub>x1\<^esub> s)\<^sup>2 + (get\<^bsub>x2\<^esub> s)\<^sup>2))) = w\<^sup>2 * p\<^sup>2"
-    using f4 f3 by (metis (no_types) add.commute mult.right_neutral sin_cos_squared_add2)
-  then show "w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) + (w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x1\<^esub> s)\<^sup>2) 
-    + (w\<^sup>2 * ((cos (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2) + w\<^sup>2 * ((sin (t * w))\<^sup>2 * (get\<^bsub>x2\<^esub> s)\<^sup>2))) = p\<^sup>2 * w\<^sup>2"
-    using f2 by (metis (no_types) add.left_commute distrib_left)
-qed
+  by (intro hoare_invs; diff_inv_on_eq)
 
 lemma "w \<noteq> 0 \<Longrightarrow> (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)\<^sub>e \<le>
   |{x1` = d1, x2` = d2, d1` = - w * d2, d2` = w * d1}] 
   (d1\<^sup>2 + d2\<^sup>2 = w\<^sup>2 * p\<^sup>2 \<and> d1 = - w * x2 \<and> d2 = w * x1)"
   (* find_local_flow *)
-  apply (wlp_solve "\<lambda>t. [d1 \<leadsto> $d1 * cos (t * w) + - 1 * $d2 * sin (t * w), 
-    d2 \<leadsto> $d2 * cos (t * w) + $d1 * sin (t * w), 
-    x1 \<leadsto> $x1 + 1 / w * $d2 * (- 1 + cos (t * w)) + 1 / w * $d1 * sin (t * w), 
-    x2 \<leadsto> $x2 + 1 / w * $d1 * (1 + - 1 * cos (t * w)) + 1 / w * $d2 * sin (t * w)]")
-  apply (expr_auto add: le_fun_def field_simps)
-  subgoal for s t
-    apply mon_pow_simp
-    apply (mon_simp_vars "get\<^bsub>x1\<^esub> s" "get\<^bsub>x2\<^esub> s" )
-    using rotational_dynamics3_arith by force
-  done
+  apply (wlp_solve "\<lambda>t. [d1 \<leadsto> d1 * cos (t * w) + - 1 * d2 * sin (t * w), 
+    d2 \<leadsto> d2 * cos (t * w) + d1 * sin (t * w), 
+    x1 \<leadsto> x1 + 1 / w * d2 * (- 1 + cos (t * w)) + 1 / w * d1 * sin (t * w), 
+    x2 \<leadsto> x2 + 1 / w * d1 * (1 + - 1 * cos (t * w)) + 1 / w * d2 * sin (t * w)]"
+      simp: lens_defs expr_defs)
+  by powers_simp
+    (simp add: Groups.add_ac(2,3) factorR(1) vector_space_over_itself.vector_space_assms(3))
 
 end
 
@@ -623,17 +578,16 @@ begin
 (* w>=0 & x=0 & y=3 -> [{x'=y, y'=-w\<^sup>2*x-2*w*y}]w\<^sup>2*x\<^sup>2+y\<^sup>2<=9 *)
 lemma "(w \<ge> 0 \<and> x = 0 \<and> y = 3)\<^sub>e \<le> |{x` = y, y` = - w\<^sup>2 * x - 2 * w * y}] (w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> 9)"
   apply (rule diff_cut_on_rule[where C="(0 \<le> w)\<^sup>e"])
-   apply (rule fbox_inv[where I="(0 \<le> w)\<^sup>e"])
-     apply (expr_simp add: le_fun_def)
-    apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
-   apply (expr_simp add: le_fun_def)
-   apply (rule fbox_inv[where I="(w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> 9)\<^sup>e"])
+   apply (rule hoare_invI[where I="(0 \<le> w)\<^sup>e"])
+     apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
     apply (expr_simp add: le_fun_def)
-   apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-   apply (diff_inv_on_single_ineq_intro "(2 * w\<^sup>2 * x * y + 2 * y * (- w\<^sup>2 * x - 2 * w * y))\<^sup>e" "(0)\<^sup>e"; expr_simp)
+   apply (expr_simp add: le_fun_def)
+  apply (rule hoare_invI[where I="(w\<^sup>2 * x\<^sup>2 + y\<^sup>2 \<le> 9)\<^sup>e"])
+    apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
+    apply (diff_inv_on_single_ineq_intro "(2 * w\<^sup>2 * x * y + 2 * y * (- w\<^sup>2 * x - 2 * w * y))\<^sup>e" "(0)\<^sup>e"; expr_simp)
     apply (force simp: field_simps)[1]
    apply (force intro!: vderiv_intros)
-  by (expr_simp add: le_fun_def)
+  by (expr_simp add: le_fun_def)+
 
 end
 
@@ -710,25 +664,6 @@ proof-
     by fastforce
 qed
 
-lemma 
-  fixes a::"'a::banach \<Longrightarrow> 'c"
-  assumes sublens: "x \<subseteq>\<^sub>L a"
-    and dhyp: "f' = (\<lambda>t. h (f t))" "\<forall>x\<ge>c::real. g x \<ge> 0"
-  shows "(\<lambda>s. c < g (get\<^bsub>x\<^esub> s)) \<le> fbox (g_ode_frame a f G (\<lambda>s. {t\<^sub>0..}) S t\<^sub>0) (\<lambda>s. c < g (get\<^bsub>x\<^esub> s))"
-proof (clarsimp simp: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def tsubst2vecf_eq)
-  fix s X t
-  assume "c < g (get\<^bsub>x\<^esub> s)" and "t\<^sub>0 \<le> t" and "X \<in> {t\<^sub>0..} \<rightarrow> S" 
-    and "(X has_vderiv_on (\<lambda>x. get\<^bsub>a\<^esub> (f (put\<^bsub>a\<^esub> s (X x))))) {t\<^sub>0..}"
-    and "X t\<^sub>0 = get\<^bsub>a\<^esub> s" and "\<forall>\<tau>. t\<^sub>0 \<le> \<tau> \<and> \<tau> \<le> t \<longrightarrow> G (put\<^bsub>a\<^esub> s (X \<tau>))"
-  have Q
-    using current_vderiv_ge_always_ge[of c "\<lambda>t. g (get\<^bsub>x\<^esub> (put\<^bsub>a\<^esub> s (X t)))" t\<^sub>0 ]
-    sorry
-  term "\<lambda>t. get\<^bsub>x\<^esub> (put\<^bsub>a\<^esub> s (X t))"
-  term "\<lambda>t. get\<^bsub>x\<^esub> (f (put\<^bsub>a\<^esub> s (X t)))"
-  show "c < g (get\<^bsub>x\<^esub> (put\<^bsub>a\<^esub> s (X t)))"
-    sorry
-qed
-
 lemma Collect_ge_ivl: "Collect ((\<le>) 0) = {(0::real)..}"
   by auto
 
@@ -743,7 +678,7 @@ lemma "0 \<le> N \<Longrightarrow> H{N < x} {x` = x} {N < x}"
 
 (* x^3>5 & y>2 -> [{x'=x^3+x^4, y'=5*y+y^2}](x^3>5 & y>2) *)
 lemma "(x\<^sup>3 > 5 \<and> y > 2)\<^sub>e \<le> |{x` = x\<^sup>3 + x\<^sup>4, y` = 5*y + y\<^sup>2}] (x\<^sup>3 > 5 \<and> y > 2)"
-  apply (intro fbox_invs)
+  apply (intro hoare_invs)
   apply (expr_simp)
   apply (clarsimp simp only: fbox_diff_inv_on diff_inv_on_eq ivp_sols_def)
    apply (expr_simp add: Collect_ge_ivl)
@@ -783,11 +718,6 @@ end
 
 
 subsubsection \<open> 28. Dynamics: Conserved quantity \<close>
-
-lemma "(36::real) * (x1\<^sup>2 * (x1 * x2\<^sup>3)) - 
-  (- (24 * (x1\<^sup>2 * x2) * x1 ^ 3 * (x2)\<^sup>2) - 12 * (x1\<^sup>2 * x2) * x1 * x2\<^sup>4) - 
-  36 * (x1\<^sup>2 * (x2 * x1)) * (x2)\<^sup>2 - 12 * (x1\<^sup>2 * (x1 * x2\<^sup>5)) = 24 * (x1\<^sup>5 * x2\<^sup>3)" 
-  by (mon_simp_vars x1 x2)
 
 dataspace conserved_quantity =
   constants c::real
@@ -909,13 +839,7 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillem
 lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup>2 + \<guillemotleft>B\<guillemotright>*x, z` = A*z*x+B*z}] (0= -x - z)"
   apply (subgoal_tac "(0= -x - z)\<^sup>e = (x + z = 0)\<^sup>e"; force?)
   apply (erule ssubst)
-  apply (rule darboux_eq[where a="x +\<^sub>L z" and y=w1 and z=w2 and g="A * get\<^bsub>x\<^esub> _ + B"])
-              apply expr_simp
-             apply expr_simp
-            apply expr_simp
-           apply expr_simp
-          apply expr_simp
-         apply expr_simp
+  apply (rule darboux_eq[where a="x +\<^sub>L z" and y=w1 and z=w2 and g="A * get\<^bsub>x\<^esub> _ + B"]; simp?)
   subgoal by expr_simp (metis indeps(15) indeps(6) lens_indep.lens_put_comm)
        apply expr_simp
   subgoal by expr_auto (metis vwb_lens.axioms(1) vwbs(4) wb_lens.axioms(1) weak_lens.put_get)
@@ -923,20 +847,13 @@ lemma "B \<noteq> 0 \<Longrightarrow> (x + z = 0)\<^sub>e \<le> |{x` = A*x\<^sup
       (smt (verit, ccfv_threshold) indeps(17) indeps(19) indeps(8) lens_indep.lens_put_comm)
     apply expr_simp
   prefer 2 subgoal
-    by (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (subst framed_derivs)
-      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (subst framed_derivs)
+    by (intro ldifferentiable; simp?)
+    apply (subst framed_derivs; simp?)
+      apply (rule ldifferentiable; simp?)
+    apply (rule ldifferentiable; simp?)
+  apply (subst framed_derivs; simp?)
+  apply (subst framed_derivs; simp?)
        apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-     apply expr_simp
-    apply clarsimp
     apply (subst darboux_arith)
     oops
 
@@ -1003,13 +920,7 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
 
 (* x+z=0 -> [{x'=(A*y+B()*x)/z^2, z' = (A*x+B())/z & y = x^2 & z^2 > 0}] x+z=0 *)
 lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | (y = x\<^sup>2 \<and> z\<^sup>2 > 0)}] (x + z = 0)"
-  apply (rule darboux_eq[where a="x +\<^sub>L z" and y=w1 and z=w2])
-              apply expr_simp
-             apply expr_simp
-            apply expr_simp
-           apply expr_simp
-          apply expr_simp
-         apply expr_simp
+  apply (rule darboux_eq[where a="x +\<^sub>L z" and y=w1 and z=w2]; simp?)
   subgoal by expr_simp (metis indeps(15) indeps(6) lens_indep.lens_put_comm)
        apply expr_simp
   subgoal by expr_auto (metis (full_types) exp_gt_zero linorder_not_le order.refl vwb_lens.axioms(1) 
@@ -1017,20 +928,14 @@ lemma "(x + z = 0)\<^sub>e \<le> |{x` = (A*y + B*x)/z\<^sup>2, z` = (A*x+B)/z | 
   subgoal by expr_auto (smt (verit, best) indeps(18) indeps(19) indeps(7) lens_indep.lens_put_comm)
   apply expr_auto
   prefer 2 subgoal
-    by (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  apply (subst framed_derivs)
-      apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_fst_comp apply expr_auto
-    apply (subst framed_derivs)
-       apply expr_simp
-      apply (simp add: lens_plus_sub_lens(1))
-    using bounded_linear_fst bounded_linear_snd_comp apply expr_auto
-     apply expr_simp
-    apply clarsimp
+    by (intro ldifferentiable; simp?)
+  apply (subst framed_derivs; simp?)
+      apply (rule ldifferentiable; simp?)
+    apply (rule ldifferentiable; simp?)
+    apply (subst framed_derivs; simp?)
+  apply (subst framed_derivs; simp?)
+  apply expr_simp
+  apply clarsimp
     oops
 (* need to generalise darboux rules, otherwise requires picard-lindeloef for closed intervals *)
 
@@ -1195,21 +1100,26 @@ lemma dyn_param_switch_arith1:
   assumes hyp: "w\<^sup>2 * (y * a)\<^sup>2 + y\<^sup>2 \<le> c" 
     and w_hyp: "0 \<le> (w::real)" 
     and a_hyp: "- 2 \<le> a" "a \<le> 2" 
-  shows "4 * w\<^sup>2 * (y * a)\<^sup>2 + y\<^sup>2 \<le> c * (16 * w\<^sup>2 + 1) / (4 * w\<^sup>2 + 1)"
+  shows "4 * w\<^sup>2 * (y * a)\<^sup>2 + y\<^sup>2 \<le> c * (16 * w\<^sup>2 + 1) / (4 * w\<^sup>2 + 1)" (is "?lhs \<le> ?rhs / ?factor")
   using assms apply -
-  apply (auto simp: field_simps)
-  apply (mon_simp_vars w a)
-  apply (mon_simp_vars c w)
+  apply (subgoal_tac "?lhs \<le> ?rhs / ?factor \<longleftrightarrow> ?lhs * ?factor \<le> ?rhs")
+   prefer 2
+  subgoal by (smt (verit, best) pos_le_divide_eq realpow_square_minus_le)
+  apply (erule ssubst)
+  apply powers_simp
   apply ferrack
+  apply clarsimp
+  apply (subgoal_tac "16 * (w\<^sup>4 * (a\<^sup>2 * y\<^sup>2)) + (4 * (w\<^sup>2 * (a\<^sup>2 * y\<^sup>2)) + (4 * (w\<^sup>2 * y\<^sup>2) + (y\<^sup>2 - c - 16 * (c * w\<^sup>2)))) \<le> 0
+  \<longleftrightarrow> 4 * (w\<^sup>4 * (a\<^sup>2 * y\<^sup>2)) + w\<^sup>2 * (a\<^sup>2 * y\<^sup>2) + (w\<^sup>2 * y\<^sup>2) - 4 * (c * w\<^sup>2) \<le> (c - y\<^sup>2) / 4")
+   prefer 2 subgoal by powers_simp
+  apply (erule ssubst)
   sorry
 
 lemma dyn_param_switch_arith2: "w\<^sup>2 * (y * b)\<^sup>2 + y\<^sup>2 \<le> (c::real) \<Longrightarrow>
           0 \<le> w \<Longrightarrow>
           1 \<le> b\<^sup>2 * 3 \<Longrightarrow>
           (w / 2)\<^sup>2 * (y * b)\<^sup>2 + y\<^sup>2 \<le> c * ((w / 2)\<^sup>2 + 1) / (2 * (w / 2)\<^sup>2 + 1)"
-  apply (auto simp: field_simps)
-  apply (mon_simp_vars w b)
-  apply (mon_simp_vars c w)
+  apply powers_simp
   apply ferrack
   sorry (* verified with the help of a CAS *)
 
@@ -1252,11 +1162,11 @@ lemma "(w \<ge> 0 \<and> d \<ge> 0 \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<
   prefer 2 using dyn_param_switch_arith1 dyn_param_switch_arith2
    apply (simp add: wlp; expr_auto)[1]
     apply (rule diff_cut_on_rule[where C="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
-         apply (rule fbox_inv[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
-  apply (expr_simp add: le_fun_def)
+         apply (rule hoare_invI[where I="(0 \<le> d \<and> 0 \<le> w \<and> -2 \<le> a \<and> a \<le> 2 \<and> b\<^sup>2 \<ge> 1/3)\<^sup>e"])
     apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
     apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")?)
-   apply (expr_simp add: le_fun_def)
+    apply (expr_simp add: le_fun_def)
+  apply (expr_simp add: le_fun_def)
   apply (rule_tac I="(w\<^sup>2*x\<^sup>2+y\<^sup>2 \<le> c)\<^sup>e" in fbox_diff_invI)
     prefer 3 apply expr_simp
    prefer 2 apply (expr_simp add: le_fun_def)
@@ -1409,10 +1319,10 @@ lemma "(v \<ge> 0 \<and> A > 0)\<^sub>e \<le> |{x` = v, v` = A}] (v \<ge> 0)"
 
 lemma "(v \<ge> 0 \<and> A > 0)\<^sub>e \<le> |{x` = v, v` = A}] (v \<ge> 0)"
   apply (rule diff_cut_on_rule[where C="(0 \<le> A)\<^sup>e"])
-   apply (rule fbox_inv[where I="(0 \<le> A)\<^sup>e"])
-     apply (expr_simp add: le_fun_def)
+   apply (rule hoare_invI[where I="(0 \<le> A)\<^sup>e"])
     apply (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")
-   apply vderiv
+    apply vderiv
+     apply (expr_simp add: le_fun_def)
   apply (diff_cut_ineq "(0 \<le> v)\<^sup>e" "(0)\<^sup>e" "(A)\<^sup>e")
   by (rule diff_weak_on_rule, expr_auto)
 
@@ -1835,13 +1745,12 @@ lemma "(v \<ge> 0 \<and> c > 0 \<and> Kp = 2 \<and> Kd = 3 \<and> (5/4)*(x-xr)\<
   |{x` = v, v` = -Kp * (x-xr) - Kd * v}] 
   ((5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)"
   apply (rule diff_cut_on_rule[where C="(c > 0 \<and> Kp = 2 \<and> Kd = 3)\<^sup>e"])
-   apply (rule fbox_inv[where I="(c > 0 \<and> Kp = 2 \<and> Kd = 3)\<^sup>e"])
-     apply (expr_simp add: le_fun_def)
+   apply (rule hoare_invI[where I="(c > 0 \<and> Kp = 2 \<and> Kd = 3)\<^sup>e"])
     apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)
-    apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e" | diff_inv_on_eq))
+     apply (intro diff_inv_on_raw_conjI; (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e" | diff_inv_on_eq))
+     apply (expr_simp add: le_fun_def)
        apply expr_simp
-   apply (rule fbox_inv[where I="((5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)\<^sup>e"])
-    apply (expr_simp add: le_fun_def)
+   apply (rule hoare_invI[where I="((5/4)*(x-xr)\<^sup>2 + (x-xr)* v/2 + v\<^sup>2/4 < c)\<^sup>e"])
   prefer 2 apply (expr_simp add: le_fun_def)
    apply (expr_simp add: hoare_diff_inv_on fbox_diff_inv_on)
   apply (diff_inv_on_single_ineq_intro "(10 *(x-xr) * v/4 + v\<^sup>2/2 + (x-xr)*(-Kp * (x-xr) - Kd * v)/2 
@@ -1860,6 +1769,8 @@ lemma STTT_9b_arith1:
   assumes "0 \<le> (v::real)" and "xm \<le> x" and "xr * 2 = xm + S" 
     and "5 * (x - xr)\<^sup>2 / 4 + (x - xr) * v / 2 + v\<^sup>2 / 4 < ((S - xm) / 2)\<^sup>2" 
   shows "x \<le> S"
+  using assms
+  apply powers_simp
   sorry (* verified with the help of a CAS *)
 
 dataspace STTT_9b =
@@ -1902,6 +1813,27 @@ lemma local_flow_STTT_9b: "local_flow_on [v \<leadsto> 2 * xr - 2 * x - 3 * v, x
   apply c1_lipschitz
   by (auto intro!: has_derivative_Blinfun derivative_eq_intros vderiv_intros split: if_splits)
     (auto simp: fun_eq_iff field_simps exp_minus_inverse)
+
+lemma STTT_9b_arith:
+  assumes "Kp = 2" "Kd = 3" "0 \<le> V" "XM \<le> X" "S + XM = XR * 2"
+  shows "X * (XR * 64) \<le> V\<^sup>2 * 32 + (X\<^sup>2 * 32 + XR\<^sup>2 * 32)" (is "?lhs \<le> ?rhs")
+proof-
+  have hammer_found: "2 * (X * XR) \<le> (V\<^sup>2 + X\<^sup>2 + XR\<^sup>2)"
+    using assms
+    using is_num_normalize(1)[of "V\<^sup>2" "X\<^sup>2" "XR\<^sup>2"] 
+      le_add_same_cancel2[of "X\<^sup>2 + XR\<^sup>2" "V\<^sup>2"] 
+      more_arith_simps(11)[of Kp X XR]
+      order_trans_rules(23)[of "Kp * (X * XR)" "X\<^sup>2 + XR\<^sup>2" "V\<^sup>2 + (X\<^sup>2 + XR\<^sup>2)"] 
+      sum_squares_bound[of X XR] 
+    by presburger
+  have "?lhs \<le> ?rhs \<longleftrightarrow> 64 * (X * XR) \<le> 32 * (V\<^sup>2 + X\<^sup>2 + XR\<^sup>2)"
+    by powers_simp
+  moreover have "... \<longleftrightarrow> 2 * (X * XR) \<le> (V\<^sup>2 + X\<^sup>2 + XR\<^sup>2)"
+    by force
+  ultimately show "?lhs \<le> ?rhs"
+    using hammer_found
+    by blast
+qed
 
 (* v >= 0 & xm <= x & x <= S & xr = (xm + S)/2 & Kp = 2 & Kd = 3
            & 5/4*(x-xr)^2 + (x-xr)*v/2 + v^2/4 < ((S - xm)/2)^2
@@ -1959,22 +1891,13 @@ lemma "Kp = 2 \<Longrightarrow> Kd = 3 \<Longrightarrow> (v \<ge> 0 \<and> xm \<
   apply (rule_tac I="(5 * ($x - $xr)\<^sup>2 / 4 + ($x - $xr) * $v / 2 + ($v)\<^sup>2 / 4 < ((S - $xm) / 2)\<^sup>2)\<^sup>e" in fbox_diff_invI)
     prefer 3 apply expr_auto
    prefer 2 apply expr_auto
-    apply (simp add: field_class.power_divide add_divide_distrib sign_distrib_laws, bin_unfold?, distribute?)+
-    apply (simp only: expr_defs hoare_diff_inv_on fbox_diff_inv_on)?
-    apply (diff_inv_on_single_ineq_intro "(10 * $x * ($v) - 10 * $v * $xr
-    + (2 * ((2 * $xr - 2 * $x - 3 * $v) * $x) + 2 * ($v)\<^sup>2
-    - 2 * ((2 * $xr - 2 * $x - 3 * $v) * $xr))
-    + 2 * ($v) * (2 * $xr - 2 * $x - 3 * $v))\<^sup>e" "(0)\<^sup>e"; expr_simp)
-   prefer 2 
-  subgoal for X s
-    apply (simp add: sign_distrib_laws, distribute?)
-    apply (intro vderiv_intros; (force | (rule vderiv_intros))?)
-    by (simp add: sign_distrib_laws, distribute?) 
-      (simp add: power2_eq_square[symmetric])
-    apply (clarsimp simp: field_class.power_divide add_divide_distrib, bin_unfold?, distribute?)
-  apply (clarsimp simp: field_class.power_divide add_divide_distrib power2_eq_square[symmetric])
-  by (smt (verit, ccfv_SIG) distrib_right realpow_square_minus_le sum_squares_bound)
-
+  apply powers_simp
+  apply dInduct_auto
+  apply (subgoal_tac "S = xr<s> * 2 - xm<s>")
+  prefer 2 apply simp
+   apply (rule subst[of "xr<_> * 2 - xm<_>" S], force)
+  apply powers_simp
+  using STTT_9b_arith by blast
 
 end
 
@@ -2299,16 +2222,16 @@ lemma "`(v \<ge> 0 \<and> A > 0 \<and> B \<ge> b \<and> b > 0 \<and> \<epsilon> 
       by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e") (clarsimp simp: le_fun_def)+
     apply (rule_tac C="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> A)\<^sup>e" in diff_cut_on_rule)
     subgoal
-      apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> A)\<^sup>e" in fbox_diff_invI)
-      apply (intro fbox_invs)
+      apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> A)\<^sup>e" in hoare_invI)
+      apply (intro hoare_invs)
       by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
     apply (rule diff_weak_on_rule)
     by expr_auto (rule STTT_10_arith2[of _ \<epsilon> "get\<^bsub>v\<^esub> _"]; assumption)
   subgoal (* SUBGOAL 3 *)
     apply (rule_tac C="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in diff_cut_on_rule)
     subgoal
-      apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in fbox_diff_invI)
-        apply (intro fbox_invs)
+      apply (rule_tac I="(v0 \<ge> 0 \<and> - B \<le> $a \<and> $a \<le> - b)\<^sup>e" in hoare_invI)
+        apply (intro hoare_invs)
       by (diff_inv_on_ineq "(0)\<^sup>e" "(0)\<^sup>e")+ (clarsimp simp: le_fun_def)+
     apply (rule_tac C="(\<bar>y0 - ly\<bar> + (v0)\<^sup>2 / (2 * b) < lw)\<^sup>e" in diff_cut_on_rule)
     subgoal
@@ -2450,11 +2373,9 @@ lemma "(v\<^sup>2 \<le> 2*b*(m-x) \<and> v\<ge>0 \<and> A \<ge> 0 \<and> b>0)\<^
       unrest_ssubst var_alpha_combine  usubst usubst_eval refine_iff_implies)
     apply expr_simp
   using LICSexample4a_arith[of A b "get\<^bsub>v\<^esub> _" m "get\<^bsub>x\<^esub> _" _ \<epsilon>]
-    apply (clarsimp simp: field_simps)
-    apply (bin_unfold, distribute, mon_simp_vars b m)
-   apply (expr_simp)
-  by clarsimp
-    (smt (verit, ccfv_SIG) mult.commute mult_le_cancel_left zero_le_power2)
+  by powers_simp
+    (smt (verit, ccfv_SIG) SEXP_def power2_less_eq_zero_iff 
+      sum_power2_eq_zero_iff taut_def zero_compare_simps(4))
 
 end
 
@@ -2699,9 +2620,7 @@ lemma "`v \<ge> 0 \<and> b > 0 \<and> A \<ge> 0 \<and> \<epsilon> \<ge> 0 \<long
    apply (force simp: field_simps)
   apply (frule spec[where x=0]; clarsimp)
   apply (rename_tac s t \<tau>)
-  apply distribute
-  apply (mon_simp_vars A \<epsilon>)
-  apply (mon_simp_vars \<epsilon> b)
+  apply powers_simp
   sorry (* verified with the help of a CAS *)
 
 end
@@ -2759,7 +2678,7 @@ lemma "`(( |{x` = v, v` = -b}] (x \<le> m))
   apply (wlp_flow local_flow: local_flow_LICS3, clarsimp simp: le_fun_def)
    apply (erule_tac x=0 in allE, expr_simp)
   apply (wlp_simp simp: fbox_solve[OF local_flow_LICS7] fbox_solve[OF local_flow_LICS4] 
-      fbox_solve[OF local_flow_LICS3], clarsimp, safe; expr_simp?, clarsimp?)
+      fbox_solve[OF local_flow_LICS3], safe; expr_simp?, clarsimp?)
   using LICSexample7_arith[of "get\<^bsub>v\<^esub> _" b]
   by auto
 
@@ -2945,8 +2864,6 @@ end
 
 
 subsection \<open> Harmonic oscillator \<close>
-
-find_theorems "0 < _ \<Longrightarrow> _ * _ \<le> _ * _ \<longleftrightarrow> _ \<le> _"
 
 lemma hosc_arith:
   assumes "b\<^sup>2 + 4 * a > 0" and "a < 0" and "b \<le> 0" and "t \<ge> 0" and "k > 0"
@@ -3225,31 +3142,39 @@ lemma "(x=1 & y=1/8)\<^sub>e
   \<le> |{x` = $x - $y^2, y` = $y * ($x - $y^2)} INV (y^2 < x)
   ] (\<not> (x<0))"
   unfolding invar_def
-  apply (rule_tac C="(y^2 < x)\<^sup>e" in diff_cut_on_rule)
+  apply (dCut "y\<^sup>2 < x")
    apply (rule_tac I="(0 < x - y^2)\<^sup>e" in fbox_diff_invI) 
-     apply (rule darboux_ge[of "x +\<^sub>L y" z w _ _ "($x - ($y)\<^sup>2)\<^sup>e"])
-                 apply simp+
-  subgoal by expr_auto (metis indeps(4) indeps(7) lens_indep_comm) 
-          apply expr_simp
-  using lget_ge0_exI[of z]  apply expr_auto
-  subgoal by expr_auto (smt (verit, best) indeps(11) indeps(6) indeps(9) lens_indep.lens_put_comm)
-       apply expr_simp
-      apply (subst framed_derivs)
-        apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-      apply (subst framed_derivs)
-        apply expr_simp
-       apply (rule ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-      apply (subst framed_derivs; (simp add: lens_plus_sub_lens(1))?)
-      apply (subst framed_derivs; (simp add: lens_plus_sub_lens(1))?)
-      apply (expr_simp add: le_fun_def)
-  subgoal sorry
-     apply (intro ldifferentiable; (simp add: lens_plus_sub_lens(1))?)
-  using less_one_multI apply (expr_auto add: field_simps)
-   apply expr_simp
-  apply (rule diff_weak_on_rule)
-  subgoal by expr_auto (smt (verit) power2_less_0)
+     prefer 2
+  subgoal 
+    by expr_auto
+      (smt (verit, del_insts) four_x_squared one_power2)
+    apply (rule darboux_ge[of "x +\<^sub>L y" z w _ _ "($x - ($y)\<^sup>2)\<^sup>e"]; simp?)
+  subgoal 
+    by expr_auto (metis indeps(4) indeps(7) lens_indep_comm)
+  subgoal 
+    by expr_simp
+  subgoal 
+    using lget_ge0_exI[of z] 
+    by expr_auto
+  subgoal
+    by expr_auto 
+      (smt (verit, best) indeps(11) indeps(6) indeps(9) lens_indep.lens_put_comm)
+  subgoal
+    by expr_simp
+  subgoal
+     apply (subst framed_derivs)
+       apply (rule ldifferentiable; simp?)+
+     apply (subst framed_derivs, simp)
+      apply (rule ldifferentiable; simp?)+
+     apply (subst framed_derivs, simp, simp, simp)
+     apply (subst framed_derivs, simp, simp, simp)
+    apply (expr_auto add: le_fun_def)
+    sorry
+  subgoal by (intro ldifferentiable; simp?)
+  subgoal by expr_auto
+  subgoal
+    apply (rule diff_weak_on_rule)
+    by expr_auto (smt (verit) power2_less_0)
   oops
 
 end

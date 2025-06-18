@@ -49,8 +49,7 @@ lemma "H{Hmin \<le> h \<and> h \<le> Hmax}
      apply (metis co_ge_0 cross3_simps(21) le_add_same_cancel1 
       less_le_not_le order.trans zero_le_mult_iff)
     apply (wlp_full local_flow: local_flow simp: field_simps)
-     apply (metis (no_types, opaque_lifting) ci_ge_0 diff_add_cancel diff_add_eq 
-      diff_ge_0_iff_ge less_le_not_le order.trans right_diff_distrib zero_le_mult_iff)
+  apply (metis add.commute add_mono ci_ge_0 less_le_not_le mult.commute mult_right_mono)
   by expr_simp+
 
 lemma water_tank_safe: 
