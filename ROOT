@@ -37,8 +37,8 @@ session "Verification_Examples" in "Hybrid_Programs/Verification_Examples" = "Hy
     Hybrid_Programs/Verification_Examples
     Legacy*)
   theories
-    "Hybrid_Programs/Verification_Examples/HS_Examples"
-    "Hybrid_Programs/Verification_Examples/ARCH2022_Examples"
+    "HS_Examples"
+    "ARCH/ARCH"
     (*"Legacy/MTX_Examples"*)
   document_files
     "root.tex"
