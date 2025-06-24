@@ -512,6 +512,7 @@ method do_a_discrete = (
     | choice
     | (rule hoare_fwd_test) 
     | (rule hoare_testI)
+    | (rule hoare_assignI)
 )
 
 method do_discretes = (do_a_discrete; do_discretes?)
