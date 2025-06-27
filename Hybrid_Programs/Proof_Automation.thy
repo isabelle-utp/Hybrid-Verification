@@ -577,12 +577,12 @@ method wlp_flow uses simp local_flow =
   (wlp_base simp: simp fbox_solve[OF local_flow]) 
 
 method wlp_simp uses simp local_flow = (
-  (wlp_flow simp: usubst usubst_eval simp local_flow: local_flow);
-  clarsimp?
+  (wlp_flow local_flow: local_flow);
+  (clarsimp simp: usubst usubst_eval simp)?
   )
 
 method wlp_full uses simp local_flow = (
-  (wlp_flow simp: usubst usubst_eval local_flow: local_flow)?; 
+  (wlp_flow local_flow: local_flow)?; 
   ((expr_simp add: le_fun_def simp), clarsimp?)
   )
 

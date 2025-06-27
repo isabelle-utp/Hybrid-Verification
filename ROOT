@@ -40,6 +40,6 @@ session "Verification_Examples" in "Hybrid_Programs/Verification_Examples" = "Hy
     "HS_Examples"
     "ARCH/ARCH"
     (*"Legacy/MTX_Examples"*)
-  document_files
-    "root.tex"
+  (* document_files
+    "root.tex" *)
 
