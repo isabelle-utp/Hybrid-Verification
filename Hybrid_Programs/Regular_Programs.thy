@@ -547,6 +547,11 @@ lemma fdia_kstar: "|F\<^sup>*\<rangle> Q = (\<lambda>s. \<exists>n. ( |kpower F 
   unfolding kstar_def fdia_def
   by expr_auto
 
+lemma "H{P} F\<^sup>* {Q} = (\<forall>n s s'. P s \<longrightarrow> s' \<in> kpower F n s \<longrightarrow> Q s')"
+  unfolding fbox_kstar le_fun_def
+  unfolding fbox_def SEXP_def 
+  by auto
+
 lemma fdia_kstarI: "( |kpower F n\<rangle> Q) s \<Longrightarrow> ( |F\<^sup>*\<rangle> Q) s"
   unfolding fdia_kstar 
   by auto
