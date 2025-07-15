@@ -105,85 +105,6 @@ term "GDERIV x y :> k"
 thm gderiv_def
 term "FDERIV f x :> f' \<longleftrightarrow> (f has_derivative f') (at x)"
 term "DERIV f x :> c \<longleftrightarrow> (f has_field_derivative c) (at x)"
-
-section \<open> Nth-derivative \<close>
-
-(* This definition is not ideal. The ones below are better and should imply this one*)
-inductive n_differentiable :: "nat \<Rightarrow> 'a filter \<Rightarrow> ('a \<Rightarrow> 'b) 
-  \<Rightarrow> ('a::real_normed_vector \<Rightarrow> 'b::real_normed_vector) \<Rightarrow> bool"
-  where "n_differentiable 0 F f f"
-  | "\<lbrakk>n_differentiable m F fm f; (fm has_derivative f') F\<rbrakk> 
-    \<Longrightarrow> n_differentiable (Suc m) F f' f"
-
-lemma n_differentiable_zeroD:
-  "n_differentiable 0 F g f \<Longrightarrow> f = g"
-  by (rule n_differentiable.cases; force)
-
-lemma n_differentiable_witness:
-  assumes "n_differentiable (Suc n) F f' f"
-  shows "\<exists>fn. n_differentiable n F fn f \<and> (fn has_derivative f') F"
-  by (rule n_differentiable.cases[OF assms])
-    auto
-
-lemma n_differentiable_SucD:
-  assumes "n_differentiable (Suc n) F f' f"
-  obtains fn where "n_differentiable n F fn f"
-    and "(fn has_derivative f') F"
-  using n_differentiable_witness[OF assms]
-  by blast
-
-
-(* Ultimately, for real-valued n-differentiability, this was not necessary.
-However, one could explore whether this definition is general enough to the important one below.  *)
-inductive n_differentiable_map
-  where "dmap 0 = f \<Longrightarrow> n_differentiable_map 0 F dmap f"
-  | "\<lbrakk>n_differentiable_map m F dmap f; (dmap m has_derivative dmap (Suc m)) F\<rbrakk> 
-    \<Longrightarrow> n_differentiable_map (Suc m) F dmap f"
-
-lemma n_differentiable_map_zeroD:
-  "n_differentiable_map 0 F dmap f \<Longrightarrow> dmap 0 = f"
-  by (rule n_differentiable_map.cases)
-    auto
-
-lemma n_differentiable_map_SucD:
-  assumes "n_differentiable_map (Suc n) F dmap f"
-  shows "n_differentiable_map n F dmap f"
-    "(dmap n has_derivative dmap (Suc n)) F"
-  by (rule n_differentiable_map.cases[OF assms]; force)+
-
-lemma n_differentiable_mapD:
-  assumes "n_differentiable_map n F dmap f"
-  shows "\<forall>m\<le>n. n_differentiable_map m F dmap f"
-    and "\<forall>m<n. (dmap m has_derivative dmap (Suc m)) F"
-    and "dmap 0 = f"
-proof-
-  show fst: "\<forall>m\<le>n. n_differentiable_map m F dmap f"
-    using assms
-    apply (induct rule: n_differentiable_map.induct)
-    by (clarsimp intro!: n_differentiable_map.intros)
-      (metis le_SucE n_differentiable_map.intros(2))
-  show "\<forall>m<n. (dmap m has_derivative dmap (Suc m)) F"
-    using assms
-    by (induct rule: n_differentiable_map.induct, simp)
-      (metis less_Suc_eq)
-  show "dmap 0 = f"
-    using fst n_differentiable_map_zeroD 
-    by blast
-qed
-
-lemma n_differentiable_mapI: 
-  "\<forall>m<n. (dmap m has_derivative dmap (Suc m)) F
-  \<Longrightarrow> dmap 0 = f
-  \<Longrightarrow> n_differentiable_map n F dmap f"
-  by (induct n)
-    (auto intro!: n_differentiable_map.intros)
-
-lemma n_differentiable_map_iff:
-  "n_differentiable_map n F dmap f 
-  \<longleftrightarrow> (\<forall>m<n. (dmap m has_derivative dmap (Suc m)) F) \<and> dmap 0 = f"
-  using n_differentiable_mapD(2,3) n_differentiable_mapI
-  by metis
-
 thm DERIV_deriv_iff_real_differentiable[unfolded has_field_derivative_def]
 thm DERIV_imp_deriv has_real_derivative_iff
 thm has_field_derivative_def has_real_derivative
@@ -192,17 +113,74 @@ thm deriv_def[no_vars] has_field_derivative_def
   frechet_derivative_def[no_vars]
 thm continuous_on_def continuous_def continuous_on_eq_continuous_within
 
-(* key observations for the upcoming definition *)
+
+section \<open> Nth-derivative \<close>
+
+inductive n_differentiable_map_at
+  where "dmap 0 = f \<Longrightarrow> n_differentiable_map_at x 0 oper dmap f"
+  | "n_differentiable_map_at x m oper dmap f
+    \<Longrightarrow> (dmap m has_derivative (\<lambda>y. oper (dmap (Suc m)) y)) (at x) 
+    \<Longrightarrow> n_differentiable_map_at x (Suc m) oper dmap f"
+
+lemma n_differentiable_map_at_zeroD:
+  "n_differentiable_map_at x 0 oper dmap f \<Longrightarrow> dmap 0 = f"
+  by (rule n_differentiable_map_at.cases)
+    auto
+
+lemma n_differentiable_map_at_SucD:
+  assumes "n_differentiable_map_at x (Suc n) oper dmap f"
+  shows "n_differentiable_map_at x n oper dmap f"
+    "(dmap n has_derivative (\<lambda>y. oper (dmap (Suc n)) y)) (at x)"
+  by (rule n_differentiable_map_at.cases[OF assms]; force)+
+
+lemma n_differentiable_map_atD:
+  assumes "n_differentiable_map_at x n oper dmap f"
+  shows "\<forall>m\<le>n. n_differentiable_map_at x m oper dmap f"
+    and "\<forall>m<n. (dmap m has_derivative (\<lambda>y. oper (dmap (Suc m)) y)) (at x)"
+    and "dmap 0 = f"
+proof-
+  show fst: "\<forall>m\<le>n. n_differentiable_map_at x m oper dmap f"
+    using assms
+    apply (induct rule: n_differentiable_map_at.induct)
+    by (clarsimp intro!: n_differentiable_map_at.intros)
+      (metis le_SucE n_differentiable_map_at.intros(2))
+  show "\<forall>m<n. (dmap m has_derivative (\<lambda>y. oper (dmap (Suc m)) y)) (at x)"
+    using assms
+    by (induct rule: n_differentiable_map_at.induct, simp)
+      (metis less_Suc_eq)
+  show "dmap 0 = f"
+    using fst n_differentiable_map_at_zeroD 
+    by blast
+qed
+
+lemma n_differentiable_map_atI: 
+  "\<forall>m<n. (dmap m has_derivative (\<lambda>y. oper (dmap (Suc m)) y)) (at x)
+  \<Longrightarrow> dmap 0 = f
+  \<Longrightarrow> n_differentiable_map_at x n oper dmap f"
+  by (induct n arbitrary: x)
+    (auto intro!: n_differentiable_map_at.intros)
+
+lemma n_differentiable_map_at_iff:
+  "n_differentiable_map_at x n oper dmap f 
+  \<longleftrightarrow> (\<forall>m<n. (dmap m has_derivative (\<lambda>y. oper (dmap (Suc m)) y)) (at x)) \<and> dmap 0 = f"
+  using n_differentiable_map_atD(2,3) n_differentiable_map_atI
+  by metis
+
+
+(* observations for the upcoming definition *)
+
+(* deriv is already the derivative operator *)
 lemma "deriv f = (\<lambda>x. SOME D. (f has_derivative (\<lambda>y. D * y)) (at x))"
   unfolding deriv_def
   by (simp add: fun_eq_iff has_field_derivative_def)
 
-lemma
+lemma deriv_differentiable_atD:
   assumes "(deriv^^n) f differentiable at (x::real)"
   shows "((deriv^^n) f has_real_derivative (deriv ^^ (Suc n)) f x) (at x)"
   using DERIV_deriv_iff_real_differentiable[THEN iffD2, OF assms]
   by simp
 
+(* frechet_derivative is already the derivative operator *)
 abbreviation "deriv_frechet F \<equiv> (\<lambda>f. frechet_derivative f F)"
 
 lemma deriv_frechet_differentiableD:
@@ -211,17 +189,13 @@ lemma deriv_frechet_differentiableD:
   using frechet_derivative_works[THEN iffD1, OF assms]
   by simp
 
-lemma n_differentiable_map_deriv_frechet_iff:
-  "n_differentiable_map n F (\<lambda>n. ((deriv_frechet F)^^n) f) f
-  \<longleftrightarrow> (\<forall>m<n. ((deriv_frechet F)^^m) f differentiable F)"
+lemma n_differentiable_map_at_deriv_frechet_iff:
+  "n_differentiable_map_at x n (\<lambda>\<D> y. \<D> y) (\<lambda>n. ((deriv_frechet (at x))^^n) f) f
+  \<longleftrightarrow> (\<forall>m<n. ((deriv_frechet (at x))^^m) f differentiable (at x))"
   apply (rule iffI)
-  unfolding n_differentiable_map_iff 
+  unfolding n_differentiable_map_at_iff 
   by (force simp: differentiable_def)
     (auto dest!: deriv_frechet_differentiableD)
-
-thm frechet_derivative_def frechet_derivative_works
-  n_differentiable_map_iff[no_vars] DERIV_deriv_iff_real_differentiable
-
 
 
 (* the main definition *)
@@ -252,7 +226,7 @@ lemma n_real_differentiable_atD:
     and "\<forall>m<n. (Nth_derivative m f has_field_derivative Nth_derivative (Suc m) f x) (at x)"
 proof-
   show "\<forall>m\<le>n. n_real_differentiable_at m f x"
-    using assms n_differentiable_mapD(1)
+    using assms n_differentiable_map_atD(1)
     unfolding n_real_differentiable_at_def
     by fastforce
   show "\<forall>m<n. ((deriv^^m) f has_field_derivative (deriv ^^ (Suc m)) f x) (at x)"
@@ -263,15 +237,88 @@ proof-
     by simp
 qed
 
-(* there are some equalities that could be proven with these lemmas *)
-thm DERIV_cmult_Id
-thm n_real_differentiable_at_iff[unfolded has_field_derivative_def]
-thm n_differentiable_map_deriv_frechet_iff [of n "at x", unfolded frechet_derivative_def]
-  n_real_differentiable_at_def[unfolded deriv_def has_field_derivative_def]
+lemma n_differentiable_map_at_iff_n_real_differentiable_at:
+  "n_differentiable_map_at x n (\<lambda>\<D> y. \<D> x * y) (\<lambda>m. (deriv^^m) f) f
+  \<longleftrightarrow> n_real_differentiable_at n f x"
+  unfolding n_real_differentiable_at_iff n_differentiable_map_at_iff
+      has_field_derivative_def by simp
 
+lemma frechet_derivative_eq: 
+  "(f has_derivative f') (at x) \<Longrightarrow> frechet_derivative f (at x) = f'"
+  unfolding frechet_derivative_def
+  using has_derivative_unique by blast
 
-(* Taylor's theorem should follow by instantiating here *)
-thm MacLaurin.Taylor[of n "\<lambda>n. (deriv ^^ n) f" f]
+lemma deriv_eq: "(f has_derivative (\<lambda>y. D * y)) (at x) \<Longrightarrow> deriv f x = D"
+  unfolding frechet_derivative_def deriv_def 
+  using DERIV_unique has_field_derivative_def by blast
+
+lemma frechet_derivative_eq_deriv:
+  fixes f :: "'a::real_normed_field \<Rightarrow> 'a"
+  assumes "(f has_derivative (\<lambda>y. D * y)) (at x)"
+  shows "frechet_derivative f (at x) 1 = D"
+    and "frechet_derivative f (at x) 1 = deriv f x"
+  using frechet_derivative_eq[OF assms] deriv_eq[OF assms]
+  by auto
+
+(* OBS: despite @{thm "n_differentiable_map_at_iff_n_real_differentiable_at"},
+we cannot prove that any map witnessing n_differentiable_map_at will
+also witness n_real_differentiable_at (see below). The only map that works is
+(\<lambda>m. (deriv^^m) f). In that sense, @{term "n_differentiable_map_at"} is more
+general.
+*)
+lemma "n_differentiable_map_at x n (\<lambda>\<D> y. \<D> x * y) (\<lambda>m. if m = 0 then f else rmap m) f
+  \<longleftrightarrow> n_real_differentiable_at n f x" (is "n_differentiable_map_at x n ?oper ?dmap f \<longleftrightarrow> _")
+proof
+  assume hyp: "n_differentiable_map_at x n ?oper ?dmap f"
+  hence key: "\<forall>m<n. (?dmap m has_derivative (*) (rmap (Suc m) x)) (at x)"
+    using n_differentiable_map_atD(2)[OF hyp] 
+    by auto
+  have "n = 0 \<Longrightarrow> n_real_differentiable_at n f x"
+    unfolding n_real_differentiable_at_def by simp
+  have "0 < n \<Longrightarrow> m < n \<Longrightarrow> ((deriv^^m) f has_derivative (*) (rmap (Suc m) x)) (at x)" for m::nat
+  proof(induct m)
+    case 0
+    thus ?case
+      using key
+      by auto
+  next
+    thm deriv_differentiable_atD
+    case (Suc m)
+    hence IH: "((deriv^^m) f has_derivative (\<lambda>y. rmap (Suc m) x * y)) (at x)"
+      using Suc_lessD by auto
+    (* here we need differentiability in the neighbourhood, not just x *)
+    have eq1: "(deriv ^^ Suc m) f x = rmap (Suc m) x"
+      using DERIV_imp_deriv[unfolded has_field_derivative_def, OF IH(1)]
+      by simp
+    have key_sucm: "(rmap (Suc m) has_derivative (*) (rmap (Suc (Suc m)) x)) (at x)"
+      using key Suc
+      by auto
+    thm DERIV_imp_deriv[unfolded has_field_derivative_def, OF key_sucm, unfolded ] 
+      eq1[symmetric, simplified]
+    then show "((deriv ^^ Suc m) f has_derivative (*) (rmap (Suc (Suc m)) x)) (at x)"
+    oops
+
+lemma Taylor_theorem:
+  "\<forall>t. a \<le> t \<longrightarrow> t \<le> b \<longrightarrow> n_real_differentiable_at n f t
+ \<Longrightarrow> \<lbrakk>0 < n; a \<le> c; c \<le> b; a \<le> x; x \<le> b; x \<noteq> c\<rbrakk>
+ \<Longrightarrow> \<exists>t. (if x < c then x < t \<and> t < c else c < t \<and> t < x) \<and>
+    f x = (\<Sum>m<n. ((deriv^^m) f) c / fact m * (x - c) ^ m) + ((deriv^^n) f) t / fact n * (x - c) ^ n"
+  using n_real_differentiable_atD(2)[of n f]
+  by - (rule MacLaurin.Taylor, auto) 
+
+lemma "n_real_differentiable_at n f x \<Longrightarrow> n_real_differentiable_at n g x 
+  \<Longrightarrow> m < n
+  \<Longrightarrow> ((deriv^^m) (\<lambda>w. f w + g w) x = (deriv ^^ m) f x + (deriv ^^ m) g x)"
+  apply (induct m arbitrary: n)
+   apply simp
+  apply simp
+    (* again we require differentiability in a neighbourhood of x *)
+  unfolding n_real_differentiable_at_iff
+  using deriv_add
+  using DERIV_deriv_iff_field_differentiable DERIV_imp_deriv 
+  oops
+
+thm at_within_open_subset
 
 
 end
