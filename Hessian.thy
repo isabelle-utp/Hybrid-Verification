@@ -8,6 +8,7 @@ theory Hessian
 
 begin 
 
+(* unbundle derivative_no_notation *)
 
 section \<open> Gradient \<close>
 
@@ -99,6 +100,37 @@ definition has_hessian_on :: "('a::euclidean_space \<Rightarrow> real)
 
 definition "hessian_of X f = (SOME H. (f has_hessian_on H) X)"
 
+
+section \<open> Frechet \<close>
+
+definition has_frechet_on :: "('a::real_normed_vector \<Rightarrow> 'b::real_normed_vector) 
+  \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a set \<Rightarrow> bool" (infix \<open>(has'_frechet'_on)\<close> 50)
+  where "(f has_frechet_on J) X \<equiv> \<forall>x\<in>X. (f has_derivative J) (at x)"
+
+definition "frechet_on X f = (SOME J. (f has_frechet_on J) X)"
+
+thm frechet_derivative_works
+
+lemma "(id has_frechet_on id) UNIV"
+  unfolding has_frechet_on_def
+  by clarsimp
+
+lemma "(f has_frechet_on Jf1) X
+  \<Longrightarrow> (g has_frechet_on Jg1) X
+  \<Longrightarrow> ((\<lambda>z. f z + g z) has_frechet_on (\<lambda>y. Jf1 y + Jg1 y)) X"
+  unfolding has_frechet_on_def
+  by clarify
+    (rule has_derivative_add, simp_all)
+
+lemma "(f has_frechet_on Jf1) X
+  \<Longrightarrow> \<forall>x\<in>X. (Jf1 has_frechet_on Jf2) X
+  \<Longrightarrow> (g has_frechet_on Jg1) X
+  \<Longrightarrow> \<forall>x\<in>X. (Jg1 has_frechet_on Jg2) X
+  \<Longrightarrow> ((\<lambda>z. f z + g z) has_frechet_on (\<lambda>y. Jf1 y + Jg1 y)) X
+    \<and> (\<forall>x\<in>X. ((\<lambda>y. Jf1 y + Jg1 y) has_frechet_on (\<lambda>y. Jf2 y + Jg2 y)) X)"
+  unfolding has_frechet_on_def
+  by clarsimp
+
 thm has_gradient_on_def has_jacobian_on_def has_hessian_on_def 
 thm bchoice choice
 term "GDERIV x y :> k"
@@ -114,7 +146,7 @@ thm deriv_def[no_vars] has_field_derivative_def
 thm continuous_on_def continuous_def continuous_on_eq_continuous_within
 
 
-section \<open> Nth-derivative \<close>
+section \<open> Nth-derivatives definitions \<close>
 
 inductive n_differentiable_map_at
   where "dmap 0 = f \<Longrightarrow> n_differentiable_map_at x 0 oper dmap f"
@@ -209,15 +241,9 @@ lemma n_real_differentiable_at_iff: "n_real_differentiable_at n f x
   by simp
 
 lemma Nth_derivative_eq_compow_deriv: 
-  "Nth_derivative n f x = (deriv ^^ n) f x"
-proof (induct n arbitrary: x)
-  fix n x
-  assume "\<And>x. Nth_derivative n f x = (deriv ^^ n) f x"
-  hence "Nth_derivative n f = (deriv ^^ n) f"
-    by (rule ext)
-  thus "Nth_derivative (Suc n) f x = (deriv ^^ Suc n) f x"
-    by simp
-qed simp
+  "Nth_derivative n f = (deriv ^^ n) f"
+  by (induct n)
+    simp_all
 
 lemma n_real_differentiable_atD:
   assumes "n_real_differentiable_at n f x"
@@ -236,6 +262,11 @@ proof-
     unfolding Nth_derivative_eq_compow_deriv 
     by simp
 qed
+
+lemma n_real_differentiable_at_iff_le:
+  "n_real_differentiable_at n f x \<longleftrightarrow> (\<forall>m\<le>n. n_real_differentiable_at m f x)"
+  using n_real_differentiable_atD(1)
+  by blast
 
 lemma n_differentiable_map_at_iff_n_real_differentiable_at:
   "n_differentiable_map_at x n (\<lambda>\<D> y. \<D> x * y) (\<lambda>m. (deriv^^m) f) f
@@ -306,19 +337,247 @@ lemma Taylor_theorem:
   using n_real_differentiable_atD(2)[of n f]
   by - (rule MacLaurin.Taylor, auto) 
 
-lemma "n_real_differentiable_at n f x \<Longrightarrow> n_real_differentiable_at n g x 
-  \<Longrightarrow> m < n
-  \<Longrightarrow> ((deriv^^m) (\<lambda>w. f w + g w) x = (deriv ^^ m) f x + (deriv ^^ m) g x)"
-  apply (induct m arbitrary: n)
+definition "n_real_differentiable_on n f X = (\<forall>x\<in>X. n_real_differentiable_at n f x)"
+
+lemma n_real_differentiable_on_iff_le:
+  "n_real_differentiable_on n f X \<longleftrightarrow> (\<forall>m\<le>n. n_real_differentiable_on m f X)"
+  unfolding n_real_differentiable_on_def Ball_def
+  by (subst n_real_differentiable_at_iff_le)
+    blast
+
+lemma n_real_differentiable_on_mono:
+  "X \<subseteq> Y \<Longrightarrow> n_real_differentiable_on n f Y \<Longrightarrow> n_real_differentiable_on n f X"
+  unfolding n_real_differentiable_on_def
+  by blast
+
+primrec k_times_differentiable_at :: "nat \<Rightarrow> (real \<Rightarrow> real) \<Rightarrow> real \<Rightarrow> bool" where
+  "k_times_differentiable_at 0 f a  \<longleftrightarrow>  True"                            \<comment> \<open>0 times \<Leftrightarrow> no condition\<close>
+| "k_times_differentiable_at (Suc k) f a \<longleftrightarrow>
+     (\<exists>\<epsilon>>0.  (\<forall>x. \<bar>x - a\<bar> < \<epsilon> \<longrightarrow> k_times_differentiable_at k f x))       \<comment> \<open>clause 1\<close>
+   \<and> (let g = Nth_derivative k f
+      in (g has_derivative (\<lambda>h. Nth_derivative (Suc k) f a * h)) (at a))" \<comment> \<open>clause 2\<close>
+
+lemma k_times_differentiable_atD: 
+  "k_times_differentiable_at n f x \<Longrightarrow> \<forall>m\<le>n. k_times_differentiable_at m f x"
+  apply (induct n)
    apply simp
-  apply simp
-    (* again we require differentiability in a neighbourhood of x *)
-  unfolding n_real_differentiable_at_iff
-  using deriv_add
-  using DERIV_deriv_iff_field_differentiable DERIV_imp_deriv 
-  oops
+  apply clarsimp
+  subgoal for n m \<epsilon>
+    apply (cases "m \<le> n")
+     apply simp
+    apply (subgoal_tac "m = Suc n")
+    by auto
+  done
 
-thm at_within_open_subset
+lemma k_times_differentiable_at_iff_le:
+  "k_times_differentiable_at n f x \<longleftrightarrow> (\<forall>m\<le>n. k_times_differentiable_at m f x)"
+  using k_times_differentiable_atD
+  by blast
 
+lemma n_real_differentiable_on_imp_k_times_diff:
+  "\<epsilon> > 0 \<Longrightarrow> n_real_differentiable_on n f (ball x \<epsilon>) \<Longrightarrow> k_times_differentiable_at n f x"
+proof (induct n arbitrary: x \<epsilon>)
+  case (Suc n)
+  hence "\<forall>y\<in>(ball x \<epsilon>). n_real_differentiable_at n f y"
+    using n_real_differentiable_on_iff_le[THEN iffD1, OF Suc(3)]
+    by (simp add: n_real_differentiable_on_def)
+  hence f1: "\<forall>y\<in>(ball x \<epsilon>). k_times_differentiable_at n f y"
+    by (metis Suc(1) Elementary_Metric_Spaces.open_ball n_real_differentiable_on_def 
+        n_real_differentiable_on_mono open_contains_ball_eq)
+  moreover have "(deriv ^^ n) f differentiable (at x)"
+    using Suc(3)[unfolded n_real_differentiable_on_def n_real_differentiable_at_def]
+    by (simp add: Suc.prems(1))
+  ultimately have r1: "(\<exists>\<epsilon>>0. \<forall>y. \<bar>y - x\<bar> < \<epsilon> \<longrightarrow> k_times_differentiable_at n f y)"
+    and r2: "((deriv ^^ n) f has_derivative (*) ((deriv ^^ (Suc n)) f x)) (at x)"
+    using \<open>0 < \<epsilon>\<close> DERIV_deriv_iff_real_differentiable 
+    by (auto simp: ball_def dist_norm has_field_derivative_def)
+  show "k_times_differentiable_at (Suc n) f x"
+    using r1 r2
+    by (auto simp: Nth_derivative_eq_compow_deriv)
+qed simp
+
+
+
+term Lim
+term filterlim
+thm Lim_cong_within
+thm t2_space_class.Lim_def[of "at x", unfolded tendsto_def eventually_at_topological]
+
+
+
+
+definition "n_diff_on X n jmap oper f 
+  \<longleftrightarrow> (\<forall>m<n. \<forall>x\<in>X. (jmap m has_derivative (\<lambda>h. oper (jmap (Suc m) x) h)) (at x within X)) \<and> jmap 0 = f"
+
+lemma n_diff_on_iff_le: 
+  "n_diff_on X n jmap oper f  \<longleftrightarrow> (\<forall>m\<le>n. n_diff_on X m jmap oper f)"
+  unfolding n_diff_on_def 
+  using order_less_le_trans by blast
+
+lemma n_diff_on_iff_Suc: 
+  "n_diff_on X (Suc n) jmap oper f \<Longrightarrow> n_diff_on X n jmap oper f"
+  unfolding n_diff_on_def
+  by auto
+
+lemma "n_diff_on X 1 jmap oper f
+  \<longleftrightarrow> (\<forall>x\<in>X. (f has_derivative (\<lambda>h. oper (jmap 1 x) h)) (at x within X)) \<and> jmap 0 = f"
+  unfolding n_diff_on_def 
+  by (auto simp: has_frechet_on_def)
+
+lemma "\<forall>x\<in>X. (f has_derivative D) (at x within X)
+  \<Longrightarrow> \<forall>x\<in>X. f x = g x
+  \<Longrightarrow> \<forall>x\<in>X. (g has_derivative D) (at x within X)"
+  by (metis has_derivative_transform)
+
+lemma deriv_transfer:
+  assumes "open X"
+  shows "(f has_derivative (*) f') (at x within X)
+ \<Longrightarrow> (g has_derivative (*) g') (at x within X)
+ \<Longrightarrow> \<forall>x\<in>X. f x = g x
+ \<Longrightarrow> x \<in> X
+ \<Longrightarrow> deriv f x = deriv g x"
+  using has_derivative_transform[of x X g f] 
+    at_within_open_subset[OF _ \<open>open X\<close>, of _ X, simplified]
+    DERIV_imp_deriv[unfolded has_field_derivative_def]
+  by metis
+
+thm has_derivative_transform at_within_open_subset
+lemma n_diff_on_general1: "n_diff_on X n (\<lambda>m. if m = 0 then f else rmap m) (\<lambda>D a. D * a) f
+  \<Longrightarrow> open X
+  \<Longrightarrow> (\<forall>x\<in>X. n_real_differentiable_at n f x)"
+  apply (clarsimp simp: n_diff_on_def n_real_differentiable_at_def)
+  subgoal for x m
+  proof(induct m arbitrary: x)
+    case 0
+    then show ?case
+      using at_within_open_subset[of _ X X]
+      by (force simp: differentiable_def)
+  next
+    case (Suc m)
+    hence IH: "\<And>x. x \<in> X \<Longrightarrow> (deriv ^^ m) f differentiable (at x)"
+      "\<forall>m<n. \<forall>x\<in>X. ((if m = 0 then f else rmap m) has_derivative (*) (rmap (Suc m) x)) (at x within X)"
+      by auto
+    hence fderiv1: "\<And>x. x \<in> X \<Longrightarrow> (f has_derivative (*) (rmap (Suc 0) x)) (at x within X)"
+      using Suc.prems(4) by auto
+    have fderiv2: "\<And>x. x \<in> X \<Longrightarrow> (f has_derivative (*) (deriv f x)) (at x within X)"
+      using IH(2) Suc(5)
+      apply (auto elim!: allE[where x=0])
+      by (metis DERIV_deriv_iff_real_differentiable Suc.prems(2,3) 
+          at_within_open differentiableI has_field_derivative_imp_has_derivative)
+    have IH3: "\<forall>m<n. \<forall>x\<in>X. deriv (if m = 0 then f else rmap m) x = (rmap (Suc m) x)"
+      using IH(2) DERIV_imp_deriv[unfolded has_field_derivative_def]
+        at_within_open_subset[OF _ Suc(3), of _ X, simplified] 
+      by fastforce+
+    thm deriv_transfer[unfolded field_differentiable_def]
+    hence key: "\<forall>m<n. \<forall>x\<in>X. ((deriv ^^ m) f) x = (if m = 0 then f else rmap m) x
+        \<and> ((deriv ^^ m) f has_derivative (*) ((deriv ^^ (Suc m)) f x)) (at x within X)"
+      apply clarsimp
+      apply (rule conjI; clarsimp)
+      using fderiv2 apply blast
+      subgoal for m' x'
+        apply (induct m' arbitrary: x', simp)
+        apply (rule conjI, clarsimp)
+        subgoal for m' x'
+          apply (cases "m' = 0", force)
+          apply simp
+          apply (subst deriv_transfer[OF Suc(3), of "(deriv ^^ m') f" _ x' "rmap m'"]; clarsimp?)
+          apply force
+          using IH(2)[rule_format, of m' x'] apply force
+          by (erule_tac x=m' in allE, simp)
+        subgoal for m' x'
+          apply (cases "m' = 0"; clarsimp)
+          subgoal
+            using IH(2)
+            apply (clarsimp elim!: allE[where x=1])
+            apply (subgoal_tac "\<forall>x \<in> X. rmap (Suc 0) x = deriv f x")
+            using has_derivative_transform[of x' X "deriv f" "rmap (Suc 0)"]
+            apply (metis Suc.prems(2) at_within_open deriv_eq)
+            using has_derivative_unique[of f "(*) (rmap (Suc 0) _)" _ "(*) (deriv f _)"] fderiv1 fderiv2
+              at_within_open_subset[OF _ \<open>open X\<close>, of _ X, simplified]
+            by (metis deriv_eq)
+          subgoal
+            using IH(2)
+            apply (clarsimp elim!: allE[where x="Suc m'"])
+            apply (subgoal_tac "\<forall>x \<in> X. rmap (Suc m') x = (deriv^^(Suc m')) f x")
+             apply (rule has_derivative_transform[of x' X "(deriv^^(Suc m')) f" "rmap (Suc m')", simplified]; simp?)
+             apply (smt (verit, best) Suc.prems(2) at_within_open deriv_eq has_derivative_transform)
+            apply clarsimp
+            apply (rename_tac z)
+            apply (subst IH3[rule_format, of m' _, symmetric]; simp)
+            apply (rule_tac f'="rmap (Suc m') z" in deriv_transfer[OF \<open>open X\<close>]; simp?)
+            using IH(2)[rule_format, of m' _] apply simp
+            by force
+        done
+      done
+    done
+    have "\<forall>x\<in>X. (rmap (Suc m) has_derivative (*) (rmap (Suc (Suc m)) x)) (at x within X)"
+      using Suc(5) IH(2)
+      by auto
+    hence "\<forall>x\<in>X. ((deriv ^^ (Suc m)) f has_derivative (*) (rmap (Suc (Suc m)) x)) (at x within X)"
+      using has_derivative_transform[of _ _ "(deriv ^^ Suc m) f" "rmap (Suc m)"]
+        key[rule_format, OF Suc(5), simplified, THEN conjunct1, symmetric] 
+      by force
+    thus "(deriv ^^ Suc m) f differentiable at x"
+      using Suc(4) at_within_open_subset[OF _ Suc(3), of _ X, simplified] 
+      by (auto simp: differentiable_def)
+  qed
+  done
+
+lemma n_diff_on_general2: "n_diff_on X n (\<lambda>m. if m = 0 then f else rmap m) (\<lambda>D a. D * a) f
+  \<Longrightarrow> open X
+  \<Longrightarrow> n_real_differentiable_on n f X"
+  unfolding n_real_differentiable_on_def
+  using n_diff_on_general1 by simp
+
+lemma n_diff_on_general3: "n_diff_on (ball x \<epsilon>) n (\<lambda>m. if m = 0 then f else rmap m) (\<lambda>D a. D * a) f
+  \<Longrightarrow> 0 < \<epsilon>
+  \<Longrightarrow> k_times_differentiable_at n f x"
+  by (rule n_real_differentiable_on_imp_k_times_diff, force)
+    (rule n_diff_on_general2; force)
+
+thm deriv_transfer has_derivative_transform
+lemma deriv_n_transfer_on_open:
+  fixes f g :: "real \<Rightarrow> real"
+  assumes "open X" "x \<in> X"
+    and eq_onX: "\<And>x. x \<in> X \<Longrightarrow> f x = g x"
+    and f_has:   "\<forall>m\<le>k. \<forall>x\<in>X. ((deriv^^ m) f has_derivative (\<lambda>h. (deriv^^(Suc m)) f x * h)) (at x within X)"
+  shows "((deriv^^ k) g  has_derivative (\<lambda>h. (deriv^^(Suc k)) f x * h)) (at x within X)"
+  using \<open>x \<in> X\<close> f_has
+proof(induct k arbitrary: x rule: nat_less_induct)
+  case (1 n)
+  have "\<And>x. x \<in> X \<Longrightarrow> (deriv ^^ n) g x = (deriv ^^ n) f x"
+    apply (cases "n = 0"; simp)
+    using eq_onX apply force
+    apply (subgoal_tac "\<exists>m. n = Suc m", clarsimp)
+     apply (rule deriv_eq)
+     apply (subst at_within_open[OF _ \<open>open X\<close>, of _, symmetric], simp)
+     apply (rule 1(1)[rule_format, simplified]; force?)
+    using 1(3) apply force
+    by (simp add: not0_implies_Suc)
+  moreover have "((deriv ^^ n) f has_derivative (*) (deriv ((deriv ^^ n) f) x)) (at x within X)"
+    using 1(3) 1(2)
+    by simp
+  ultimately have "((deriv ^^ n) g has_derivative (*) (deriv ((deriv ^^ n) f) x)) (at x within X)"
+    by (rule has_derivative_transform[OF \<open>x \<in> X\<close>, of _ "(deriv ^^ n) f"])
+      simp
+  thus "((deriv ^^ n) g has_derivative (*) ((deriv ^^ Suc n) f x)) (at x within X)"
+    by simp
+qed
+
+lemma Nth_derivative_transfer_on_ball:
+  fixes f g :: "real \<Rightarrow> real"
+  assumes \<epsilon>_pos: "0 < \<epsilon>"
+      and eq_ball: "\<forall>y. y \<in> ball x \<epsilon> \<longrightarrow> f y = g y"
+      and f_has:   "\<forall>m\<le>k. \<forall>y\<in>ball x \<epsilon>. (Nth_derivative m f
+                      has_derivative (\<lambda>h. Nth_derivative (Suc m) f x * h)) (at y)"
+  shows   "(Nth_derivative k g
+              has_derivative (\<lambda>h. Nth_derivative (Suc k) f x * h)) (at x)"
+  using f_has
+  unfolding Nth_derivative_eq_compow_deriv
+  apply (subst at_within_open[symmetric, of x "ball x \<epsilon>"]; simp add: \<epsilon>_pos)
+  apply (rule deriv_n_transfer_on_open[simplified]; (simp add: \<epsilon>_pos)?)
+  using eq_ball apply force
+  using at_within_open[of _ "ball x \<epsilon>", simplified]
+  by (metis deriv_eq has_derivative_at_withinI)
 
 end
