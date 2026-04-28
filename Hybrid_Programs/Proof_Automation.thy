@@ -212,7 +212,7 @@ method dInduct_mega uses facts =
   | (dWeaken ; force) \<comment> \<open> (2) Try differential weakening \<close>
   | rule_tac diff_cut_on_split' | rule_tac diff_cut_on_split \<comment> \<open> (4) Try differential cut (two options) \<close>
   | rule_tac hoare_if_then_else_inv
-  | (dInduct_auto) \<comment> \<open> (5) Try differential induction \<close>
+  | (dInduct) \<comment> \<open> (5) Try differential induction \<close>
   )+
 
 method dInduct_mega' uses facts = 
@@ -492,10 +492,10 @@ method normalise_prog =
 subsection \<open> Symbolic Execution \<close>
 
 method forward_assign =
-  ((simp only: kcomp_assoc)?, rule hoare_fwd_assign hoare_nondet_fwd_assign, simp, subst_eval)
+  ((simp only: kcomp_assoc)?, rule hoare_fwd_assign hoare_nondet_fwd_assign, simp, subst_eval')
 
 method backward_assign =
-  (rule hoare_bwd_assign hoare_assignI, subst_eval; (expr_auto add: field_simps)[1])
+  (rule hoare_bwd_assign hoare_assignI, subst_eval')
 
 method nondet_fwd_assign =
   ((simp only: kcomp_assoc)?, rule hoare_nondet_fwd_assign, simp, subst_eval')
@@ -505,7 +505,7 @@ method forward_test =
 
 method do_a_discrete = (
     forward_assign 
-    | (rule hoare_bwd_assign)
+    | backward_assign
     | nondet_fwd_assign 
     | (rule hoare_skip_impl) 
     | if_then_else

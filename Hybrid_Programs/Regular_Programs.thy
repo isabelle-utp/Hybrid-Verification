@@ -539,6 +539,15 @@ next
     by (metis kcomp_skip(1) mono_kcompL)
 qed
 
+lemma kstar_unfold: "P\<^sup>* = (P ; P\<^sup>*) \<sqinter> skip"
+  apply (simp add: kstar_alt Nondet_choice_def fun_eq_iff skip_def nondet_choice_def kpower_def)
+  apply safe
+  apply simp_all
+  apply (metis funpow_0 in_kcomp_iff kcomp_id(1) kcomp_skip(2) kpower_Suc kpower_def list_decode.cases singletonD)
+  apply (metis funpow_0 insertI1)
+  apply (metis in_kcomp_iff kcomp_id(1) kcomp_skip(2) kpower_Suc kpower_def)
+  done
+
 lemma fbox_kstar: "|F\<^sup>*] Q = (\<lambda>s. \<forall>n. ( |kpower F n] Q) s)"
   unfolding kstar_def fbox_def
   by expr_auto
@@ -923,6 +932,12 @@ definition while :: "'a pred \<Rightarrow> ('a \<Rightarrow> 'a set) \<Rightarro
 syntax "_while" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("WHILE _ DO _" [0,64] 64)
 translations "WHILE T DO X" == "CONST while (T)\<^sub>e X"
 
+lemma while_unfold: "WHILE T DO X = (IF T THEN (X ; WHILE T DO X) ELSE skip)"
+  apply (simp add: while_def)
+  apply (subst kstar_unfold)
+  apply (simp add: choice_kcomp_distr if_then_else_eq kcomp_assoc kcomp_skip(1,2))
+  done
+
 lemma hoare_while:
   "H{I \<and> T} X {I} \<Longrightarrow> H{I} (WHILE T DO X) {\<not> T \<and> I}"
   unfolding while_def 
@@ -972,6 +987,11 @@ lemma fdia_while_variantI:
   apply (erule_tac P="\<lambda>s. \<forall>k. V k s \<longrightarrow> ( |X\<rangle> @(V (k - 1))) s" and x=s' in allE)
   apply (erule_tac x="int m" in allE, simp add: fdia_kcomp fdia_test)
   using of_nat_0_less_iff by blast
+
+lemma hoare_while_unfold:
+  assumes "H{P} IF T THEN X ; WHILE T DO X ELSE skip {Q}"
+  shows "H{P} WHILE T DO X {Q}"
+  by (metis assms while_unfold)
 
 subsection \<open> Framing \<close>
 
