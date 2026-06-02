@@ -136,6 +136,11 @@ lemma differentiable_discr_expr [ldifferentiable]:
   unfolding ldifferentiable_expr_def lframe_fun_def
   by fastforce
 
+lemma differentiable_vec_nth [ldifferentiable]:
+  assumes "differentiable\<^bsub>x\<^esub> expr within S when G"
+  shows "differentiable\<^bsub>x\<^esub> (expr $ \<guillemotleft>i\<guillemotright>) within S when G"
+  using assms by (simp add: expr_defs differentiable_def, metis has_derivative_coordinate)
+
 declare lens_plus_right_sublens [simp] 
 
 (* should we generalise and make it "at (get\<^bsub>x\<^esub> s) within S"? It does not seem 
@@ -277,6 +282,11 @@ lemma lframeD_snd [framed_derivs]:
   using frechet_derivative_snd
   (* by (simp add: expr_defs fun_eq_iff frechet_derivative_snd) *)
   oops
+
+lemma lframeD_vec_nth [framed_derivs]:
+  assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr $ \<guillemotleft>i\<guillemotright>) = ((\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr) $ \<guillemotleft>i\<guillemotright>)\<^sub>e"
+  using assms by (simp add: expr_defs fun_eq_iff) (metis differentiable_def frechet_derivative_at has_derivative_coordinate)
 
 declare lens_quotient_plus_den1 [simp]
 declare lens_quotient_plus_den2 [simp]
