@@ -39,8 +39,6 @@ dataspace obstacle_avoidance =
     r :: real
     ob :: "real ^ 2"
     v :: "real ^ 2"
-    oldp :: "real ^ 2"
-    olds :: "real"
 
 context obstacle_avoidance
 begin
@@ -50,15 +48,15 @@ definition ctrl :: "'st prog \<Rightarrow> ('st \<Rightarrow> bool) \<Rightarrow
     (a := -b
      \<sqinter> \<questiondown>s = 0? ; a := 0 ; \<omega> := 0
      \<sqinter> drive ; \<omega> := ? ; \<questiondown>-\<Omega> \<le> \<omega> \<and> \<omega> \<le> \<Omega>? ; r := ? ; \<questiondown>r \<noteq> 0 \<and> r * \<omega> = s \<and> @safe?) ;
-    t := 0 ; oldp := p ; olds := s"
+    t := 0"
 
 expression safe is "\<parallel>p - ob\<parallel>\<^sub>\<infinity> > (s\<^sup>2 / (2*b)) + (A/b + 1) * (A/2 * \<epsilon>\<^sup>2 + \<epsilon> * s)"
 
 definition 
  "\<Psi> opc obc ac osc =
-  (oldp = opc \<and> ob = obc \<and> a = ac \<and> olds = osc
-    \<and> 0 \<le> s \<and> 0 \<le> t \<and> t \<le> \<epsilon> \<and> \<parallel>d\<parallel> = 1 \<and> s = olds + a * t
-    \<and> \<parallel>p - oldp\<parallel>\<^sub>\<infinity> \<le> t * (s - a * t/2))\<^sup>e"
+  (ob = obc \<and> a = ac 
+    \<and> 0 \<le> s \<and> 0 \<le> t \<and> t \<le> \<epsilon> \<and> \<parallel>d\<parallel> = 1 \<and> s = osc + a * t
+    \<and> \<parallel>p - opc\<parallel>\<^sub>\<infinity> \<le> t * (s - a * t/2))\<^sup>e"
 
 expr_constructor \<Psi>
 
@@ -88,7 +86,7 @@ lemma dyn_inv: "H{\<Psi> opc obc ac osc} dyn {\<Psi> opc obc ac osc}"
     apply (simp add: norm_eq_1)
   apply (simp add: norm_eq_1)
   apply (dInduct_mega)
-  apply (invariant "- t * (s - a * t/2) \<le> (p - oldp) $ 0 \<and> (p - oldp) $ 0 \<le> t * (s - a * t/2) \<and> - t * (s - a * t/2) \<le> (p - oldp) $ 1 \<and> (p - oldp) $1 \<le> t * (s - a * t/2)")
+  apply (invariant "- t * (s - a * t/2) \<le> (p - opc) $ 0 \<and> (p - opc) $ 0 \<le> t * (s - a * t/2) \<and> - t * (s - a * t/2) \<le> (p - opc) $ 1 \<and> (p - opc) $1 \<le> t * (s - a * t/2)")
     apply (dInduct_mega)
   apply expr_simp
      apply (smt (verit) Finite_Cartesian_Product.norm_nth_le more_arith_simps(8) mult_left_le real_norm_def)
