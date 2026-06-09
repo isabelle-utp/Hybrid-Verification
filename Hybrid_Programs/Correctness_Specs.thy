@@ -41,6 +41,11 @@ translations "_fbox F P" == "CONST fbox F (P)\<^sub>e"
 
 expr_constructor fbox
 
+lemma fboxI:
+  assumes "\<And> s'. \<lbrakk> s' \<in> C s \<rbrakk> \<Longrightarrow> P s'"
+  shows "fbox C P s"
+  by (simp add: assms fbox_def)
+
 lemma clarify_fbox: "|F] P = fbox F P"
   by (clarsimp simp: fbox_def)
 
@@ -211,6 +216,11 @@ lemma fbox_to_hoare: "P \<le> |F] Q \<longleftrightarrow> H{P} F {Q}"
   by auto
 
 ML_file \<open>Spec_Utils.ML\<close>
+
+lemma hoare_fboxI: 
+  assumes "\<And> s. (P)\<^sub>e s \<Longrightarrow> fbox C (Q)\<^sub>e s"
+  shows "H{P} C {Q}"
+  using assms by blast
 
 lemma hoare_conseq: 
   assumes "H{P} X {Q}" "`P' \<longrightarrow> P`" "`Q \<longrightarrow> Q'`"

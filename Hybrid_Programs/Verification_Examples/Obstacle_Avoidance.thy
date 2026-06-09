@@ -6,30 +6,6 @@ begin
 
 unbundle Hybrid_Program_Syntax
 
-declare [[literal_variables=false]]
-
-lemma fbox_kstarI:
-  assumes "I s" "\<And> s\<^sub>0. I s\<^sub>0 \<Longrightarrow> fbox C I s\<^sub>0" "\<And> s\<^sub>0. I s\<^sub>0 \<Longrightarrow> Q s\<^sub>0" 
-  shows "fbox (C\<^sup>*) Q s"
-  by (metis (mono_tags, opaque_lifting) SEXP_def assms(1,2,3) fbox_iso fbox_kstar_inv
-      le_bool_def le_funD predicate1I)
-
-
-lemma hl_pre_ghost: 
-  assumes "\<And> x. H{\<guillemotleft>x\<guillemotright> = e \<and> P} C {Q}"
-  shows "H{P} C {Q}"
-  using assms by fastforce
-
-lemma hl_middle_state:
-  assumes "\<And> x. H{P} C\<^sub>1 {\<guillemotleft>x\<guillemotright> = e \<longrightarrow> @(I x)}" "\<And> x. H{\<guillemotleft>x\<guillemotright> = e \<and> @(I x)} C\<^sub>2 {Q}"
-  shows "H{P} C\<^sub>1 ; C\<^sub>2 {Q}"
-  using assms 
-  apply (simp add: fbox_kcomp)
-  apply (auto simp add: fbox_def SEXP_def)
-  using le_bool_def le_funD by fastforce
-
-declare [[literal_variables]]
-
 notation norm ("\<parallel>_\<parallel>")
 notation infnorm ("\<parallel>_\<parallel>\<^sub>\<infinity>")
 
@@ -105,25 +81,6 @@ definition dyn :: "'st prog" where
 
 definition "model1 = (ctrl (a := A) safe ; dyn)\<^sup>*"
 
-lemma safety_from_Psi:
-  assumes "opc \<noteq> obc" "\<Psi> (opc, obc, 0, 0) s'"
-  shows "\<psi> s'"
-proof -
-  have "\<parallel>p<s'> - opc\<parallel>\<^sub>\<infinity> \<le> 0"
-    using assms by (auto simp add: \<Psi>_def safety_condition_def)
-  hence "\<parallel>p<s'> - opc\<parallel>\<^sub>\<infinity> = 0"
-    using infnorm_pos_le verit_la_disequality by blast
-  hence "p<s'> = opc"
-    by (meson eq_iff_diff_eq_0 infnorm_eq_0)
-  with assms have sep_eq:"\<parallel>p<s'> - ob<s'>\<parallel> = \<parallel>opc - obc\<parallel>"
-    by (simp add: \<Psi>_def)
-  from assms have old_sep: "0 < \<parallel>opc - obc\<parallel>"
-    by (simp add: \<Psi>_def)
-  show ?thesis
-    apply (simp add: safety_condition_def)
-    using old_sep sep_eq by force
-qed
-
 lemma dyn_inv: "H{\<Psi> (opc, obc, ac, osc)} dyn {\<Psi> (opc, obc, ac, osc)}"
   apply (unfold dyn_def \<Psi>_def)
   apply (dCut "\<parallel>d\<parallel> = 1")
@@ -158,38 +115,14 @@ lemma ctrl_inv: "H{\<phi>} ctrl (a := A) safe {\<phi> \<and> t = 0}"
   apply wlp_simp
   done
 
-lemma fbox_choiceI:
-  assumes "fbox C\<^sub>1 P s" "fbox C\<^sub>2 P s"
-  shows "fbox (C\<^sub>1 \<sqinter> C\<^sub>2) P s"
-  by (metis (lifting) SEXP_def assms(1,2) fbox_choice)
-
-declare [[literal_variables=false]]
-
-lemma hl_fboxI: 
-  assumes "\<And> s. (P)\<^sub>e s \<Longrightarrow> fbox C (Q)\<^sub>e s"
-  shows "H{P} C {Q}"
-  using assms by blast
-
-lemma fboxI:
-  assumes "\<And> s'. \<lbrakk> s' \<in> C s \<rbrakk> \<Longrightarrow> P s'"
-  shows "fbox C P s"
-  by (simp add: assms fbox_def)
-
-lemma exec_assign: 
-  assumes "vwb_lens x" "\<And> s' x\<^sub>0. \<lbrakk> (get\<^bsub>x\<^esub> s' = e s); s = put\<^bsub>x\<^esub> s' x\<^sub>0 \<rbrakk> \<Longrightarrow> fbox C P s'" 
-  shows "fbox (x := e ; C) P s"
-  using assms 
-  by (simp add: fbox_def prog_defs expr_defs)
-     (metis mwb_lens_weak vwb_lens.put_eq vwb_lens_mwb weak_lens.put_get)
-
-declare [[literal_variables]]
-
 theorem static_safety: "H{\<Phi>} model1 {\<psi>}"
 proof (unfold model1_def, kstar "loop_invariant", simp add: ctrl_def loop_invariant_def safe_def, symbolic_exec, simp_all)
   show "H{t = 0 \<and> \<omega> = 0 \<and> a = 0 \<and> sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1 \<and> sp = 0} 
           dyn 
          {sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1}"
-  proof (rule hl_fboxI, clarsimp)
+
+  \<comment> \<open> For each Hoare triple, we need to drop down into point-wise reasoning, so we can explicitly characterise state changes. \<close>
+  proof (rule hoare_fboxI, clarsimp)
     fix s
     assume t_0: "t<s> = 0" and \<omega>_0: "\<omega><s> = 0" and a_0: "a<s> = 0" and sep: "0 < \<parallel>p<s> - ob<s>\<parallel>\<^sub>\<infinity>" and d1: "\<parallel>d<s>\<parallel> = 1" and sp_0: "sp<s> = 0"
     \<comment> \<open> We can show that the dynamics invariant holds initially \<close>
@@ -239,30 +172,129 @@ next
         show ?thesis
           by (smt (verit) \<Psi>_def \<Psi>_s' hsp_eq prod.simps(2))
       qed
-      have hgoal : "(sp<s> + -(b * t<s'>)) ^ 2 / (2 * b) < infnorm (p<s'> - ob<s>)"
-        sorry
+      have hgoal: "(sp<s> + -(b * t<s'>)) ^ 2 / (2 * b) < infnorm (p<s'> - ob<s>)"
+      proof -
+        have "infnorm (p<s> - ob<s>) \<le> infnorm (p<s> - p<s'>) + infnorm (p<s'> - ob<s>)"
+          by (metis (no_types, lifting) add_diff_cancel_right diff_add_cancel infnorm_triangle)
+        also have "... = infnorm (p<s'> - p<s>) + infnorm (p<s'> - ob<s>)"
+          by (simp add: infnorm_sub)
+        finally have "sp<s> ^ 2 / (2 * b) < infnorm (p<s'> - p<s>) + infnorm (p<s'> - ob<s>)"
+          using hold by linarith
+        moreover have "infnorm (p<s'> - p<s>) \<le> t<s'> * sp<s> - b * (t<s'> ^ 2) / 2"
+          using hmove by (simp add: field_simps power2_eq_square)
+        moreover have "sp<s> ^ 2 / (2 * b) - (t<s'> * sp<s> - b * (t<s'> ^ 2) / 2) = (sp<s> - b * t<s'>) ^ 2 / (2 * b)"
+          using b_min by (simp add: field_simps power2_eq_square)
+        ultimately show ?thesis
+          by simp 
+      qed
       thus "(sp<s'>)\<^sup>2 / (2 * b) < \<parallel>p<s'> - ob<s'>\<parallel>\<^sub>\<infinity>"
-      sorry
-(*
-    apply (rule hl_middle_state[where e="((p, ob, a, s))\<^sup>e" and I="\<Psi>"])
-     apply (simp add: ctrl_def safe_def loop_invariant_def \<Psi>_def)
-     apply wlp_simp
-     apply (smt (verit, del_insts) eps_min infnorm_0)
-  subgoal for vs
-    apply (case_tac vs)
-    subgoal for opc obc ac osc
-      apply (rule hoare_invI[where I="\<Psi> vs"])
-      apply simp
-      using dyn_inv apply auto[1]
-      apply simp
-    apply expr_auto
-     apply (simp add: ctrl_def safe_def loop_invariant_def \<Psi>_def)
-    apply expr_simp
-    apply auto[1]
-  oops
-*)
-  
+        using \<Psi>_s' a_b by (auto simp add: \<Psi>_def)
+      show "0 \<le> sp<s'>"
+        using \<Psi>_s' by (auto simp add: \<Psi>_def)
+      show "\<parallel>d<s'>\<parallel> = 1"
+        using \<Psi>_s' by (auto simp add: \<Psi>_def)
+    qed
+  qed
+next
+  fix \<omega>\<^sub>0 :: real and r\<^sub>0 :: real
 
+  show "H{t = 0 \<and> a = A \<and> sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1 
+         \<and> \<omega> = \<omega>\<^sub>0 \<and> - \<Omega> \<le> \<omega> \<and> \<omega> \<le> \<Omega> \<and> r = r\<^sub>0 \<and> r \<noteq> 0 \<and> r * \<omega> = sp 
+         \<and> sp\<^sup>2 / (2 * b) + (A / b + 1) * (A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * sp) < \<parallel>p - ob\<parallel>\<^sub>\<infinity>} 
+         dyn 
+       {sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1}"
+  proof (rule hl_fboxI, clarsimp)
+    fix s
+    assume "t<s> = 0" "A = a<s>" "0 \<le> sp<s>" "\<parallel>d<s>\<parallel> = 1"
+       and safe_infl: "sp<s>^2 / (2 * b) + (a<s> / b + 1) * (a<s> * \<epsilon>\<^sup>2 / 2 + \<epsilon> * sp<s>) < \<parallel>p<s> - ob<s>\<parallel>\<^sub>\<infinity>"
+    hence \<Psi>_s: "\<Psi> (p<s>, ob<s>, a<s>, sp<s>) s"
+      by (simp add: \<Psi>_def eps_min infnorm_0 less_eq_real_def)
+    show "( |dyn] (sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1)) s"
+    proof (intro fboxI, simp, safe)
+      fix s'
+      assume s': "s' \<in> dyn s"
+      hence \<Psi>_s': "\<Psi> (p<s>, ob<s>, a<s>, sp<s>) s'"
+        by (smt (verit, best) SEXP_def \<Psi>_s s' dyn_inv fbox_def predicate1D)
+      hence t_bnd: "t<s'> \<le> \<epsilon>" and sp_s': "sp<s'> = sp<s> + A * t<s'>"
+        using \<open>A = a<s>\<close> by (auto simp add: \<Psi>_def)
+      have "infnorm (p<s> - ob<s>) \<le> infnorm (p<s> - p<s'>) + infnorm (p<s'> - ob<s>)"
+        by (smt (verit, best) add_diff_add add_diff_cancel_left' diff_diff_eq2 infnorm_triangle)
+      also have "... = infnorm (p<s'> - p<s>) + infnorm (p<s'> - ob<s>)"
+        using infnorm_sub by auto
+      finally have dist_ineq: "infnorm (p<s> - ob<s>) - infnorm (p<s'> - p<s>) \<le> infnorm (p<s'> - ob<s>)" 
+        by linarith
+      have "infnorm (p<s'> - p<s>) \<le> t<s'> * sp<s> + A * (t<s'> ^ 2) / 2"
+        using \<Psi>_s' \<open>A = a<s>\<close> by (auto simp add: \<Psi>_def field_simps)
+      have "infnorm (p<s'> - p<s>) \<le> t<s'> * sp<s> + A * (t<s'> ^ 2) / 2"
+        using \<Psi>_s' \<open>A = a<s>\<close> by (auto simp add: \<Psi>_def field_simps)
+      also have "... \<le> \<epsilon> * sp<s> + A * (\<epsilon> ^ 2) / 2"
+      proof -
+        have term1: "t<s'> * sp<s> \<le> \<epsilon> * sp<s>"
+          using t_bnd \<open>0 \<le> sp<s>\<close> by (simp add: mult_right_mono)
+        
+        have t_pos: "0 \<le> t<s'>" 
+          using \<Psi>_s' by (auto simp add: \<Psi>_def)
+        have t_sq: "t<s'> ^ 2 \<le> \<epsilon> ^ 2"
+          by (simp add: power_mono t_bnd t_pos)
+        have term2: "A * (t<s'> ^ 2) / 2 \<le> A * (\<epsilon> ^ 2) / 2"
+          using t_sq A_min by (simp add: divide_right_mono mult_left_mono)          
+        from term1 term2 show ?thesis by linarith
+      qed
+      finally have "infnorm (p<s'> - p<s>) \<le> \<epsilon> * sp<s> + A * (\<epsilon> ^ 2) / 2" .
+
+      have h_bound: "infnorm (p<s'> - p<s>) \<le> (A * (\<epsilon> \<^sup>2) / 2 + \<epsilon> * sp<s>)"
+        using \<open>infnorm (p<s'> - p<s>) \<le> \<epsilon> * sp<s> + A * (\<epsilon> ^ 2) / 2\<close> by (simp add: field_simps)
+
+      from A_min b_min have key_algebraic_bound: "(sp<s> + A * t<s'>)^2 / (2*b) \<le> (sp<s>)^2 / (2*b) + (A/b) * (A * \<epsilon>^2 / 2 + \<epsilon> * sp<s>)"
+      proof -
+        have "(sp<s> + A * t<s'>)^2 = (sp<s>)^2 + 2 * A * t<s'> * sp<s> + A^2 * (t<s'>)^2"
+          by (simp add: algebra_simps power2_eq_square)
+        also have "... \<le> (sp<s>)^2 + 2 * A * \<epsilon> * sp<s> + A^2 * \<epsilon>^2"
+        proof (intro add_mono)
+          show "(sp<s>)\<^sup>2 \<le> (sp<s>)\<^sup>2" by simp
+        next
+          show "2 * A * t<s'> * sp<s> \<le> 2 * A * \<epsilon> * sp<s>"
+            by (simp add: A_min \<open>0 \<le> sp<s>\<close> landau_o.R_mult_right_mono landau_omega.R_mult_left_mono t_bnd)
+        next
+          have "(t<s'>)^2 \<le> \<epsilon>^2"
+            using \<Psi>_def \<Psi>_s' by auto 
+          thus "A^2 * (t<s'>)^2 \<le> A^2 * \<epsilon>^2"
+            using A_min by (simp add: mult_left_mono power2_eq_square)
+        qed
+        finally have "(sp<s> + A * t<s'>)^2 \<le> (sp<s>)^2 + 2 * A * \<epsilon> * sp<s> + A^2 * \<epsilon>^2" .
+        hence "(sp<s> + A * t<s'>)^2 / (2*b) \<le> ((sp<s>)^2 + 2 * A * \<epsilon> * sp<s> + A^2 * \<epsilon>^2) / (2*b)"
+          using b_min by (simp add: divide_right_mono)
+        also from b_min have "... = (sp<s>)^2 / (2*b) + (A/b) * (A * \<epsilon>^2 / 2 + \<epsilon> * sp<s>)"
+          by (simp add: field_simps)
+        finally show ?thesis .
+      qed
+
+      show "(sp<s'>)\<^sup>2 / (2 * b) < \<parallel>p<s'> - ob<s'>\<parallel>\<^sub>\<infinity>"
+      proof -
+        have "ob<s'> = ob<s>" using \<Psi>_s' by (simp add: \<Psi>_def)
+        have "(sp<s'>)^2 / (2*b) \<le> (sp<s>)^2 / (2*b) + (A/b) * (A * \<epsilon>^2 / 2 + \<epsilon> * sp<s>)"
+          using sp_s' key_algebraic_bound by simp
+        also have "... = (sp<s>)^2 / (2*b) + (A/b + 1) * (A * \<epsilon>^2 / 2 + \<epsilon> * sp<s>) - (A * \<epsilon>^2 / 2 + \<epsilon> * sp<s>)"
+          by (simp add: algebra_simps)
+        also have "... < infnorm (p<s> - ob<s>) - infnorm (p<s'> - p<s>)"
+          using \<open>A = a<s>\<close> h_bound safe_infl by auto
+        also have "... \<le> infnorm (p<s'> - ob<s>)"
+          using dist_ineq by linarith
+        finally show ?thesis using `ob<s'> = ob<s>` by simp
+      qed
+
+      show "0 \<le> sp<s'>" using \<Psi>_s' by (auto simp add: \<Psi>_def)
+      show "\<parallel>d<s'>\<parallel> = 1" using \<Psi>_s' by (auto simp add: \<Psi>_def)
+    qed
+  qed
+next
+  show "`\<Phi> \<longrightarrow> \<phi>`"
+    by expr_simp
+next
+  show "`\<phi> \<longrightarrow> \<psi>`"
+    by expr_simp (metis arith_simps(62) b_min divide_less_eq infnorm_0 power2_less_0 rel_simps(51) verit_minus_simplify(1) zero_compare_simps(6))
+qed
+  
 end
 
 end

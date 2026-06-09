@@ -322,6 +322,14 @@ lemma fdia_invI_break:
   by (rule fdia_kcompI, force, rule fdia_invI[where I=I])
     (expr_auto add: invar_def)+
 
+lemma hoare_middle_state:
+  assumes "\<And> x. H{P} C\<^sub>1 {\<guillemotleft>x\<guillemotright> = e \<longrightarrow> @(I x)}" "\<And> x. H{\<guillemotleft>x\<guillemotright> = e \<and> @(I x)} C\<^sub>2 {Q}"
+  shows "H{P} C\<^sub>1 ; C\<^sub>2 {Q}"
+  using assms 
+  apply (simp add: fbox_kcomp)
+  apply (auto simp add: fbox_def SEXP_def)
+  using le_bool_def le_funD apply fastforce
+  done
 
 subsection \<open> Conditional statement \<close>
 
