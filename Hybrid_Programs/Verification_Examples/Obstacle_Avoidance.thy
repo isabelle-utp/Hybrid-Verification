@@ -54,6 +54,9 @@ definition ctrl :: "'st prog \<Rightarrow> ('st \<Rightarrow> bool) \<Rightarrow
      \<sqinter> drive ; \<omega> := ? ; \<questiondown>-\<Omega> \<le> \<omega> \<and> \<omega> \<le> \<Omega>? ; r := ? ; \<questiondown>r \<noteq> 0 \<and> r * \<omega> = sp \<and> @safe?) ;
     t := 0"
 
+text \<open> The safety condition has two components: (1) the distance travelled when braking;
+  (2) the maximum time before the next controller cycle. \<close>
+
 expression safe is "\<parallel>p - ob\<parallel>\<^sub>\<infinity> > (sp\<^sup>2 / (2*b)) + (A/b + 1) * (A/2 * \<epsilon>\<^sup>2 + \<epsilon> * sp)"
 
 definition 
