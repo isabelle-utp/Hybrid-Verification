@@ -151,7 +151,7 @@ proof (unfold model1_def, kstar "loop_invariant", simp add: ctrl_def loop_invari
 next
   show "H{t = 0 \<and> a = - b \<and> sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1} dyn
          {sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1}"
-  proof (rule hl_fboxI, clarsimp)
+  proof (rule hoare_fboxI, clarsimp)
     fix s
     assume t_0: "t<s> = 0" and a_b: "a<s> = - b" and sep: "(sp<s>)\<^sup>2 / (2 * b) < \<parallel>p<s> - ob<s>\<parallel>\<^sub>\<infinity>" and sp_pos: "0 \<le> sp<s>"
            and d1: "\<parallel>d<s>\<parallel> = 1"
@@ -203,7 +203,7 @@ next
          \<and> sp\<^sup>2 / (2 * b) + (A / b + 1) * (A * \<epsilon>\<^sup>2 / 2 + \<epsilon> * sp) < \<parallel>p - ob\<parallel>\<^sub>\<infinity>} 
          dyn 
        {sp\<^sup>2 / (2 * b) < \<parallel>p - ob\<parallel>\<^sub>\<infinity> \<and> 0 \<le> sp \<and> \<parallel>d\<parallel> = 1}"
-  proof (rule hl_fboxI, clarsimp)
+  proof (rule hoare_fboxI, clarsimp)
     fix s
     assume "t<s> = 0" "A = a<s>" "0 \<le> sp<s>" "\<parallel>d<s>\<parallel> = 1"
        and safe_infl: "sp<s>^2 / (2 * b) + (a<s> / b + 1) * (a<s> * \<epsilon>\<^sup>2 / 2 + \<epsilon> * sp<s>) < \<parallel>p<s> - ob<s>\<parallel>\<^sub>\<infinity>"
