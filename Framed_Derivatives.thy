@@ -91,6 +91,12 @@ lemma differentiable_inner [ldifferentiable]:
   shows "differentiable\<^bsub>x\<^esub> (expr1 \<bullet> expr2) within S when G"
   using assms by (simp add: expr_defs)
 
+lemma differentiable_sqnorm [ldifferentiable]:
+  fixes expr :: "'a \<Rightarrow> 'b::{real_inner,real_normed_vector}"
+  assumes "differentiable\<^bsub>x\<^esub> expr within S when G"  
+  shows "differentiable\<^bsub>x\<^esub> \<parallel>expr\<parallel>\<^sup>2 within S when G"
+  using assms by (simp add: expr_defs power2_norm_eq_inner)
+
 lemma differentiable_scaleR [ldifferentiable]:
   assumes "differentiable\<^bsub>x\<^esub> r within S when G"  
     and "differentiable\<^bsub>x\<^esub> expr within S when G"
@@ -140,6 +146,34 @@ lemma differentiable_vec_nth [ldifferentiable]:
   assumes "differentiable\<^bsub>x\<^esub> expr within S when G"
   shows "differentiable\<^bsub>x\<^esub> (expr $ \<guillemotleft>i\<guillemotright>) within S when G"
   using assms by (simp add: expr_defs differentiable_def, metis has_derivative_coordinate)
+
+lemma differentiable_Vec [ldifferentiable]:
+  assumes "(length xs)\<^sub>e = (CARD('n))\<^sub>e" "\<And> i. i < CARD('n) \<Longrightarrow> differentiable\<^bsub>x\<^esub> (xs ! \<guillemotleft>i\<guillemotright>)"
+  shows "differentiable\<^bsub>x\<^esub> (Vec xs :: 'a::real_normed_vector ^ 'n::nat)"
+  unfolding ldifferentiable_expr_def lframe_fun_def SEXP_def Vec_def
+proof (clarify, rule differentiable_vec, simp)
+  fix s and i::'n
+  from assms(1) have xs:"\<And> s'. length (xs s') = CARD('n)"
+    by (metis SEXP_def)
+  have i:"nat_of i \<in> {0..<CARD('n)}"
+    by (rule nat_of_range)
+  from xs assms(2) show "(\<lambda>y. ezlist CARD('n) (xs (put\<^bsub>x\<^esub> s y)) ! nat_of i) differentiable at (get\<^bsub>x\<^esub> s)"
+    unfolding ldifferentiable_expr_def lframe_fun_def
+    by (simp add: ezlist_simp)
+qed
+
+lemma differentiable_Vec2 [ldifferentiable]:
+  assumes "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2"
+  shows "differentiable\<^bsub>x\<^esub> (Vector[expr1,expr2])"
+  apply (rule differentiable_Vec)
+  apply simp
+   apply (simp add: numerals(2))
+  subgoal for i
+    apply (subgoal_tac "i = 0 \<or> i = 1")
+    apply (insert assms)
+     apply auto
+    done
+  done
 
 declare lens_plus_right_sublens [simp] 
 
@@ -203,6 +237,12 @@ lemma lframeD_inner [framed_derivs]:
   assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2"
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr1 \<bullet> expr2) = (expr1 \<bullet> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2 + \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1 \<bullet> expr2)\<^sub>e"
   using assms by (simp add: expr_defs fun_eq_iff frechet_derivative_inner)
+
+lemma lframeD_sqnorm [framed_derivs]:
+  fixes x :: "'c::{real_normed_vector, real_inner} \<Longrightarrow> 'v"
+  assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (\<parallel>expr\<parallel>\<^sup>2) = (2 *\<^sub>R (expr \<bullet> \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr))\<^sub>e"
+  using assms by (simp add: expr_defs fun_eq_iff power2_norm_eq_inner frechet_derivative_inner inner_commute)
 
 lemma lframeD_scaleR [framed_derivs]:
   fixes a :: "'c::{real_normed_vector} \<Longrightarrow> 'v"
@@ -287,6 +327,37 @@ lemma lframeD_vec_nth [framed_derivs]:
   assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr"
   shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (expr $ \<guillemotleft>i\<guillemotright>) = ((\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr) $ \<guillemotleft>i\<guillemotright>)\<^sub>e"
   using assms by (simp add: expr_defs fun_eq_iff) (metis differentiable_def frechet_derivative_at has_derivative_coordinate)
+
+abbreviation (input) "exp_list e n \<equiv> (map (\<lambda> i s. e s ! i) [0..<n])"
+
+lemma lframeD_Vec [framed_derivs]:
+  assumes "vwb_lens x" "(length xs)\<^sub>e = (CARD('n))\<^sub>e" "\<And> i. i < CARD('n) \<Longrightarrow> differentiable\<^bsub>x\<^esub> (xs ! \<guillemotleft>i\<guillemotright>)"
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (Vec xs :: 'a::real_normed_vector ^ 'n::nat) = SEXP (\<lambda> s. Vec (map (\<lambda> e. lframe_frechetD x \<sigma> e s) (exp_list xs CARD('n))))"
+unfolding ldifferentiable_expr_def lframe_frechetD_def lframe_fun_def SEXP_def Vec_def
+proof (subst frechet_derivative_vec, simp_all add: fun_eq_iff comp_def, safe)
+  fix s and i::'n
+  from assms(2) have xs:"\<And> s'. length (xs s') = CARD('n)"
+    by (metis SEXP_def)
+  have i:"nat_of i \<in> {0..<CARD('n)}"
+    by (rule nat_of_range)
+  from xs assms(3) show "(\<lambda>c. ezlist CARD('n) (xs (put\<^bsub>x\<^esub> s c)) ! nat_of i) differentiable at (get\<^bsub>x\<^esub> s)"
+    unfolding ldifferentiable_expr_def lframe_fun_def
+    by (simp add: ldifferentiable_expr_def ezlist_simp)
+
+  from xs show "\<partial> (\<lambda>c. ezlist CARD('n) (xs (put\<^bsub>x\<^esub> s c)) ! nat_of i) (at (get\<^bsub>x\<^esub> s)) (get\<^bsub>x\<^esub> (\<sigma> s)) =
+       ezlist CARD('n)
+        (map (\<lambda>xb. \<partial> (\<lambda>c. xs (put\<^bsub>x\<^esub> s c) ! xb) (at (get\<^bsub>x\<^esub> s)) (get\<^bsub>x\<^esub> (\<sigma> s))) [0..<CARD('n)]) !
+       nat_of i"
+    by (simp add: ldifferentiable_expr_def ezlist_simp)
+qed
+
+lemma lframeD_Vec2 [framed_derivs]:
+  assumes "vwb_lens x" "differentiable\<^bsub>x\<^esub> expr1" "differentiable\<^bsub>x\<^esub> expr2 "
+  shows "\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> (Vector[expr1, expr2]) = (Vector[\<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr1, \<D>\<^bsub>x\<^esub>\<langle>\<sigma>\<rangle> expr2])\<^sub>e"
+  apply (subst lframeD_Vec, simp_all add: assms numerals)
+  using assms(2,3) less_Suc_eq apply fastforce
+  apply (simp add: SEXP_def)
+  done
 
 declare lens_quotient_plus_den1 [simp]
 declare lens_quotient_plus_den2 [simp]

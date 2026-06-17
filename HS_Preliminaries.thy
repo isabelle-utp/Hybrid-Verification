@@ -10,7 +10,7 @@ auxiliary lemmas for verification of hybrid systems.\<close>
 theory HS_Preliminaries
   imports 
     "Ordinary_Differential_Equations.Picard_Lindeloef_Qualitative" 
-    "Hybrid-Library.Matrix_Syntax"
+    "Hybrid-Library.Vector_Syntax"
 begin
 
 subsection \<open> Notation \<close>

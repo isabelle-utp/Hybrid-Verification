@@ -10,7 +10,7 @@ text \<open>This section adds useful syntax, abbreviations and theorems to the I
 theory MTX_Preliminaries
   imports 
     "Ordinary_Differential_Equations.Picard_Lindeloef_Qualitative" 
-    "Hybrid-Library.Matrix_Syntax"
+    "Hybrid-Library.Vector_Syntax"
 begin
 
 
