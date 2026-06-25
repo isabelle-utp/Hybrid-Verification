@@ -11,7 +11,6 @@ theory Evolution_Commands
     "Framed_ODEs.Framed_ODEs"
 begin
 
-
 subsection \<open> Analytic dynamics \<close>
 
 definition g_evol :: "(('a::ord) \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'b pred \<Rightarrow> ('b \<Rightarrow> 'a set) \<Rightarrow> ('b \<Rightarrow> 'b set)" ("EVOL")
@@ -202,17 +201,6 @@ abbreviation g_dl_ode_on :: "('c::banach \<Longrightarrow> 'a) \<Rightarrow> ('a
 
 no_notation (ASCII) disj (infixr "|" 30)
 
-text \<open> We set up syntax for writing a list of derivatives. Internally, these are translated to
-  a set of substitution maplets, but the user doesn't see that. \<close>
-
-nonterminal deriv and derivs
-
-syntax
-  "_deriv"       :: "[svid, logic] => deriv"             ("_` = _")
-  ""             :: "deriv => derivs"            ("_")
-  "_Derivs"      :: "[deriv, derivs] => derivs" ("_,/ _")
-  "_SDeriv"      :: "smaplets \<Rightarrow> derivs"
-
 syntax
   "_ode_frame"       :: "svid \<Rightarrow> derivs \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("_:{_ | _ on _ _ @ _}")
   "_dl_ode_frame"    :: "svid \<Rightarrow> derivs \<Rightarrow> logic \<Rightarrow> logic" ("_:{_ | _}")
@@ -229,10 +217,6 @@ syntax
    "_ode_ng"          :: "svid \<Rightarrow> logic \<Rightarrow> logic" ("{(_)\<acute> = _}") *)
 
 translations
-  "_deriv x v"  => "_smaplet x v"
-  "_Derivs d \<sigma>" => "_SMaplets d \<sigma>"
-  "_deriv (_salphamk x) v"  <= "_SDeriv (_smaplet x v)"
-  "_Derivs (_SDeriv d) (_SDeriv \<sigma>)"  <= "_SDeriv (_SMaplets d \<sigma>)"
   "_ode_frame a \<sigma> G U S t\<^sub>0" => "CONST g_ode_frame a (_Subst \<sigma>) (G)\<^sub>e (U)\<^sub>e S t\<^sub>0"
   "_ode_frame (_salphamk a) (_SDeriv \<sigma>) G U S t\<^sub>0" <= "CONST g_ode_frame a (_Subst \<sigma>) (G)\<^sub>e (U)\<^sub>e S t\<^sub>0"
   "_dl_ode_frame a \<sigma> G" => "CONST g_dl_ode_frame a (_Subst \<sigma>) (G)\<^sub>e"

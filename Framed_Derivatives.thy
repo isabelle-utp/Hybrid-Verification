@@ -654,4 +654,23 @@ proof (unfold local_lipschitz_on_def, clarify)
     done
 qed
 
+subsection \<open> Derivative syntax \<close>
+
+nonterminal deriv and derivs
+
+syntax
+  "_deriv"       :: "[svid, logic] => deriv"             ("_` = _")
+  ""             :: "deriv => derivs"            ("_")
+  "_Derivs"      :: "[deriv, derivs] => derivs" ("_,/ _")
+  "_SDeriv"      :: "smaplets \<Rightarrow> derivs"
+
+text \<open> We set up syntax for writing a list of derivatives. Internally, these are translated to
+  a set of substitution maplets, but the user doesn't see that. \<close>
+
+translations
+  "_deriv x v"  => "_smaplet x v"
+  "_Derivs d \<sigma>" => "_SMaplets d \<sigma>"
+  "_deriv (_salphamk x) v"  <= "_SDeriv (_smaplet x v)"
+  "_Derivs (_SDeriv d) (_SDeriv \<sigma>)"  <= "_SDeriv (_SMaplets d \<sigma>)"
+
 end
