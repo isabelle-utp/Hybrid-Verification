@@ -231,7 +231,7 @@ definition ctrl :: "'st prog \<Rightarrow> ('st \<Rightarrow> bool) \<Rightarrow
 text \<open> The linear velocity can be a minimum of zero, so the robot cannot start reversing. \<close>
 
 definition dyn :: "'st prog" where
-"dyn = {clock` = 1, t` = 1, p` = sp *\<^sub>R d, sp` = a, d` = \<omega> *\<^sub>R rot d, \<omega>` = a / r 
+"dyn = {clock` = 1, t` = 1, p` = sp *\<^sub>R d, sp` = a, d` = \<omega> *\<^sub>R rot d, \<omega>` = (if r = 0 then 0 else a / r) 
        | 0 \<le> sp \<and> sp \<le> S \<and> t \<le> \<epsilon>}"
 
 (* , \<omega>` = a / r *)
@@ -271,7 +271,7 @@ text \<open> The invariant for the dynamics. It sets some healthiness conditions
 
 definition \<Psi>\<^sub>1 :: "(real ^ 2) \<Rightarrow> (real ^ 2 ^ 'n) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real^2 \<Rightarrow> 'st \<Rightarrow> bool" where
  "\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 od =
-  (ob = ob\<^sub>0 \<and> a = a\<^sub>0 \<and> 0 \<le> s\<^sub>0 \<and> \<omega> = 0 \<and> d = od
+  (ob = ob\<^sub>0 \<and> a = a\<^sub>0 \<and> 0 \<le> s\<^sub>0 \<and> r = 0 \<and> \<omega> = 0 \<and> d = od
     \<and> 0 \<le> sp \<and> 0 \<le> t  \<and> \<parallel>d\<parallel>\<^sup>2 = 1 \<and> \<parallel>d\<parallel> = 1 \<and> sp = s\<^sub>0 + a * t
     \<and> p = p\<^sub>0 + (s\<^sub>0 * t + a\<^sub>0 * t\<^sup>2 / 2) *\<^sub>R od
     \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> t * (sp - a * t/2))\<^sup>e"
@@ -307,10 +307,6 @@ definition \<Psi>\<^sub>2 :: "(real ^ 2) \<Rightarrow> (real ^ 2 ^ 'n) \<Rightar
     \<and> \<parallel>p - p\<^sub>0\<parallel> = r\<^sub>0 * \<parallel>d - d\<^sub>0\<parallel>
     \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> 2 * S * t )\<^sup>e"
 
-(* \<and> r\<^sub>0\<^sup>2 * (2 - 2*(d \<bullet> d\<^sub>0)) \<le> (S * t)\<^sup>2 *)
-
-(* (\<parallel>p - p\<^sub>0\<parallel>)\<^sup>2 \<le> (sp\<^sub>0 * t + (a * t\<^sup>2/2))\<^sup>2 *)
-
 term "((p $ 0 = p\<^sub>0 $ 0 + (sp * sin(\<theta>) - s\<^sub>0 * sin(\<theta>\<^sub>0)) / \<omega>\<^sub>0 + a\<^sub>0*(cos(\<theta>) - cos(\<theta>\<^sub>0)) / \<omega>\<^sub>0\<^sup>2)
     \<and> (p $ 1 = p\<^sub>0 $ 1 - (sp * cos(\<theta>) - s\<^sub>0 * cos(\<theta>\<^sub>0)) / \<omega>\<^sub>0 + a\<^sub>0*(sin(\<theta>) - sin(\<theta>\<^sub>0)) / \<omega>\<^sub>0\<^sup>2))\<^sub>e"
 
@@ -323,15 +319,36 @@ expr_constructor \<Psi>\<^sub>2
 
 declare norm_norm_1 [intro]
 
-(*
 lemma dyn_inv_no_rot: "H{\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 d\<^sub>0} dyn {\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 d\<^sub>0}"
   apply (unfold dyn_def \<Psi>\<^sub>1_def)
-  apply dInduct_mega
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dWeaken
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dWeaken
+  apply dCut
+  apply dInduct
+  apply dCut
+  apply dInduct
   apply dWeaken
   apply (metis add_sign_intros(4) cross3_simps(12) is_num_normalize(1) 
          mult_2_right mult_sign_intros(1) ring_class.ring_distribs(1))
   done
-*)
 
 theorem exists_cos_sin:
   fixes x y :: real
