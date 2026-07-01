@@ -349,7 +349,9 @@ lemma dyn_inv_rot:
   apply dCut
   apply dInduct
   apply dCut
-   apply dWeaken
+     apply dInduct
+  apply dCut
+apply dWeaken
   apply (metis abs_of_nonneg inner_real_def less_eq_real_def norm_eq
       real_norm_def)
   apply dCut
