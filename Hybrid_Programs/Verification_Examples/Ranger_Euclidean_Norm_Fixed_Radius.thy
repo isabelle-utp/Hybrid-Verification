@@ -15,6 +15,25 @@ declare [[literal_variables=false]]
 
 declare [[simproc del: ring_le_cancel_numeral_factor]]
 
+
+declare prime_elem_imp_nonzero [simp del]
+
+declare usubst_upd_idem_sub [usubst del]
+
+declare overrider.ovr_overshadow_left [simp del]
+
+declare overrider.ovr_overshadow_right [simp del]
+
+declare idem_overrider.ovr_idem [simp del]
+
+declare [[simp_trace_depth_limit=10]] 
+
+theorem exists_cos_sin:
+  fixes x y :: real
+  assumes "x^2 + y^2 = 1"
+  shows "\<exists>\<theta>. 0 \<le> \<theta> \<and> \<theta> < 2 * pi \<and> x = cos \<theta> \<and> y = sin \<theta>"
+  by (meson assms sincos_total_2pi)
+
 lemma cauchy_schwarz_heading_bound:
   fixes v u :: "real^2"
   assumes "\<parallel>u\<parallel> = 1"
@@ -269,15 +288,6 @@ text \<open> The invariant for the dynamics. It sets some healthiness conditions
   We give several versions of this. The first is when the robot is moving in a straight line.
 \<close>
 
-definition \<Psi>\<^sub>1 :: "(real ^ 2) \<Rightarrow> (real ^ 2 ^ 'n) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real^2 \<Rightarrow> 'st \<Rightarrow> bool" where
- "\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 od =
-  (ob = ob\<^sub>0 \<and> a = a\<^sub>0 \<and> 0 \<le> s\<^sub>0 \<and> r = 0 \<and> \<omega> = 0 \<and> d = od
-    \<and> 0 \<le> sp \<and> 0 \<le> t  \<and> \<parallel>d\<parallel>\<^sup>2 = 1 \<and> \<parallel>d\<parallel> = 1 \<and> sp = s\<^sub>0 + a * t
-    \<and> p = p\<^sub>0 + (s\<^sub>0 * t + a\<^sub>0 * t\<^sup>2 / 2) *\<^sub>R od
-    \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> t * (sp - a * t/2))\<^sup>e"
-
-expr_constructor \<Psi>\<^sub>1 
-
 expression safety_condition is "\<forall> i. \<parallel>p - ob $ i\<parallel> > 0"
 
 notation safety_condition ("\<psi>")
@@ -291,97 +301,43 @@ expression initial_condition is "sp = 0 \<and> (\<forall> i. \<parallel>p - ob $
 
 notation initial_condition ("\<Phi>")
 
-definition \<Psi>\<^sub>2 :: "(real ^ 2) \<Rightarrow> (real ^ 2 ^ 'n) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real^2 \<Rightarrow> real^2 \<Rightarrow> real \<Rightarrow> real \<Rightarrow> 'st \<Rightarrow> bool" where
- "\<Psi>\<^sub>2 p\<^sub>0 ob\<^sub>0 a\<^sub>0 sp\<^sub>0 d\<^sub>0 c\<^sub>0 r\<^sub>0 \<omega>\<^sub>0 =
-  (ob = ob\<^sub>0 \<and> a = a\<^sub>0 \<and> 0 \<le> sp\<^sub>0 \<and> r = r\<^sub>0 \<and> r\<^sub>0 > 0 \<and> (c\<^sub>0 - p\<^sub>0)\<bullet>(c\<^sub>0 - p\<^sub>0) = r\<^sub>0\<^sup>2 \<and> \<parallel>c\<^sub>0 - p\<^sub>0\<parallel> = r
-    \<and> 0 \<le> sp \<and> 0 \<le> t  \<and> \<parallel>d\<parallel>\<^sup>2 = 1 \<and> \<parallel>d\<parallel> = 1 \<and> d\<^sub>0 \<bullet> d\<^sub>0 = 1
-    \<and> r * \<omega> = sp
-    \<and> (p - c)\<bullet>(p - c) = r\<^sub>0\<^sup>2
-    \<and> r\<^sub>0 \<le> S * t 
-    \<and> r\<^sub>0\<^sup>2 * (2 - 2*(d \<bullet> d\<^sub>0)) \<le> (t * S)\<^sup>2
-    \<and> c = c\<^sub>0
-    \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> 2 * r
-    \<and> sp = sp\<^sub>0 + a * t
-    \<and> c\<^sub>0 - p\<^sub>0 = r\<^sub>0 *\<^sub>R rot(d\<^sub>0)
-    \<and> (p - c\<^sub>0) \<bullet> (p\<^sub>0 - c\<^sub>0) = r\<^sub>0\<^sup>2 * (d \<bullet> d\<^sub>0)
-    \<and> \<parallel>p - p\<^sub>0\<parallel> = r\<^sub>0 * \<parallel>d - d\<^sub>0\<parallel>
-    \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> 2 * S * t )\<^sup>e"
-
-term "((p $ 0 = p\<^sub>0 $ 0 + (sp * sin(\<theta>) - s\<^sub>0 * sin(\<theta>\<^sub>0)) / \<omega>\<^sub>0 + a\<^sub>0*(cos(\<theta>) - cos(\<theta>\<^sub>0)) / \<omega>\<^sub>0\<^sup>2)
-    \<and> (p $ 1 = p\<^sub>0 $ 1 - (sp * cos(\<theta>) - s\<^sub>0 * cos(\<theta>\<^sub>0)) / \<omega>\<^sub>0 + a\<^sub>0*(sin(\<theta>) - sin(\<theta>\<^sub>0)) / \<omega>\<^sub>0\<^sup>2))\<^sub>e"
-
-term "(p = p\<^sub>0 + Vector[(sp * sin(\<theta>) - s\<^sub>0 * sin(\<theta>\<^sub>0)) / \<omega>\<^sub>0 + a\<^sub>0*(cos(\<theta>) - cos(\<theta>\<^sub>0)) / \<omega>\<^sub>0\<^sup>2
-                     ,-(sp * cos(\<theta>) - s\<^sub>0 * cos(\<theta>\<^sub>0)) / \<omega>\<^sub>0 + a\<^sub>0*(sin(\<theta>) - sin(\<theta>\<^sub>0)) / \<omega>\<^sub>0\<^sup>2])\<^sub>e"
-
-term "(p = p\<^sub>0 + ((sp *\<^sub>R rot(d) - sp\<^sub>0 *\<^sub>R rot(d\<^sub>0)) /\<^sub>R \<omega>\<^sub>0) + ((a\<^sub>0 *\<^sub>R d - a\<^sub>0 *\<^sub>R d\<^sub>0) /\<^sub>R \<omega>\<^sub>0\<^sup>2))\<^sub>e"  
-
-expr_constructor \<Psi>\<^sub>2
-
 declare norm_norm_1 [intro]
+
+definition \<Psi>\<^sub>1 :: "(real ^ 2) \<Rightarrow> (real ^ 2 ^ 'n) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real^2 \<Rightarrow> 'st \<Rightarrow> bool" where
+ "\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 od =
+  (ob = ob\<^sub>0 \<and> a = a\<^sub>0 \<and> 0 \<le> s\<^sub>0 \<and> r = 0 \<and> \<omega> = 0 \<and> d = od
+    \<and> 0 \<le> sp \<and> 0 \<le> t  \<and> \<parallel>d\<parallel>\<^sup>2 = 1 \<and> \<parallel>d\<parallel> = 1 \<and> sp = s\<^sub>0 + a * t
+    \<and> p = p\<^sub>0 + (s\<^sub>0 * t + a\<^sub>0 * t\<^sup>2 / 2) *\<^sub>R od
+    \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> t * (sp - a * t/2))\<^sup>e"
+
+expr_constructor \<Psi>\<^sub>1 
 
 lemma dyn_inv_no_rot: "H{\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 d\<^sub>0} dyn {\<Psi>\<^sub>1 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 d\<^sub>0}"
   apply (unfold dyn_def \<Psi>\<^sub>1_def)
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dWeaken
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dWeaken
-  apply dCut
-  apply dInduct
-  apply dCut
-  apply dInduct
+  apply dInduct_mega
   apply dWeaken
   apply (metis add_sign_intros(4) cross3_simps(12) is_num_normalize(1) 
          mult_2_right mult_sign_intros(1) ring_class.ring_distribs(1))
   done
 
-theorem exists_cos_sin:
-  fixes x y :: real
-  assumes "x^2 + y^2 = 1"
-  shows "\<exists>\<theta>. 0 \<le> \<theta> \<and> \<theta> < 2 * pi \<and> x = cos \<theta> \<and> y = sin \<theta>"
-  by (meson assms sincos_total_2pi)
+definition \<Psi>\<^sub>2 :: "(real ^ 2) \<Rightarrow> (real ^ 2 ^ 'n) \<Rightarrow> real \<Rightarrow> real \<Rightarrow> real^2 \<Rightarrow> real^2 \<Rightarrow> real \<Rightarrow> real \<Rightarrow> 'st \<Rightarrow> bool" where
+ "\<Psi>\<^sub>2 p\<^sub>0 ob\<^sub>0 a\<^sub>0 sp\<^sub>0 d\<^sub>0 c\<^sub>0 r\<^sub>0 \<omega>\<^sub>0 =
+  (ob = ob\<^sub>0 \<and> a = a\<^sub>0 \<and> 0 \<le> sp\<^sub>0 \<and> r = r\<^sub>0 \<and> r\<^sub>0 > 0 \<and> (c\<^sub>0 - p\<^sub>0)\<bullet>(c\<^sub>0 - p\<^sub>0) = r\<^sub>0\<^sup>2 \<and> \<parallel>c\<^sub>0 - p\<^sub>0\<parallel> = r
+    \<and> 0 \<le> sp \<and> 0 \<le> t  \<and> \<parallel>d\<parallel>\<^sup>2 = 1 \<and> \<parallel>d\<parallel> = 1 \<and> d\<^sub>0 \<bullet> d\<^sub>0 = 1
+    \<and> r * \<omega> = sp \<and> (p - c)\<bullet>(p - c) = r\<^sub>0\<^sup>2
+    \<and> r\<^sub>0 \<le> S * t \<and> r\<^sub>0\<^sup>2 * (2 - 2*(d \<bullet> d\<^sub>0)) \<le> (t * S)\<^sup>2
+    \<and> c = c\<^sub>0 \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> 2 * r \<and> sp = sp\<^sub>0 + a * t
+    \<and> c\<^sub>0 - p\<^sub>0 = r\<^sub>0 *\<^sub>R rot(d\<^sub>0)
+    \<and> (p - c\<^sub>0) \<bullet> (p\<^sub>0 - c\<^sub>0) = r\<^sub>0\<^sup>2 * (d \<bullet> d\<^sub>0)
+    \<and> \<parallel>p - p\<^sub>0\<parallel> = r\<^sub>0 * \<parallel>d - d\<^sub>0\<parallel>
+    \<and> \<parallel>p - p\<^sub>0\<parallel> \<le> 2 * S * t )\<^sup>e"
 
-find_theorems cos sin
-
-term frac
-
-declare prime_elem_imp_nonzero [simp del]
-
-declare usubst_upd_idem_sub [usubst del]
-
-declare overrider.ovr_overshadow_left [simp del]
-
-declare overrider.ovr_overshadow_right [simp del]
-
-declare idem_overrider.ovr_idem [simp del]
-
-declare [[simp_trace_depth_limit=10]] 
-
-find_theorems "(\<subseteq>\<^sub>L)" subst_upd
-
-declare [[simproc del: ring_le_cancel_numeral_factor]]
+expr_constructor \<Psi>\<^sub>2
 
 lemma dyn_inv_rot: 
   assumes r_nz: "r\<^sub>0 \<noteq> 0"
   shows "H{\<Psi>\<^sub>2 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 d\<^sub>0 c\<^sub>0 r\<^sub>0 \<omega>\<^sub>0} dyn {\<Psi>\<^sub>2 p\<^sub>0 ob\<^sub>0 a\<^sub>0 s\<^sub>0 d\<^sub>0 c\<^sub>0 r\<^sub>0 \<omega>\<^sub>0}"
   apply (unfold dyn_def \<Psi>\<^sub>2_def)
-  apply dCut
-   apply dInduct
   apply dCut
    apply dInduct
   apply dCut
